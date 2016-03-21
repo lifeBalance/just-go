@@ -1,3 +1,4 @@
+// Helloworld prints the string "Hello, World!" backwards.
 package main
 
 import (

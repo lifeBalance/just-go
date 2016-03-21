@@ -84,6 +84,7 @@ go version go1.6 darwin/amd64
 
 Now let's create a file named `hello.go` anywhere in your filesystem and add the following contents to it:
 ```go
+// Hello prints the string "Hello, World!".
 package main
 
 import "fmt"
@@ -128,6 +129,8 @@ Let's go over the `hello.go` program trying to explain what's going on. We can d
   * And finally the **body** of the function, which is a block of code surrounded by curly braces.
 
   This function has no parameters, doesn't return anything and has only one statement. The name `main` is special because it's the function that gets called when you execute the program. Inside the **body** of our `main` function we have just **one statement**: `fmt.Println("Hello, World!")`. Here we are calling a function named [Println][5], which takes the string `"Hello, World!"` as an argument, and writes it to the **standard output**. Note that this function is prefixed with the name of the package where it is defined, the `fmt` package, which we define in our import declaration.
+
+The very first line at the beginning of our program is a **comment**, intended to be read by programmers and ignored by the compiler. By convention, we describe each package in a comment immediately preceding its package declaration. For a main package the comment is one or more sentences that describe what the program does.
 
 Go does not require **semicolons** at the ends of statements or declarations, except when two or more appear on the same line. At compile time, newlines following certain tokens are converted into semicolons. For example, the **opening brace** (`{`) of a function declaration must be on the same line of the declaration, not on a line by itself.
 
