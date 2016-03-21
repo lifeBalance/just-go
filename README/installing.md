@@ -109,12 +109,12 @@ The output is unsurprisingly, the text *Hello, World!*.
 ### Analizing our first program
 Let's go over the `hello.go` code, line by line:
 
-* The `package main` line is known as a **package declaration**. Every Go program must start with a package declaration.
+* The `package main` line is known as a **package declaration**. Every Go program must start with a package declaration. In this case, since this file will be the entry point of our app, it's going to be the main package.
 * Next we have the `import "fmt"` line, where we are including code from the [fmt package][4] (shorthand for format), which contains formatting functions for input and output text.
-* The last part is a **function declaration**. All function declarations have the following parts:
+* The last part is a **function declaration**. In this case we are declaring a function named `main`, which will be automatically called once our program is run. All function declarations have the following parts:
 
   * They start with the keyword `func`.
-  * Followed by the **name of the function**, `main` in this case. This is a function that must be present almost always, and represents the **entry point** of our application, meaning that all the code it contains will be executed when running our program.
+  * Followed by the **name of the function**, `main` in this case.
   * A list of zero or more **parameters** surrounded by parentheses.
   * An **optional** return type, which in this case doesn't exist.
   * And finally the **body** of the function, which is a block of code surrounded by curly braces.
@@ -131,7 +131,7 @@ And that's it for now.
 <!-- navigation -->
 [home]: ../README.md
 [back]: ../README.md
-[next]: #
+[next]: workspace.md
 
 
 <!-- links -->
