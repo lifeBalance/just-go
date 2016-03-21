@@ -107,23 +107,33 @@ Here we are passing the `go` tool two arguments:
 The output is unsurprisingly, the text *Hello, World!*.
 
 ### Analizing our first program
-Let's go over the `hello.go` code, line by line:
+Let's go over the `hello.go` program trying to explain what's going on. We can differentiate 3 main sections:
 
-* The `package main` line is known as a **package declaration**. Every Go program must start with a package declaration. In this case, since this file will be the entry point of our app, it's going to be the main package.
-* Next we have the `import "fmt"` line, where we are including code from the [fmt package][4] (shorthand for format), which contains formatting functions for input and output text.
-* The last part is a **function declaration**. In this case we are declaring a function named `main`, which will be automatically called once our program is run. All function declarations have the following parts:
+1. The **package declaration**. This is always the first thing at the top of each and every source code file. In Go, source code is organized into packages. A **package** consists of one or more files with the `.go` extension in a single directory. Each of these files begins with a package declaration which states the name of the package the file belongs to.
 
-  * They start with the keyword `func`.
+  In this case `package main` is special. It defines an **executable** program, not a library. If this file were part of a **library**, its package declaration would contain the name of the library.
+
+2. Right after the package declaration follows the **import declaration**, in this case `import "fmt"`. This is where we tell the compiler what packages are needed by this source file, its dependencies. This program depends on a single package, the [fmt package][4] (shorthand for format), which contains functions for printing formatted text and scanning input text.
+
+  Most of the times programs will import more than one package. We must import exactly the packages we intend to use. A program will not compile if there are missing imports or if there are unnecessary ones.
+
+3. So far we have seen how the import declarations must follow the package declaration. After that, a program consists of the declarations of **functions**, **variables**, **constants** and **types**, preceded by the keywords `func`, `var`, `const` and `type`. In most of the cases, the order of the declarations in this section is not important.
+
+  In this example we have a **function declaration**. We are declaring a function named `main`, which is a special function present on every `package main`. This function will be automatically called once our executable is run. All function declarations have the following parts:
+
+  * They start with the **keyword** `func`.
   * Followed by the **name of the function**, `main` in this case.
-  * A list of zero or more **parameters** surrounded by parentheses.
-  * An **optional** return type, which in this case doesn't exist.
+  * A list of zero or more **parameters** surrounded by parentheses, which is always empty in the case of `main`.
+  * An **optional** result list, which in this case doesn't exist.
   * And finally the **body** of the function, which is a block of code surrounded by curly braces.
 
-  This function has no parameters, doesn't return anything and has only one statement. The name main is special because it's the function that gets called when you execute the program.
+  This function has no parameters, doesn't return anything and has only one statement. The name `main` is special because it's the function that gets called when you execute the program. Inside the **body** of our `main` function we have just **one statement**: `fmt.Println("Hello, World!")`. Here we are calling a function named [Println][5], which takes the string `"Hello, World!"` as an argument, and writes it to the **standard output**. Note that this function is prefixed with the name of the package where it is defined, the `fmt` package, which we define in our import declaration.
 
-* Inside the **body** of our `main` function we have just **one statement**: `fmt.Println("Hello, World!")`. Here we are calling a function named [Println][5], which takes the string `"Hello, World!"` as an argument, and writes it to the **standard output**. Note that this function is prefixed with the name of the package where it is defined, the `fmt` package, which we imported before.
+Go does not require **semicolons** at the ends of statements or declarations, except when two or more appear on the same line. At compile time, newlines following certain tokens are converted into semicolons. For example, the **opening brace** (`{`) of a function declaration must be on the same line of the declaration, not on a line by itself.
 
-And that's it for now.
+In Go, code formatting is very important, and the [gofmt][6] command applies the **standard format** to all the files in the specified package, or the ones in the current directory by default.
+
+And that's it for this section.
 
 ---
 [:arrow_backward:][back] ║ [:house:][home] ║ [:arrow_forward:][next]
@@ -140,3 +150,4 @@ And that's it for now.
 [3]: http://brew.sh/
 [4]: https://golang.org/pkg/fmt/
 [5]: https://golang.org/pkg/fmt/#Println
+[6]: https://golang.org/cmd/gofmt/
