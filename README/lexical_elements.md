@@ -197,7 +197,7 @@ A [string literal][15] represents a string value. In Go there are two forms of s
 <!-- navigation -->
 [home]: ../README.md
 [back]: installing.md
-[next]: #
+[next]: variables.md
 
 
 <!-- links -->
