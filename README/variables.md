@@ -143,7 +143,7 @@ var i, j, k = 11, "hello", true
 <!-- navigation -->
 [home]: ../README.md
 [back]: lexical_elements.md
-[next]: #
+[next]: constants.md
 
 
 <!-- links -->

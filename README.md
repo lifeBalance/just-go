@@ -7,6 +7,7 @@ This repository is intended for keeping my notes about the [Go programming langu
 * [The Go Workspace][c2]
 * [Lexical Elements][c3]
 * [Variables][c4]
+* [Constants][c5]
 
 
 ---
@@ -26,3 +27,4 @@ This repository is intended for keeping my notes about the [Go programming langu
 [c2]: README/workspace.md
 [c3]: README/lexical_elements.md
 [c4]: README/variables.md
+[c5]: README/constants.md
