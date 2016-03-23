@@ -216,7 +216,7 @@ This section is based mostly on the article [How to Write Go Code][5] that you c
 <!-- navigation -->
 [home]: ../README.md
 [back]: installing.md
-[next]: #
+[next]: lexical_elements.md
 
 
 <!-- links -->
