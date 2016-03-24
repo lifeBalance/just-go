@@ -77,7 +77,7 @@ const (
 <!-- navigation -->
 [home]: ../README.md
 [back]: variables.md
-[next]: #
+[next]: types.md
 
 
 <!-- links -->

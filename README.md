@@ -8,6 +8,9 @@ This repository is intended for keeping my notes about the [Go programming langu
 * [Lexical Elements][c3]
 * [Variables][c4]
 * [Constants][c5]
+* [Types][c6]
+  * [Basic Types][c7]
+
 
 
 ---
@@ -28,3 +31,5 @@ This repository is intended for keeping my notes about the [Go programming langu
 [c3]: README/lexical_elements.md
 [c4]: README/variables.md
 [c5]: README/constants.md
+[c6]: README/types.md
+[c7]: README/types.md#basic-types
