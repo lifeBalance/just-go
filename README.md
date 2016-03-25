@@ -10,7 +10,8 @@ This repository is intended for keeping my notes about the [Go programming langu
 * [Constants][c5]
 * [Types][c6]
   * [Basic Types][c7]
-
+  * [Composite Types][c8]
+    * [Arrays][c9]
 
 
 ---
@@ -33,3 +34,5 @@ This repository is intended for keeping my notes about the [Go programming langu
 [c5]: README/constants.md
 [c6]: README/types.md
 [c7]: README/types.md#basic-types
+[c8]: README/composite_types.md
+[c9]: README/composite_types.md#arrays
