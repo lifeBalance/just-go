@@ -219,8 +219,8 @@ To sum it up, Go’s arrays are **values** not references. An array variable den
 
 <!-- navigation -->
 [home]: ../README.md
-[back]: ../README.md
-[next]: workspace.md
+[back]: types.md
+[next]: slices.md
 
 
 <!-- links -->

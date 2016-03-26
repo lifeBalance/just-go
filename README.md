@@ -12,6 +12,7 @@ This repository is intended for keeping my notes about the [Go programming langu
   * [Basic Types][c7]
   * [Composite Types][c8]
     * [Arrays][c9]
+    * [Slices][c10]
 
 
 ---
@@ -36,3 +37,4 @@ This repository is intended for keeping my notes about the [Go programming langu
 [c7]: README/types.md#basic-types
 [c8]: README/composite_types.md
 [c9]: README/composite_types.md#arrays
+[c10]: README/slices.md
