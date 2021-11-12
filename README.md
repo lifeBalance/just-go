@@ -1,4 +1,4 @@
-# Just Go
+# Just Go!
 This repository is intended for keeping my notes about the [Go programming language][1].
 
 ## Contents
