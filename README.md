@@ -1,40 +1,38 @@
-# Just Go!
-This repository is intended for keeping my notes about the [Go programming language][1].
+# sv
 
-## Contents
+Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
-* [Installing Go][c1]
-* [The Go Workspace][c2]
-* [Lexical Elements][c3]
-* [Variables][c4]
-* [Constants][c5]
-* [Types][c6]
-  * [Basic Types][c7]
-  * [Composite Types][c8]
-    * [Arrays][c9]
-    * [Slices][c10]
+## Creating a project
 
+If you're seeing this, you've probably already done this step. Congrats!
 
----
-[:arrow_backward:][back] ║ [:house:][home] ║ [:arrow_forward:][next]
+```sh
+# create a new project in the current directory
+npx sv create
 
-<!-- navigation -->
-[home]: #
-[back]: #
-[next]: README/installing.md
+# create a new project in my-app
+npx sv create my-app
+```
 
+## Developing
 
-<!-- links -->
-[1]: https://golang.org
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
-<!-- contents -->
-[c1]: README/installing.md
-[c2]: README/workspace.md
-[c3]: README/lexical_elements.md
-[c4]: README/variables.md
-[c5]: README/constants.md
-[c6]: README/types.md
-[c7]: README/types.md#basic-types
-[c8]: README/composite_types.md
-[c9]: README/composite_types.md#arrays
-[c10]: README/slices.md
+```sh
+npm run dev
+
+# or start the server and open the app in a new browser tab
+npm run dev -- --open
+```
+
+## Building
+
+To create a production version of your app:
+
+```sh
+npm run build
+```
+
+You can preview the production build with `npm run preview`.
+
+> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
