@@ -1,0 +1,30 @@
+---
+import SidebarLayout from '../../layouts/SidebarLayout.astro'
+
+export async function getStaticPaths() {
+  const files = Object.keys(import.meta.glob('/src/content/basics/**/*.mdx'))
+  return files.map((fs) => {
+    const page = fs
+      .replace('/src/content/basics/', '')
+      .replace(/index\.mdx$/, '')
+      .replace(/\.mdx$/, '')
+    return { params: { page } }
+  })
+}
+
+const mods = import.meta.glob('/src/content/basics/**/*.mdx', { eager: true })
+const toRoute = (fs: string) => fs.replace(/^\/src\/content/, '').replace(/index\.mdx$/, '').replace(/\.mdx$/, '').replace(/^\/basics\//, '/basics/')
+const routeMap = new Map(Object.entries(mods).map(([fs, mod]) => [toRoute(fs), mod]))
+
+const param = Astro.params.page || ''
+const target = '/basics/' + param
+const mod = routeMap.get(target)
+if (!mod) {
+  throw new Error(`Basics page not found for route: ${target}`)
+}
+const Page = (mod as any).default
+---
+
+<SidebarLayout heading="Basics">
+  <Page />
+</SidebarLayout>
