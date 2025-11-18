@@ -1,5 +1,6 @@
-<script>
+<script lang="ts">
   import DocsSectionPage from '$lib/svelte-doc/DocsSectionPage.svelte'
+  export let data: { segment?: string }
 </script>
 
-<DocsSectionPage section="basics" />
+<DocsSectionPage section="basics" segment={data.segment ?? ''} />

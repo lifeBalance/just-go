@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { page } from '$app/stores'
   export let nav: { label: string; href?: string; items: { url: string; title: string }[] }[]
   export let heading = 'Contents'
-  $: pathname = $page.url.pathname
+  export let currentPath: string = ''
   const normalize = (p: string) => p.replace(/\/$/, '')
-  const isActive = (url: string) => normalize(pathname) === normalize(url)
+  const isActive = (url: string) => normalize(currentPath) === normalize(url)
 </script>
 
 <nav aria-label={heading}>

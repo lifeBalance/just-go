@@ -1,13 +1,12 @@
 <script lang="ts">
-  import { page } from '$app/stores'
   import { createSection } from '$lib/docs/section'
   export let section: string
+  export let segment: string = ''
   export let notFound: string = 'Not found.'
 
   const { resolver } = createSection(section)
   const resolve = resolver()
-  $: seg = $page.params.page ?? ''
-  $: mod = resolve(seg)
+  $: mod = resolve(segment)
 </script>
 
 {#if mod}
