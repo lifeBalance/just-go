@@ -5,7 +5,7 @@
 
 <div style="display:flex; gap:2rem; align-items:flex-start;">
   <aside style="min-width:240px; position:sticky; top:1rem;">
-    <DocsSidebar nav={data.nav} heading="Design Patterns" currentPath={data.path} />
+    <DocsSidebar nav={data.nav} heading="Svelte‑Doc" currentPath={data.path} />
   </aside>
   <main style="flex:1; min-width:0;">
     <slot />

@@ -5,9 +5,9 @@
       <h2 class="text-xl font-medium">Basics</h2>
       <p class="text-sm text-gray-600">Start with the language fundamentals.</p>
     </a>
-    <a href="/design-patterns" class="block rounded-lg border border-gray-200 p-5 hover:shadow-md transition">
-      <h2 class="text-xl font-medium">Design Patterns</h2>
-      <p class="text-sm text-gray-600">Common patterns and best practices.</p>
+    <a href="/svelte-doc" class="block rounded-lg border border-gray-200 p-5 hover:shadow-md transition">
+      <h2 class="text-xl font-medium">Svelte‑Doc</h2>
+      <p class="text-sm text-gray-600">Build doc sites with SvelteKit helpers.</p>
     </a>
   </div>
 </section>

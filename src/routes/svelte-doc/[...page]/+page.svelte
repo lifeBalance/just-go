@@ -3,4 +3,4 @@
   export let data: { segment?: string }
 </script>
 
-<DocsSectionPage section="design-patterns" segment={data.segment ?? ''} />
+<DocsSectionPage section="svelte-doc" segment={data.segment ?? ''} />
