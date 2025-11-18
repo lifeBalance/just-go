@@ -1,12 +1,10 @@
+import { fsPathToRoute, relSlug as relSlugBase } from '$lib/docs/paths'
+
 export const load = async () => {
   const mods = import.meta.glob('/src/content/basics/**/*.md', {
     eager: true,
   }) as Record<string, any>
-  const toUrl = (fs: string) =>
-    fs
-      .replace(/^\/src\/content/, '')
-      .replace(/index\.md$/, '')
-      .replace(/\.md$/, '')
+  const toUrl = (fs: string) => fsPathToRoute(fs)
   const entries = Object.entries(mods).map(([fs, mod]) => {
     const isIndex = /\/index\.md$/.test(fs)
     const url = toUrl(fs)
@@ -48,9 +46,8 @@ export const load = async () => {
     weight: number
   }
   const groups: Record<string, Group> = {}
-  function relSlug(url: string) {
-    return url.replace(/^\/basics\//, '').replace(/\/$/, '')
-  }
+  const base = '/basics'
+  const relSlug = (url: string) => relSlugBase(url, base)
   for (const e of entries) {
     if (e.isIndex) continue
     const dir = e.dir || ''
