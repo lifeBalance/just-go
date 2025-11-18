@@ -36,7 +36,7 @@ export const load = async () => {
         ? metaTitle || e.dir.replace(/(^|\/)\w/g, (m) => m.toUpperCase())
         : metaTitle || 'Basics'
       folderTitle.set(e.dir, pretty)
-      folderHref.set(e.dir, e.url)
+      folderHref.set(e.dir, e.url.replace(/\/$/, ''))
     }
   }
 
