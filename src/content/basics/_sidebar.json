@@ -1,5 +1,4 @@
 [
-  "introduction/",
-  "variables/intro",
-  "variables/scope"
+  { "path": "introduction/", "label": "Introvert" },
+  { "path": "variables/", "label": "Variables" }
 ]
