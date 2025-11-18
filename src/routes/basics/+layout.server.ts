@@ -1,13 +1,9 @@
 import { createOrderIndex } from '$lib/docs/order'
 import { createNav } from '$lib/docs/nav'
-import { createContentEntries } from '$lib/docs/content'
-import type { ContentEntry } from '$lib/docs/types'
+import { basicsEntries } from '$lib/docs/sections/basics'
 
 export const load = async () => {
-  const mods = import.meta.glob('/src/content/basics/**/*.md', {
-    eager: true,
-  }) as Record<string, any>
-  const entries: ContentEntry[] = createContentEntries(mods, '/basics')
+  const entries = basicsEntries()
 
 
   // Optional order config
