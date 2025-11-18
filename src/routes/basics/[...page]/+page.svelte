@@ -1,8 +1,8 @@
 <script lang="ts">
   import { page } from '$app/stores'
-  import { makeResolver, type MdModule } from '$lib/docs/resolver'
-  const pages: Record<string, MdModule> = import.meta.glob('/src/content/basics/**/*.md', { eager: true }) as Record<string, MdModule>
-  const resolve = makeResolver(pages, '/basics')
+  import { createSection } from '$lib/docs/section'
+  const { resolver } = createSection('basics')
+  const resolve = resolver()
   $: seg = $page.params.page ?? ''
   $: mod = resolve(seg)
 </script>

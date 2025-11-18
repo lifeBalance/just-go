@@ -1,9 +1,10 @@
 import { createOrderIndex } from '$lib/docs/order'
 import { createNav } from '$lib/docs/nav'
-import { basicsEntries } from '$lib/docs/sections/basics'
+import { createSection } from '$lib/docs/section'
 
 export const load = async () => {
-  const entries = basicsEntries()
+  const { entries } = createSection('basics')
+  const list = entries()
 
 
   // Optional order config
@@ -15,6 +16,6 @@ export const load = async () => {
     '/src/content/basics/_sidebar.json',
   )
 
-  const { nav } = createNav(entries, '/basics', orderIndex)
+  const { nav } = createNav(list, '/basics', orderIndex)
   return { nav }
 }
