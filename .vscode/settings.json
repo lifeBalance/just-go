@@ -1,5 +1,6 @@
 {
-	"files.associations": {
-		"*.css": "tailwind"
-	}
+  "files.associations": {
+    "*.css": "postcss"
+  },
+  "css.lint.unknownAtRules": "ignore"
 }

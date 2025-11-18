@@ -1,5 +1,5 @@
 <script>
-  import BasicsIndex from '../../content/basics/index.svx'
+  import BasicsIndex from '../../content/basics/index.md'
 </script>
 
 <BasicsIndex />
