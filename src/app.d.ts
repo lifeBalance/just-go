@@ -10,11 +10,7 @@ declare global {
   }
 
   // Allow importing mdsvex files as components
-  module '*.svx' {
-    const component: import('svelte').ComponentType
-    export default component
-    export const metadata: Record<string, any>
-  }
+
   module '*.md' {
     const component: import('svelte').ComponentType
     export default component

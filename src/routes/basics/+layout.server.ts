@@ -8,11 +8,12 @@ export const load = async () => {
       .replace(/index\.md$/, '')
       .replace(/\.md$/, '')
   const entries = Object.entries(mods).map(([fs, mod]) => {
+    const isIndex = /\/index\.md$/.test(fs)
     const url = toUrl(fs)
     const rel = url.replace(/^\/basics\//, '')
     const dir = rel.split('/').slice(0, -1).join('/') || ''
-    const title = mod?.metadata?.title ?? (rel || 'Basics')
-    return { url, dir, title }
+    const title = mod?.metadata?.title ?? (isIndex ? (dir || 'Basics') : (rel.split('/').pop() || ''))
+    return { url, dir, title, isIndex, fs, mod }
   })
 
   // Optional order config
@@ -25,39 +26,58 @@ export const load = async () => {
     orderList.map((slug, i) => [slug.replace(/\/$/, ''), i]),
   )
 
-  const groups: Record<
-    string,
-    {
-      label: string
-      items: { url: string; title: string; weight: number }[]
-      weight: number
+  // Build folder titles and hrefs from index.md frontmatter when available
+  const folderTitle = new Map<string, string>()
+  const folderHref = new Map<string, string>()
+  for (const e of entries) {
+    if (e.isIndex) {
+      const metaTitle: string | undefined = (e.mod as any)?.metadata?.title
+      const pretty = e.dir
+        ? metaTitle || e.dir.replace(/(^|\/)\w/g, (m) => m.toUpperCase())
+        : metaTitle || 'Basics'
+      folderTitle.set(e.dir, pretty)
+      folderHref.set(e.dir, e.url)
     }
-  > = {}
+  }
+
+  type Group = {
+    dir: string
+    label: string
+    href?: string
+    items: { url: string; title: string; weight: number }[]
+    weight: number
+  }
+  const groups: Record<string, Group> = {}
   function relSlug(url: string) {
     return url.replace(/^\/basics\//, '').replace(/\/$/, '')
   }
   for (const e of entries) {
-    const label = e.dir || 'Introduction'
+    if (e.isIndex) continue
+    const dir = e.dir || ''
+    const label = folderTitle.get(dir) || (dir ? dir : 'Basics')
+    const href = folderHref.get(dir)
     const w = orderIndex.get(relSlug(e.url)) ?? Number.POSITIVE_INFINITY
-    const gw =
-      orderIndex.get((e.dir || '').replace(/\/$/, '')) ??
-      Number.POSITIVE_INFINITY
-    groups[label] ||= { label, items: [], weight: gw }
-    groups[label].items.push({ url: e.url, title: e.title, weight: w })
+    const gw = orderIndex.get(dir.replace(/\/$/, '')) ?? Number.POSITIVE_INFINITY
+    groups[dir] ||= { dir, label, href, items: [], weight: gw }
+    if (!groups[dir].items.some((it) => it.url === e.url)) {
+      groups[dir].items.push({ url: e.url, title: e.title, weight: w })
+    }
   }
   // sort groups and items
   const nav = Object.values(groups)
     .map((g) => ({
       label: g.label,
-      items: g.items.sort(
-        (a, b) => a.weight - b.weight || a.title.localeCompare(b.title),
-      ),
+      href: g.href,
+      items: g.items
+        .filter((it) => it.url)
+        .sort((a, b) => a.weight - b.weight || a.title.localeCompare(b.title)),
+      dir: g.dir,
     }))
     .sort((a, b) => {
-      const aw = orderIndex.get(a.label) ?? Number.POSITIVE_INFINITY
-      const bw = orderIndex.get(b.label) ?? Number.POSITIVE_INFINITY
+      const aw = orderIndex.get(a.dir) ?? Number.POSITIVE_INFINITY
+      const bw = orderIndex.get(b.dir) ?? Number.POSITIVE_INFINITY
       if (aw !== bw) return aw - bw
-      return a.label.localeCompare(b.label)
+      return (a.label || '').localeCompare(b.label || '')
     })
   return { nav }
 }

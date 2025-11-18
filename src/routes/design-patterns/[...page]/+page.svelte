@@ -1,11 +1,12 @@
 <script lang="ts">
-  export let data: { pageParam?: string }
-  type SvxModule = { default: unknown }
-  const pages: Record<string, SvxModule> = import.meta.glob('/src/content/design-patterns/**/*.svx', { eager: true }) as Record<string, SvxModule>
-  const toRoute = (fs: string) => fs.replace(/^\/src\/content/, '').replace(/index\.svx$/, '').replace(/\.svx$/, '')
-  const routeMap = new Map<string, SvxModule>(Object.entries(pages).map(([fs, mod]) => [toRoute(fs), mod]))
-  const target = '/design-patterns/' + (data.pageParam ?? '')
-  const mod = routeMap.get(target)
+  import { page } from '$app/stores'
+  type MdModule = { default: unknown }
+  const pages: Record<string, MdModule> = import.meta.glob('/src/content/design-patterns/**/*.md', { eager: true }) as Record<string, MdModule>
+  const toRoute = (fs: string) => fs.replace(/^\/src\/content/, '').replace(/index\.md$/, '').replace(/\.md$/, '')
+  const routeMap = new Map<string, MdModule>(Object.entries(pages).map(([fs, mod]) => [toRoute(fs), mod]))
+  $: seg = $page.params.page ?? ''
+  $: target = '/design-patterns/' + seg
+  $: mod = routeMap.get(target)
 </script>
 
 {#if mod}
