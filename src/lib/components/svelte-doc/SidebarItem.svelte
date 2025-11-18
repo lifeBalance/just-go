@@ -10,8 +10,9 @@
   <a
     href={url}
     aria-current={active ? 'page' : undefined}
-    class="block px-2 py-1 rounded-md no-underline text-(--sd-fg) hover:bg-(--sd-hover)"
-    class:bg-(--sd-hover)={active}
+    class="block px-2 py-1 no-underline text-sd-fg transition-colors hover:bg-sd-border rounded-sm hover:text-sd-bg"
+    class:bg-sd-border={active}
+    class:text-sd-bg={active}
     class:font-medium={active}
   >{title}</a>
 </li>

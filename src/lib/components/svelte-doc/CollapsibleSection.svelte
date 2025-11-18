@@ -11,12 +11,12 @@
   {#if p.label}
     <button
       type="button"
-      class="w-full mb-2 flex items-center justify-between px-2 py-1 rounded-md text-(--sd-fg) hover:bg-(--sd-hover) cursor-pointer"
+      class="w-full mb-2 flex items-center justify-between px-2 py-1 cursor-pointer"
       aria-expanded={p.open}
       onclick={onHeaderClick}
     >
-      <span class="text-base">{p.label}</span>
-      <Icon icon={p.open ? 'mdi:chevron-down' : 'mdi:chevron-right'} class="text-(--sd-muted)" />
+      <span class="text-sm uppercase tracking-wide text-sd-muted">{p.label}</span>
+      <Icon icon={p.open ? 'mdi:chevron-down' : 'mdi:chevron-right'} class="text-sd-muted" />
     </button>
   {/if}
   {#if p.open}
