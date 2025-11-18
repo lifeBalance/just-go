@@ -1,2 +1,22 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
+
+:root {
+  /* Sidebar theme (OKLCH colors) */
+  --sd-bg: oklch(0.98 0.005 250);
+  --sd-fg: oklch(0.22 0.03 250);
+  --sd-muted: oklch(0.60 0.02 250);
+  --sd-accent: oklch(0.68 0.12 250);
+  --sd-border: oklch(0.92 0.01 250);
+  --sd-hover: oklch(0.96 0.01 250);
+}
+
+/* Dark theme */
+[data-theme='dark'] {
+  --sd-bg: oklch(0.16 0.02 250);
+  --sd-fg: oklch(0.88 0.02 250);
+  --sd-muted: oklch(0.72 0.02 250);
+  --sd-accent: oklch(0.78 0.12 250);
+  --sd-border: oklch(0.28 0.01 250);
+  --sd-hover: oklch(0.22 0.02 250);
+}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DocsSidebar from '$lib/svelte-doc/DocsSidebar.svelte'
+  import DocsSidebar from '$lib/components/svelte-doc/DocsSidebar.svelte'
   export let data: { path: string; nav: { label: string; href?: string; items: { url: string; title: string }[] }[] }
 </script>
 

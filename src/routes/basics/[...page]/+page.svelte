@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DocsSectionPage from '$lib/svelte-doc/DocsSectionPage.svelte'
+  import DocsSectionPage from '$lib/components/svelte-doc/DocsSectionPage.svelte'
   export let data: { segment?: string }
 </script>
 
