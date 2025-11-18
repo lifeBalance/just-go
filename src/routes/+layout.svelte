@@ -1,8 +1,9 @@
 <script lang="ts">
-  import './layout.css'
+  import '../app.css'
   import favicon from '$lib/assets/favicon.svg'
+  import TopBar from '$lib/components/svelte-doc/TopBar.svelte'
 
-  let { children } = $props()
+  let { children, data } = $props()
 </script>
 
 <svelte:head>
@@ -11,5 +12,7 @@
     href={favicon}
   />
 </svelte:head>
+
+<TopBar homeHref="/" currentPath={data?.path ?? ''} />
 
 {@render children()}
