@@ -1,22 +1,32 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
-:root {
-  /* Sidebar theme (Tailwind color vars) */
-  --sd-bg: var(--color-stone-50);
-  --sd-fg: var(--color-stone-900);
-  --sd-muted: var(--color-stone-500);
-  --sd-accent: var(--color-sky-600);
-  --sd-border: var(--color-stone-200);
-  --sd-hover: var(--color-stone-100);
+/* Tailwind v4 theme tokens for IntelliSense-friendly classes */
+@theme {
+  --color-sd-bg: var(--color-stone-50);
+  --color-sd-fg: var(--color-stone-900);
+  --color-sd-muted: var(--color-stone-500);
+  --color-sd-accent: var(--color-sky-600);
+  --color-sd-border: var(--color-stone-200);
+  --color-sd-hover: var(--color-stone-100);
 }
 
-/* Dark theme */
+/* Dark theme overrides */
 [data-theme='dark'] {
-  --sd-bg: var(--color-stone-900);
-  --sd-fg: var(--color-stone-50);
-  --sd-muted: var(--color-stone-400);
-  --sd-accent: var(--color-sky-400);
-  --sd-border: var(--color-stone-700);
-  --sd-hover: var(--color-stone-800);
+  --color-sd-bg: var(--color-stone-900);
+  --color-sd-fg: var(--color-stone-50);
+  --color-sd-muted: var(--color-stone-400);
+  --color-sd-accent: var(--color-sky-400);
+  --color-sd-border: var(--color-stone-700);
+  --color-sd-hover: var(--color-stone-800);
+}
+
+/* Maintain legacy CSS variables for runtime reads (e.g., /colors page) */
+:root {
+  --sd-bg: var(--color-sd-bg);
+  --sd-fg: var(--color-sd-fg);
+  --sd-muted: var(--color-sd-muted);
+  --sd-accent: var(--color-sd-accent);
+  --sd-border: var(--color-sd-border);
+  --sd-hover: var(--color-sd-hover);
 }

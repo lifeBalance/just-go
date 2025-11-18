@@ -23,16 +23,16 @@
   })
 </script>
 
-<section class="text-(--sd-fg)">
+<section class="text-[var(--sd-fg)]">
   <h1 class="text-2xl mb-2">Color Tokens</h1>
-  <p class="text-sm text-(--sd-muted)">Theme: {theme}</p>
+  <p class="text-sm text-[var(--sd-muted)]">Theme: {theme}</p>
   {#if !okSupport}
-    <p class="text-sm text-(--sd-muted)">Your browser may not support OKLCH colors; swatches might not render. Try a recent Chromium/Safari/Firefox version.</p>
+    <p class="text-sm text-[var(--sd-muted)]">Your browser may not support OKLCH colors; swatches might not render. Try a recent Chromium/Safari/Firefox version.</p>
   {/if}
 
   <div class="mt-4" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
     {#each vars as v}
-      <div class="rounded-md border" style:border-color={'var(--sd-border)'}>
+      <div class="rounded-md border border-[var(--sd-border)]">
         <div class="h-16 rounded-t-md" style:background={`var(${v})`}></div>
         <div class="p-2 text-sm">
           <div><code>{v}</code></div>

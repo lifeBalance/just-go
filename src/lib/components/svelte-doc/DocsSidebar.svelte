@@ -10,7 +10,10 @@
   export let currentPath: string = ''
 
   const normalize = (p: string) => (p ? p.replace(/\/$/, '') : '')
-  const keyFor = (group: { label: string; items: { url: string; title: string }[] }) => {
+  const keyFor = (group: {
+    label: string
+    items: { url: string; title: string }[]
+  }) => {
     const first = group.items[0]?.url ?? ''
     const parts = first.split('/').filter(Boolean)
     // e.g. /basics/variables/intro -> 'variables'
@@ -34,24 +37,38 @@
     const next: Record<string, boolean> = {}
     for (const g of nav) {
       const k = keyFor(g)
-      next[k] = k === activeKey ? true : open[k] ?? false
+      next[k] = k === activeKey ? true : (open[k] ?? false)
     }
     open = next
   }
 
-  function toggle(group: { label: string; items: { url: string; title: string }[] }) {
+  function toggle(group: {
+    label: string
+    items: { url: string; title: string }[]
+  }) {
     const k = keyFor(group)
     open = { ...open, [k]: !open[k] }
   }
 </script>
 
-<nav aria-label={heading} class="text-(--sd-fg)">
-  <h3 class="mt-1 mb-3 text-sm text-(--sd-muted)">{heading}</h3>
+<nav
+  aria-label={heading}
+  class="text-(--sd-fg) p-4 border-r border-sd-border min-w-[25%] min-h-full"
+>
   {#each nav as group}
-    <CollapsibleSection label={group.label} href={group.href} open={open[keyFor(group)]} onToggle={() => toggle(group)}>
+    <CollapsibleSection
+      label={group.label}
+      href={group.href}
+      open={open[keyFor(group)]}
+      onToggle={() => toggle(group)}
+    >
       <ul class="list-none p-0 m-0 pl-6">
         {#each group.items as item}
-          <SidebarItem url={item.url} title={item.title} {currentPath} />
+          <SidebarItem
+            url={item.url}
+            title={item.title}
+            {currentPath}
+          />
         {/each}
       </ul>
     </CollapsibleSection>
