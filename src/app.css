@@ -30,3 +30,18 @@
   --sd-border: var(--color-sd-border);
   --sd-hover: var(--color-sd-hover);
 }
+
+/* Tie Tailwind Typography (prose) colors to site tokens */
+.prose {
+  --tw-prose-body: var(--color-sd-fg);
+  --tw-prose-headings: var(--color-sd-fg);
+  --tw-prose-links: var(--color-sd-accent);
+  --tw-prose-bold: var(--color-sd-fg);
+  --tw-prose-quotes: var(--color-sd-muted);
+  --tw-prose-hr: var(--color-sd-border);
+  --tw-prose-counters: var(--color-sd-muted);
+  --tw-prose-bullets: var(--color-sd-border);
+  --tw-prose-code: var(--color-sd-fg);
+  --tw-prose-th-borders: var(--color-sd-border);
+  --tw-prose-td-borders: var(--color-sd-border);
+}

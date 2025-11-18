@@ -13,7 +13,7 @@
   console.log(data)
 </script>
 
-<div class="mx-auto min-h-screen bg-amber-400">
+<div class="mx-auto min-h-screen">
   <div class="flex items-stretch">
     <aside
       class="sticky top-0 h-screen overflow-y-auto w-64 shrink-0 bg-sd-hover"
@@ -25,10 +25,12 @@
       />
     </aside>
     <main class="min-w-0 flex-1 bg-sd-bg p-6">
-      <Breadcrumb
-        path={data.path}
-        nav={data.nav}
-      />
+      <div class="pb-4">
+        <Breadcrumb
+          path={data.path}
+          nav={data.nav}
+        />
+      </div>
       <slot />
     </main>
   </div>

@@ -10,7 +10,9 @@
 </script>
 
 {#if mod}
-  <svelte:component this={(mod as any).default} />
+  <div class="prose prose-headings:uppercase prose-a:text-sd-accent prose-hr:border-sd-border prose-img:rounded-md max-w-none">
+    <svelte:component this={(mod as any).default} />
+  </div>
 {:else}
   <p>{notFound}</p>
 {/if}
