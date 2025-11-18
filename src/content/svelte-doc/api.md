@@ -14,3 +14,7 @@ Types
 - `ContentEntry { url, dir, title, isIndex, mod }`
 - `NavItem { url, title, weight }`
 - `NavGroup { dir, label, href?, items }`
+
+```ts
+console.log('hello world')
+```
