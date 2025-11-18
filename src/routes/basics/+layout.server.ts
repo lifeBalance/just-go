@@ -1,6 +1,7 @@
 import { fsPathToRoute } from '$lib/docs/paths'
 import { createOrderIndex } from '$lib/docs/order'
-import { createNav, type ContentEntry } from '$lib/docs/nav'
+import { createNav } from '$lib/docs/nav'
+import type { ContentEntry } from '$lib/docs/types'
 
 export const load = async () => {
   const mods = import.meta.glob('/src/content/basics/**/*.md', {

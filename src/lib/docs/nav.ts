@@ -1,19 +1,5 @@
 import { normalizePath, relSlug as relSlugBase } from './paths'
-
-export type NavItem = { url: string; title: string; weight: number }
-export type NavGroup = {
-  dir: string
-  label: string
-  href?: string
-  items: NavItem[]
-}
-export type ContentEntry = {
-  url: string
-  dir: string
-  title: string
-  isIndex: boolean
-  mod?: any
-}
+import type { ContentEntry, NavGroup } from './types'
 
 export function createNav(
   entries: ContentEntry[],
