@@ -11,7 +11,7 @@
   {#if p.label}
     <button
       type="button"
-      class="w-full mb-2 flex items-center justify-between px-2 py-1 rounded-md text-(--sd-fg) hover:bg-(--sd-hover)"
+      class="w-full mb-2 flex items-center justify-between px-2 py-1 rounded-md text-(--sd-fg) hover:bg-(--sd-hover) cursor-pointer"
       aria-expanded={p.open}
       onclick={onHeaderClick}
     >

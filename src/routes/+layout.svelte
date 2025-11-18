@@ -13,6 +13,7 @@
   />
 </svelte:head>
 
-<TopBar homeHref="/" currentPath={data?.path ?? ''} />
-
-{@render children()}
+<div class="min-h-screen bg-(--sd-bg) text-(--sd-fg)">
+  <TopBar homeHref="/" currentPath={data?.path ?? ''} />
+  {@render children()}
+</div>
