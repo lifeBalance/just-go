@@ -1,21 +1,13 @@
-import { fsPathToRoute } from '$lib/docs/paths'
 import { createOrderIndex } from '$lib/docs/order'
 import { createNav } from '$lib/docs/nav'
+import { createContentEntries } from '$lib/docs/content'
 import type { ContentEntry } from '$lib/docs/types'
 
 export const load = async () => {
   const mods = import.meta.glob('/src/content/basics/**/*.md', {
     eager: true,
   }) as Record<string, any>
-  const toUrl = (fs: string) => fsPathToRoute(fs)
-  const entries: ContentEntry[] = Object.entries(mods).map(([fs, mod]) => {
-    const isIndex = /\/index\.md$/.test(fs)
-    const url = toUrl(fs)
-    const rel = url.replace(/^\/basics\//, '')
-    const dir = rel.split('/').slice(0, -1).join('/') || ''
-    const title = mod?.metadata?.title ?? (isIndex ? (dir || 'Basics') : (rel.split('/').pop() || ''))
-    return { url, dir, title, isIndex, mod }
-  })
+  const entries: ContentEntry[] = createContentEntries(mods, '/basics')
 
 
   // Optional order config

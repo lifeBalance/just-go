@@ -1,18 +1,10 @@
 <script lang="ts">
   import { page } from '$app/stores'
-  type MdModule = { default: unknown }
+  import { makeResolver, type MdModule } from '$lib/docs/resolver'
   const pages: Record<string, MdModule> = import.meta.glob('/src/content/basics/**/*.md', { eager: true }) as Record<string, MdModule>
-  const toRoute = (fs: string) =>
-    fs
-      .replace(/^\/src\/content/, '')
-      .replace(/index\.md$/, '')
-      .replace(/\.md$/, '')
-      .replace(/\/$/, '')
-  const routeMap = new Map<string, MdModule>(Object.entries(pages).map(([fs, mod]) => [toRoute(fs), mod]))
-  const normalize = (path: string) => path.replace(/\/$/, '')
+  const resolve = makeResolver(pages, '/basics')
   $: seg = $page.params.page ?? ''
-  $: target = normalize('/basics' + (seg ? '/' + seg : ''))
-  $: mod = routeMap.get(target)
+  $: mod = resolve(seg)
 </script>
 
 {#if mod}
