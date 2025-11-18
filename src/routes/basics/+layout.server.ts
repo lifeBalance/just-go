@@ -1,4 +1,5 @@
 import { fsPathToRoute, relSlug as relSlugBase } from '$lib/docs/paths'
+import { createOrderIndex } from '$lib/docs/order'
 
 export const load = async () => {
   const mods = import.meta.glob('/src/content/basics/**/*.md', {
@@ -18,10 +19,9 @@ export const load = async () => {
   const orderMod = import.meta.glob('/src/content/basics/_sidebar.json', {
     eager: true,
   }) as Record<string, any>
-  const orderList: string[] =
-    orderMod['/src/content/basics/_sidebar.json']?.default ?? []
-  const orderIndex = new Map(
-    orderList.map((slug, i) => [slug.replace(/\/$/, ''), i]),
+  const orderIndex = createOrderIndex(
+    orderMod,
+    '/src/content/basics/_sidebar.json',
   )
 
   // Build folder titles and hrefs from index.md frontmatter when available
