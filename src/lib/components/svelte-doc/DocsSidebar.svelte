@@ -69,6 +69,7 @@
         label={group.label}
         href={group.href}
         open={open[keyFor(group)]}
+        active={group.items.some((i) => normalize(i.url) === normalize(currentPath))}
         onToggle={() => toggle(group)}
       >
         <ul class="list-none p-0 m-0 pl-3">
