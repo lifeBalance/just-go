@@ -29,6 +29,7 @@
   --sd-accent: var(--color-sd-accent);
   --sd-border: var(--color-sd-border);
   --sd-hover: var(--color-sd-hover);
+  --topbar-height: 4rem;
 }
 
 /* Tie Tailwind Typography (prose) colors to site tokens */

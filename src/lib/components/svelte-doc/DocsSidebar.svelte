@@ -53,7 +53,7 @@
 
 <nav
   aria-label={heading}
-  class="text-sd-fg p-4 border-r border-sd-border min-w-[25%] min-h-full"
+  class="text-sd-fg p-4 border-r border-sd-border min-w-[25%] h-full"
 >
   {#each nav as group}
     <CollapsibleSection

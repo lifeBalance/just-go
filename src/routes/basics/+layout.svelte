@@ -13,25 +13,18 @@
   console.log(data)
 </script>
 
-<div class="mx-auto min-h-full bg-amber-400">
-  <div class="flex items-stretch">
-    <aside
-      class="sticky top-0 h-screen overflow-y-auto w-64 shrink-0 bg-sd-hover"
-    >
-      <DocsSidebar
-        nav={data.nav}
-        heading="Basics"
-        currentPath={data.path}
-      />
-    </aside>
-    <main class="min-w-0 flex-1 bg-sd-bg p-6">
-      <div class="pb-4">
-        <Breadcrumb
-          path={data.path}
-          nav={data.nav}
-        />
-      </div>
-      <slot />
-    </main>
-  </div>
+<div class="flex h-[calc(100vh-var(--topbar-height))]">
+  <aside class="sticky top-0 h-full overflow-y-auto w-64 shrink-0 bg-sd-hover">
+    <DocsSidebar
+      nav={data.nav}
+      heading="Basics"
+      currentPath={data.path}
+    />
+  </aside>
+  <main class="min-w-0 flex-1 bg-sd-bg p-6 overflow-y-auto">
+    <div class="pb-4">
+      <Breadcrumb path={data.path} nav={data.nav} />
+    </div>
+    <slot />
+  </main>
 </div>
