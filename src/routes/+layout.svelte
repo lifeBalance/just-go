@@ -13,7 +13,7 @@
   />
 </svelte:head>
 
-<div class="min-h-screen bg-sd-bg text-sd-fg flex flex-col my-0">
+<div class="min-h-screen bg-sd-bg text-sd-fg">
   <TopBar homeHref="/" currentPath={data?.path ?? ''} />
   {@render children()}
 </div>
