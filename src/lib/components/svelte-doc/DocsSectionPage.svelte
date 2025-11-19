@@ -2,13 +2,12 @@
   import { createSection } from '$lib/docs/section'
   export let section: string
   export let segment: string = ''
+  // console.log('mod', section)
   export let contentFolderNotFound: string = `Make sure that the content folder contains a ${section} subfolder.`
 
   const { resolver } = createSection(section)
   const resolve = resolver()
   $: mod = resolve(segment)
-  console.log('mod', segment)
-  console.log('mod', section)
 </script>
 
 {#if mod}

@@ -1,11 +1,35 @@
-import { error } from '@sveltejs/kit'
+import { error, redirect } from '@sveltejs/kit'
 import { createSection } from '$lib/docs/section'
 
 export const load = ({ params }: { params: { page?: string } }) => {
   const segment = params.page ?? ''
-  const resolve = createSection('basics').resolver()
-  if (!resolve(segment)) {
-    throw error(404, 'Not found')
+  const section = createSection('basics')
+  const resolve = section.resolver()
+  const { nav } = section.nav()
+
+  // If direct doc exists, render it
+  if (resolve(segment)) {
+    return { segment }
   }
-  return { segment }
+
+  const parts = (segment || '').split('/').filter(Boolean)
+
+  // Root of section: redirect to first listed item
+  if (parts.length === 0) {
+    const first = nav[0]?.items[0]?.url
+    if (first) throw redirect(302, first)
+    throw error(404, 'No docs in section')
+  }
+
+  // Group root: redirect to first item in that group
+  if (parts.length === 1) {
+    const dir = parts[0]
+    const group = nav.find((g: any) => g.dir === dir)
+    const first = group?.items[0]?.url
+    if (first) throw redirect(302, first)
+    throw error(404, 'No docs in group')
+  }
+
+  // Otherwise not found
+  throw error(404, 'Not found')
 }
