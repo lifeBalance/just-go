@@ -34,7 +34,7 @@
 
 /* Tie Tailwind Typography (prose) colors to site tokens */
 .prose {
-  --tw-prose-body: var(--color-sd-fg);
+  --tw-prose-body: var(--color-sd-muted);
   --tw-prose-headings: var(--color-sd-fg);
   --tw-prose-links: var(--color-sd-accent);
   --tw-prose-bold: var(--color-sd-fg);

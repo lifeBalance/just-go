@@ -34,7 +34,7 @@
     </div>
   </main>
   <aside
-    class="hidden xl:block sticky top-0 h-full overflow-y-auto w-64 shrink-0 bg-sd-hover p-3"
+    class="hidden xl:block sticky top-0 h-full overflow-y-auto w-64 shrink-0 bg-sd-hover p-3 border-l border-sd-border"
   >
     <DocsToc />
   </aside>
