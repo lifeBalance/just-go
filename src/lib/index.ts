@@ -5,6 +5,7 @@ export { default as ErrorPage } from './components/svelte-doc/ErrorPage.svelte'
 export { default as Card } from './components/svelte-doc/Card.svelte'
 export { default as CollapsibleSection } from './components/svelte-doc/CollapsibleSection.svelte'
 export { default as Breadcrumb } from './components/svelte-doc/Breadcrumb.svelte'
+export { default as DocsToc } from './components/svelte-doc/DocsToc.svelte'
 
 export { createSection } from './docs/section'
 export { cn } from './utils/cn'

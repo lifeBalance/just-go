@@ -1,6 +1,7 @@
 <script lang="ts">
   import Breadcrumb from '$lib/components/svelte-doc/Breadcrumb.svelte'
   import DocsSidebar from '$lib/components/svelte-doc/DocsSidebar.svelte'
+  import DocsToc from '$lib/components/svelte-doc/DocsToc.svelte'
   export let data: {
     path: string
     nav: {
@@ -23,8 +24,18 @@
   </aside>
   <main class="min-w-0 flex-1 bg-sd-bg p-6 overflow-y-auto">
     <div class="pb-4">
-      <Breadcrumb path={data.path} nav={data.nav} />
+      <Breadcrumb
+        path={data.path}
+        nav={data.nav}
+      />
     </div>
-    <slot />
+    <div id="content">
+      <slot />
+    </div>
   </main>
+  <aside
+    class="hidden xl:block sticky top-0 h-full overflow-y-auto w-64 shrink-0 bg-sd-hover p-3"
+  >
+    <DocsToc />
+  </aside>
 </div>
