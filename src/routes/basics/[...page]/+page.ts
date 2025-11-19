@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit'
 import { createSection } from '$lib/docs/section'
 
-export const load = ({ params }: { params: { page?: string } }) => {
+export const load = ({ params, url }: { params: { page?: string }; url: URL }) => {
   const segment = params.page ?? ''
   const section = createSection('basics')
   const resolve = section.resolver()
@@ -9,7 +9,7 @@ export const load = ({ params }: { params: { page?: string } }) => {
 
   // If direct doc exists, render it
   if (resolve(segment)) {
-    return { segment }
+    return { segment, nav, path: url.pathname }
   }
 
   const parts = (segment || '').split('/').filter(Boolean)
