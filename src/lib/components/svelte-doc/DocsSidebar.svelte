@@ -59,7 +59,11 @@
   {#each nav as group}
     {#if group.items.length === 0 && group.href}
       <!-- Root-level doc as a plain nav item -->
-      <SidebarItem url={group.href} title={group.label} {currentPath} />
+      <SidebarItem
+        url={group.href}
+        title={group.label}
+        {currentPath}
+      />
     {:else}
       <CollapsibleSection
         label={group.label}
@@ -67,13 +71,15 @@
         open={open[keyFor(group)]}
         onToggle={() => toggle(group)}
       >
-        <ul class="list-none p-0 m-0 pl-6">
+        <ul class="list-none p-0 m-0 pl-3">
           {#each group.items as item}
-            <SidebarItem
-              url={item.url}
-              title={item.title}
-              {currentPath}
-            />
+            <li>
+              <SidebarItem
+                url={item.url}
+                title={item.title}
+                {currentPath}
+              />
+            </li>
           {/each}
         </ul>
       </CollapsibleSection>

@@ -13,11 +13,11 @@
   }
 </script>
 
-<section class="mb-4">
+<section class="mb-2">
   {#if p.label}
     <button
       type="button"
-      class="w-full mb-2 flex items-center justify-between px-2 py-1 cursor-pointer"
+      class="w-full flex items-center justify-between px-2 py-1 cursor-pointer"
       aria-expanded={p.open}
       onclick={onHeaderClick}
     >
