@@ -16,16 +16,16 @@ export const load = ({ params, url }: { params: { page?: string }; url: URL }) =
 
   // Root of section: redirect to first listed item
   if (parts.length === 0) {
-    const first = nav[0]?.items[0]?.url
+    const first = nav[0]?.items[0]?.url ?? nav[0]?.href
     if (first) throw redirect(302, first)
     throw error(404, 'No docs in section')
   }
 
-  // Group root: redirect to first item in that group
+  // Group root: redirect to first item in that group or the doc itself
   if (parts.length === 1) {
     const dir = parts[0]
     const group = nav.find((g: any) => g.dir === dir)
-    const first = group?.items[0]?.url
+    const first = group?.items[0]?.url ?? group?.href
     if (first) throw redirect(302, first)
     throw error(404, 'No docs in group')
   }

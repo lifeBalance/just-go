@@ -55,76 +55,124 @@ export function createSection(section: string) {
       }
       const groups = Array.from(groupSet)
 
-      // Parent (root) sidebar for group ordering and alias/hidden
-      const rootSidebar = readSidebar(`${contentRoot}/_sidebar.json`)
-      const listedGroups = rootSidebar.ordered
-        .map((e) => e.path.endsWith('/') ? e.path.slice(0, -1) : e.path)
-        .filter((g) => g)
+       // Parent (root) sidebar for ordering, alias, hidden
+       const rootSidebar = readSidebar(`${contentRoot}/_sidebar.json`)
+       const rootAlias = rootSidebar.alias
+       const rootHidden = rootSidebar.hidden
 
-      const groupAlias = rootSidebar.alias
-      const groupHidden = rootSidebar.hidden
+       // Collect top-level docs (files directly under the section)
+       const topDocs: Map<string, ContentEntry> = new Map()
+       for (const e of entries) {
+         const rel = e.url.replace(new RegExp('^' + base + '/'), '')
+         const parts = rel.split('/').filter(Boolean)
+         if (parts.length === 1 && !e.isIndex) {
+           topDocs.set(parts[0], e)
+         }
+       }
 
-      // Order groups: listed first (in order), then remaining alphabetically
-      const listedSet = new Set(listedGroups)
-      const remainingGroups = groups.filter((g) => !listedSet.has(g)).sort()
-      const orderedGroups = [...listedGroups, ...remainingGroups]
+       // Helper: build a group NavGroup for folder 'g'
+       function buildGroup(g: string): NavGroup | null {
+         const groupKey = `${g}/`
+         if (rootHidden.has(groupKey)) return null
 
-      const nav: NavGroup[] = []
-      for (const g of orderedGroups) {
-        // Skip hidden groups via root sidebar (key with trailing slash)
-        const groupKey = `${g}/`
-        if (groupHidden.has(groupKey)) continue
+         // Collect direct items within this group (one level deep)
+         const items = entries.filter((e) => {
+           const rel = e.url.replace(new RegExp('^' + base + '/'), '')
+           const parts = rel.split('/').filter(Boolean)
+           return parts[0] === g && parts.length === 2 && !e.isIndex
+         })
 
-        // Collect direct items within this group (one level deep)
-        const items = entries.filter((e) => {
-          const rel = e.url.replace(new RegExp('^' + base + '/'), '')
-          const parts = rel.split('/').filter(Boolean)
-          return parts[0] === g && parts.length === 2 && !e.isIndex
-        })
+         // Local sidebar inside the group folder
+         const localSidebar = readSidebar(`${contentRoot}/${g}/_sidebar.json`)
+         const listedItems = localSidebar.ordered
+           .map((e) => (e.path.endsWith('/') ? e.path.slice(0, -1) : e.path))
+           .filter((p) => p)
+         const itemAlias = localSidebar.alias
+         const itemHidden = localSidebar.hidden
+         const listedItemSet = new Set(listedItems)
 
-        // Local sidebar inside the group folder
-        const localSidebar = readSidebar(`${contentRoot}/${g}/_sidebar.json`)
-        const listedItems = localSidebar.ordered
-          .map((e) => e.path.endsWith('/') ? e.path.slice(0, -1) : e.path)
-          .filter((p) => p)
-        const itemAlias = localSidebar.alias
-        const itemHidden = localSidebar.hidden
-        const listedItemSet = new Set(listedItems)
+         // Map items by slug within the group
+         const itemBySlug = new Map<string, ContentEntry>()
+         for (const e of items) {
+           const rel = e.url.replace(new RegExp('^' + base + '/'), '')
+           const parts = rel.split('/').filter(Boolean)
+           const slug = parts[1]
+           itemBySlug.set(slug, e)
+         }
 
-        // Map items by slug within the group
-        const itemBySlug = new Map<string, ContentEntry>()
-        for (const e of items) {
-          const rel = e.url.replace(new RegExp('^' + base + '/'), '')
-          const parts = rel.split('/').filter(Boolean)
-          const slug = parts[1]
-          itemBySlug.set(slug, e)
-        }
+         // Build ordered item list: listed first, then remaining alpha
+         const remainingItemSlugs = Array.from(itemBySlug.keys())
+           .filter((s) => !listedItemSet.has(s))
+           .sort()
+         const finalItemSlugs = [
+           ...listedItems.filter((s) => itemBySlug.has(s)),
+           ...remainingItemSlugs,
+         ]
 
-        // Build ordered item list: listed first, then remaining alpha
-        const remainingItemSlugs = Array.from(itemBySlug.keys())
-          .filter((s) => !listedItemSet.has(s))
-          .sort()
-        const finalItemSlugs = [...listedItems.filter((s) => itemBySlug.has(s)), ...remainingItemSlugs]
+         // Group label: alias from root sidebar or folder name
+         const groupLabel = rootAlias.get(groupKey) || capitalize(g)
 
-        // Group label: alias from root sidebar or folder name
-        const groupLabel = groupAlias.get(groupKey) || capitalize(g)
+         // Build nav items, apply alias and hidden
+         const navItems = [] as { url: string; title: string }[]
+         for (const slug of finalItemSlugs) {
+           if (itemHidden.has(slug)) continue
+           const entry = itemBySlug.get(slug)!
+           const title = itemAlias.get(slug) || entry.title || capitalize(slug)
+           navItems.push({ url: entry.url, title })
+         }
 
-        // Build nav items, apply alias and hidden
-        const navItems = [] as { url: string; title: string }[]
-        for (const slug of finalItemSlugs) {
-          if (itemHidden.has(slug)) continue
-          const entry = itemBySlug.get(slug)!
-          const title = itemAlias.get(slug) || entry.title || capitalize(slug)
-          navItems.push({ url: entry.url, title })
-        }
+         if (navItems.length === 0) return null
+         return { label: groupLabel, items: navItems, dir: g } as any
+       }
 
-        // Skip empty groups with no items
-        if (navItems.length === 0) continue
+       // Helper: build a doc NavGroup (as a root nav item)
+       function buildDoc(slug: string): NavGroup | null {
+         if (rootHidden.has(slug)) return null
+         const entry = topDocs.get(slug)
+         if (!entry) return null
+         const label = rootAlias.get(slug) || entry.title || capitalize(slug)
+         // Represent a root doc as a group with href and no items
+         return { label, href: entry.url, items: [], dir: slug } as any
+       }
 
-        nav.push({ label: groupLabel, items: navItems, dir: g } as any)
-      }
+       // Root ordering: respect the root _sidebar.json order exactly, mixing docs and groups
+       const listed = rootSidebar.ordered.map((e) => e.path).filter(Boolean)
+       const listedGroups = listed.filter((p) => /\/$/.test(p)).map((p) => p.slice(0, -1))
+       const listedDocs = listed.filter((p) => !/\/$/.test(p))
 
-      return { nav }
+       const listedSet = new Set(listed)
+
+       const nav: NavGroup[] = []
+       for (const pth of listed) {
+         if (/\/$/.test(pth)) {
+           const g = pth.slice(0, -1)
+           const grp = buildGroup(g)
+           if (grp) nav.push(grp)
+         } else {
+           const doc = buildDoc(pth)
+           if (doc) nav.push(doc)
+         }
+       }
+
+       // Append remaining groups (not listed) alphabetically
+       const remainingGroups = groups
+         .filter((g) => !listedGroups.includes(g))
+         .sort()
+       for (const g of remainingGroups) {
+         const grp = buildGroup(g)
+         if (grp) nav.push(grp)
+       }
+
+       // Append remaining top-level docs (not listed) alphabetically
+       const remainingDocs = Array.from(topDocs.keys())
+         .filter((d) => !listedDocs.includes(d))
+         .sort()
+       for (const d of remainingDocs) {
+         const doc = buildDoc(d)
+         if (doc) nav.push(doc)
+       }
+
+       return { nav }
     },
   }
 }
