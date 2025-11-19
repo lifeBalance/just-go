@@ -6,11 +6,11 @@
   $: active = normalize(currentPath) === normalize(url)
 </script>
 
-<li>
+<li class="prose">
   <a
     href={url}
     aria-current={active ? 'page' : undefined}
-    class="block px-2 py-1 no-underline text-sd-fg transition-colors hover:bg-sd-border rounded-sm hover:text-sd-bg"
+    class="block px-2 py-1 no-underline text-sd-fg transition-colors hover:bg-sd-border rounded-sm text-sm prose"
     class:bg-sd-border={active}
     class:text-sd-bg={active}
     class:font-medium={active}

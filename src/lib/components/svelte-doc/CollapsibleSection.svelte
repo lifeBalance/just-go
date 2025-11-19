@@ -1,7 +1,13 @@
 <script lang="ts">
   import Icon from '@iconify/svelte'
   import type { Snippet } from 'svelte'
-  const p = $props<{ label: string; href?: string; open: boolean; onToggle?: () => void; children?: Snippet }>()
+  const p = $props<{
+    label: string
+    href?: string
+    open: boolean
+    onToggle?: () => void
+    children?: Snippet
+  }>()
   function onHeaderClick() {
     p.onToggle?.()
   }
@@ -15,8 +21,13 @@
       aria-expanded={p.open}
       onclick={onHeaderClick}
     >
-      <span class="text-sm uppercase tracking-wide text-sd-muted">{p.label}</span>
-      <Icon icon={p.open ? 'mdi:chevron-down' : 'mdi:chevron-right'} class="text-sd-muted" />
+      <span class="text-sm uppercase text-sd-muted prose"
+        >{p.label}</span
+      >
+      <Icon
+        icon={p.open ? 'mdi:chevron-down' : 'mdi:chevron-right'}
+        class="text-sd-muted"
+      />
     </button>
   {/if}
   {#if p.open}

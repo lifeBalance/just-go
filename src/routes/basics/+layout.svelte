@@ -13,7 +13,7 @@
   console.log(data)
 </script>
 
-<div class="mx-auto min-h-screen">
+<div class="mx-auto min-h-full bg-amber-400">
   <div class="flex items-stretch">
     <aside
       class="sticky top-0 h-screen overflow-y-auto w-64 shrink-0 bg-sd-hover"
