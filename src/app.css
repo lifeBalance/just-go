@@ -46,3 +46,20 @@
   --tw-prose-th-borders: var(--color-sd-border);
   --tw-prose-td-borders: var(--color-sd-border);
 }
+
+.prose :not(pre) > code::before,
+.prose :not(pre) > code::after {
+  content: none;
+}
+
+.prose :not(pre) > code {
+  background: oklch(from var(--color-sd-muted) l c h / 0.7);
+  /* background: var(--color-sd-muted); */
+  color: var(--color-sd-bg);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  font-size: 0.85em;
+}
