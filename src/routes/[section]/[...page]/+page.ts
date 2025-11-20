@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit'
 import { createSection } from '$lib/docs/section'
-import { resolveOrNext } from '$lib/docs/routing'
+import { resolveOrNext, getPrevNext } from '$lib/docs/routing'
 
 export const load = ({ params, url }: { params: { section: string; page?: string }; url: URL }) => {
   const sectionName = params.section
@@ -9,7 +9,8 @@ export const load = ({ params, url }: { params: { section: string; page?: string
   const result = resolveOrNext(section, segment)
 
   if (result.kind === 'ok') {
-    return { section: sectionName, segment: result.segment, nav: result.nav, path: url.pathname }
+    const { prev, next } = getPrevNext(result.nav, url.pathname)
+    return { section: sectionName, segment: result.segment, nav: result.nav, path: url.pathname, prev, next }
   }
   if (result.kind === 'redirect') {
     throw redirect(302, result.url)
