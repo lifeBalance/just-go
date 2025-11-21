@@ -93,27 +93,20 @@ export function createSection(section: string) {
          const listedItems = localSidebar.ordered
            .map((e) => (e.path.endsWith('/') ? e.path.slice(0, -1) : e.path))
            .filter((p) => p)
-         const itemAlias = localSidebar.alias
-         const itemHidden = localSidebar.hidden
-         const listedItemSet = new Set(listedItems)
+          const itemAlias = localSidebar.alias
+          const itemHidden = localSidebar.hidden
 
-         // Map items by slug within the group
-         const itemBySlug = new Map<string, ContentEntry>()
-         for (const e of items) {
-           const rel = e.url.replace(new RegExp('^' + base + '/'), '')
-           const parts = rel.split('/').filter(Boolean)
-           const slug = parts[1]
-           itemBySlug.set(slug, e)
-         }
+          // Map items by slug within the group
+          const itemBySlug = new Map<string, ContentEntry>()
+          for (const e of items) {
+            const rel = e.url.replace(new RegExp('^' + base + '/'), '')
+            const parts = rel.split('/').filter(Boolean)
+            const slug = parts[1]
+            itemBySlug.set(slug, e)
+          }
 
-         // Build ordered item list: listed first, then remaining alpha
-         const remainingItemSlugs = Array.from(itemBySlug.keys())
-           .filter((s) => !listedItemSet.has(s))
-           .sort()
-         const finalItemSlugs = [
-           ...listedItems.filter((s) => itemBySlug.has(s)),
-           ...remainingItemSlugs,
-         ]
+          // Build item list: only items explicitly listed in _toc
+          const finalItemSlugs = listedItems.filter((s) => itemBySlug.has(s))
 
          // Group label: alias from root sidebar or folder name
          const groupLabel = rootAlias.get(groupKey) || capitalize(g)
@@ -160,23 +153,6 @@ export function createSection(section: string) {
          }
        }
 
-       // Append remaining groups (not listed) alphabetically
-       const remainingGroups = groups
-         .filter((g) => !listedGroups.includes(g))
-         .sort()
-       for (const g of remainingGroups) {
-         const grp = buildGroup(g)
-         if (grp) nav.push(grp)
-       }
-
-       // Append remaining top-level docs (not listed) alphabetically
-       const remainingDocs = Array.from(topDocs.keys())
-         .filter((d) => !listedDocs.includes(d))
-         .sort()
-       for (const d of remainingDocs) {
-         const doc = buildDoc(d)
-         if (doc) nav.push(doc)
-       }
 
        return { nav }
     },
