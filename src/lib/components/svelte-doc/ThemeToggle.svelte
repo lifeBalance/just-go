@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '@iconify/svelte'
   import { onMount } from 'svelte'
   let dark = false
 
@@ -39,8 +40,12 @@
   type="button"
   on:click={toggle}
   aria-label="Toggle theme"
-  class="inline-flex items-center gap-2 px-2 py-1 rounded-md no-underline text-(--sd-fg) hover:bg-(--sd-hover)"
+  class="inline-flex items-center gap-2 px-2 py-1 rounded-md no-underline text-(--sd-fg) hover:bg-(--sd-hover) hover:cursor-pointer transition"
 >
-  <span aria-hidden="true">{dark ? '🌙' : '🌤️'}</span>
-  <span>{dark ? 'Dark' : 'Light'}</span>
+  <span aria-hidden="true"
+    ><Icon
+      class="text-2xl"
+      icon={dark ? 'mdi:moon-waning-crescent' : 'mdi:white-balance-sunny'}
+    /></span
+  >
 </button>
