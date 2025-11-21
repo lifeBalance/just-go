@@ -11,7 +11,6 @@
   ]
   let values: Record<string, string> = {}
   let theme = 'light'
-  let okSupport = true
 
   function refresh() {
     const style = getComputedStyle(document.documentElement)
@@ -22,7 +21,6 @@
   }
 
   onMount(() => {
-    okSupport = CSS.supports?.('color', 'oklch(50% 0.1 0)') ?? true
     refresh()
     const obs = new MutationObserver(refresh)
     obs.observe(document.documentElement, {
@@ -33,20 +31,12 @@
   })
 </script>
 
-<section class="text-(--sd-fg)">
+<section class="text-(--sd-fg) max-w-5xl mx-auto p-4">
   <h1 class="text-2xl mb-2">Color Tokens</h1>
   <p class="text-sm text-(--sd-muted)">Theme: {theme}</p>
-  {#if !okSupport}
-    <p class="text-sm text-(--sd-muted)">
-      Your browser may not support OKLCH colors; swatches might not render. Try
-      a recent Chromium/Safari/Firefox version.
-    </p>
-  {/if}
 
-  <div
-    class="mt-4"
-    style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;"
-  >
+
+  <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
     {#each vars as v}
       <div class="rounded-md border border-(--sd-border)">
         <div
