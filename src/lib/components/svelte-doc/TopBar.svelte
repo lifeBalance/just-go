@@ -2,9 +2,6 @@
   import { cn } from '$lib'
   import { cva, type VariantProps } from 'class-variance-authority'
 
-  export let homeHref: string = '/'
-  export let currentPath: string = ''
-
   const topbar = cva(
     'z-50 flex items-center justify-between px-4 py-2 h-(--topbar-height)',
     {
