@@ -11,7 +11,17 @@
     <img src={partyGopher} alt="Just Go Logo" class="w-16 h-16 mr-4" />
   </div>
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-    <Card href="/basics" title="Basics" description="Start with the language fundamentals." />
-    <Card href="/svelte-doc" title="Svelte‑Doc" description="Build doc sites with SvelteKit helpers." />
+    <Card href="/basics">
+      {#snippet children()}
+        <h2 class="text-xl font-semibold">Basics</h2>
+        <p class="text-sm text-sd-muted">Start with the language fundamentals.</p>
+      {/snippet}
+    </Card>
+    <Card href="/svelte-doc">
+      {#snippet children()}
+        <h2 class="text-xl font-semibold">Svelte‑Doc</h2>
+        <p class="text-sm text-sd-muted">Build doc sites with SvelteKit helpers.</p>
+      {/snippet}
+    </Card>
   </div>
 </section>

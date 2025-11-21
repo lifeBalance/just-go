@@ -1,6 +1,5 @@
 <script lang="ts">
   import Icon from '@iconify/svelte'
-  import { text } from '@sveltejs/kit'
   import type { Snippet } from 'svelte'
   const p = $props<{
     label: string
@@ -25,7 +24,7 @@
     >
       <span
         class="text-sm uppercase font-bold"
-        class:text-sd-fg={p.active}
+        class:text-sd-accent={p.active}
         class:text-sd-muted={!p.active}>{p.label}</span
       >
       <Icon
