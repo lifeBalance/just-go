@@ -1,3 +1,16 @@
+<script module lang="ts">
+  import type { Snippet } from 'svelte'
+  export type Props = {
+    left?: Snippet
+    right?: Snippet
+    kind?: 'solid' | 'glass' | 'transparent'
+    position?: 'sticky' | 'fixed' | 'static'
+    inset?: boolean
+    elevation?: 'none' | 'sm' | 'md' | 'lg'
+    border?: boolean
+  }
+</script>
+
 <script lang="ts">
   import { cn } from '$lib'
   import { cva, type VariantProps } from 'class-variance-authority'
@@ -43,18 +56,30 @@
   )
 
   type TopBarVariants = VariantProps<typeof topbar>
-  export let kind: TopBarVariants['kind'] = 'solid'
-  export let position: TopBarVariants['position'] = 'sticky'
-  export let inset: boolean = false
-  export let elevation: TopBarVariants['elevation'] = 'none'
-  export let border: TopBarVariants['border'] = true
+  let {
+    kind = 'solid',
+    position = 'sticky',
+    inset = false,
+    elevation = 'none',
+    border = true,
+    left,
+    right,
+  } = $props<{
+    kind?: TopBarVariants['kind']
+    position?: TopBarVariants['position']
+    inset?: boolean
+    elevation?: TopBarVariants['elevation']
+    border?: TopBarVariants['border']
+    left?: import('svelte').Snippet
+    right?: import('svelte').Snippet
+  }>()
 </script>
 
 <nav class={cn(topbar({ kind, position, inset, elevation, border }))}>
   <div class="flex items-center gap-3">
-    <slot name="left" />
+    {@render left?.()}
   </div>
   <div class="flex items-center gap-3">
-    <slot name="right" />
+    {@render right?.()}
   </div>
 </nav>

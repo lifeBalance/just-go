@@ -17,14 +17,14 @@
 
 <div class="min-h-screen bg-sd-bg text-sd-fg relative gradient-container">
   <TopBar>
-    <svelte:fragment slot="left">
+    {#snippet left()}
       <Logo href="/" label="Home" currentPath={data?.path ?? ''} />
-    </svelte:fragment>
+    {/snippet}
 
-    <svelte:fragment slot="right">
+    {#snippet right()}
       <a href="/colors" class="text-sm no-underline text-sd-muted hover:text-sd-accent">Colors</a>
       <ThemeToggle />
-    </svelte:fragment>
+    {/snippet}
   </TopBar>
 
   <div class="relative z-10">
