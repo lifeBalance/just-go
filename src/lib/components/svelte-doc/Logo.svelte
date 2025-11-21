@@ -13,7 +13,7 @@
 
 <a
   href={href}
-  class="inline-flex items-center gap-2 px-2 py-1 rounded-md no-underline text-(--sd-fg) hover:bg-(--sd-hover)"
+  class="inline-flex items-center gap-3"
 >
   <span aria-hidden="true">{@render icon?.()}</span>
   <span>{@render text?.()}</span>

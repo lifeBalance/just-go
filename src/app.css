@@ -6,7 +6,7 @@
   --color-sd-bg: var(--color-stone-50);
   --color-sd-fg: var(--color-stone-900);
   --color-sd-muted: var(--color-stone-500);
-  --color-sd-accent: var(--color-sky-600);
+  --color-sd-accent: #65d6e7;
   --color-sd-border: var(--color-stone-200);
   --color-sd-hover: var(--color-stone-100);
 }
@@ -16,7 +16,7 @@
   --color-sd-bg: var(--color-stone-900);
   --color-sd-fg: var(--color-stone-50);
   --color-sd-muted: var(--color-stone-400);
-  --color-sd-accent: var(--color-sky-400);
+  --color-sd-accent: #65d6e7;
   --color-sd-border: var(--color-stone-700);
   --color-sd-hover: var(--color-stone-800);
 }
