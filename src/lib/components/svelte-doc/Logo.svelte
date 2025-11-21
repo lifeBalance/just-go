@@ -1,19 +1,20 @@
+<script module lang="ts">
+  import type { Snippet } from 'svelte'
+  export type Props = {
+    href?: string
+    icon?: Snippet
+    text?: Snippet
+  }
+</script>
+
 <script lang="ts">
-  export let href: string = '/'
-  export let label: string = 'Home'
-  export let emoji: string = '🏠'
-  export let currentPath: string = ''
-  const normalize = (p: string) => p.replace(/\/$/, '')
-  $: active = normalize(currentPath) === normalize(href)
+  let { href = '/', icon, text } = $props()
 </script>
 
 <a
   href={href}
-  aria-current={active ? 'page' : undefined}
   class="inline-flex items-center gap-2 px-2 py-1 rounded-md no-underline text-(--sd-fg) hover:bg-(--sd-hover)"
-  class:bg-(--sd-hover)={active}
-  class:font-medium={active}
 >
-  <span aria-hidden="true">{emoji}</span>
-  <span>{label}</span>
+  <span aria-hidden="true">{@render icon?.()}</span>
+  <span>{@render text?.()}</span>
 </a>

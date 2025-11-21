@@ -4,6 +4,7 @@
   import TopBar from '$lib/components/svelte-doc/TopBar.svelte'
   import Logo from '$lib/components/svelte-doc/Logo.svelte'
   import ThemeToggle from '$lib/components/svelte-doc/ThemeToggle.svelte'
+  import gopher from '../assets/gopher.png'
 
   let { children, data } = $props()
 </script>
@@ -18,7 +19,10 @@
 <div class="min-h-screen bg-sd-bg text-sd-fg relative gradient-container">
   <TopBar>
     {#snippet left()}
-      <Logo href="/" label="Home" currentPath={data?.path ?? ''} />
+      <Logo href="/">
+        {#snippet icon()}<img src={gopher} alt="" class="h-6 w-6" />{/snippet}
+        {#snippet text()}Just Go!{/snippet}
+      </Logo>
     {/snippet}
 
     {#snippet right()}
