@@ -54,7 +54,7 @@
 
 <nav
   aria-label={heading}
-  class="text-sd-fg p-4 border-r border-sd-border min-w-[25%] h-full"
+  class="p-4 min-w-[25%] h-full"
 >
   {#each nav as group}
     {#if group.items.length === 0 && group.href}

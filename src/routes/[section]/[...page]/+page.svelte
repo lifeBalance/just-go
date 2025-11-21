@@ -20,50 +20,68 @@
     prev?: FlatNavItem
     next?: FlatNavItem
   }>()
+
+  // Adjust this to match your actual TopBar height
+  const topBarHeight = '4rem'
 </script>
 
-<div class="flex h-[calc(100vh-var(--topbar-height))]">
-  <aside class="sticky top-0 h-full overflow-y-auto w-[20%] shrink-0 bg-sd-hover">
-    <DocsSidebar
-      nav={data.nav}
-      heading=""
-      currentPath={data.path}
-    />
-  </aside>
-  <main class="min-w-0 flex-1 bg-sd-bg p-10 overflow-y-auto">
-    <div class="pb-4">
-      <Breadcrumb
-        path={data.path}
+<div class="flex max-w-screen-2xl mx-auto">
+  <!-- Left Sidebar - TOC -->
+  <aside
+    class="sticky self-start overflow-y-auto w-64 shrink-0 border-r border-sd-border"
+    style="top: {topBarHeight}; height: calc(100vh - {topBarHeight});"
+  >
+    <div class="p-4">
+      <DocsSidebar
         nav={data.nav}
+        heading=""
+        currentPath={data.path}
       />
     </div>
-    <div id="content">
-      <DocsSectionPage
-        section={data.section}
-        segment={data.segment}
-      />
-    </div>
-    <div class="mt-8 flex items-center justify-between">
-      {#if data.prev}
-        <PageBtn
-          href={data.prev.url}
-          label={data.prev.title}
-          direction="prev"
+  </aside>
+
+  <!-- Main Content - Scrolls naturally -->
+  <main class="min-w-0 flex-1 bg-sd-bg px-10 py-8">
+    <div class="max-w-4xl mx-auto">
+      <div class="pb-4">
+        <Breadcrumb
+          path={data.path}
+          nav={data.nav}
         />
-      {/if}
-      <span class="flex-1"></span>
-      {#if data.next}
-        <PageBtn
-          href={data.next.url}
-          label={data.next.title}
-          direction="next"
+      </div>
+      <div id="content">
+        <DocsSectionPage
+          section={data.section}
+          segment={data.segment}
         />
-      {/if}
+      </div>
+      <div class="mt-8 flex items-center justify-between">
+        {#if data.prev}
+          <PageBtn
+            href={data.prev.url}
+            label={data.prev.title}
+            direction="prev"
+          />
+        {/if}
+        <span class="flex-1"></span>
+        {#if data.next}
+          <PageBtn
+            href={data.next.url}
+            label={data.next.title}
+            direction="next"
+          />
+        {/if}
+      </div>
     </div>
   </main>
+
+  <!-- Right Sidebar - On This Page -->
   <aside
-    class="hidden xl:block sticky top-0 h-full overflow-y-auto w-[20%] shrink-0 bg-sd-hover p-3 border-l border-sd-border"
+    class="hidden xl:block sticky self-start overflow-y-auto w-64 shrink-0 border-l border-sd-border"
+    style="top: {topBarHeight}; height: calc(100vh - {topBarHeight});"
   >
-    <DocsToc />
+    <div class="p-4">
+      <DocsToc />
+    </div>
   </aside>
 </div>

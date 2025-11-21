@@ -17,37 +17,39 @@
 </svelte:head>
 
 <div class="min-h-screen bg-sd-bg text-sd-fg relative gradient-container">
-  <TopBar>
-    {#snippet left()}
-      <Logo href="/">
-        {#snippet icon()}<img
-            src={gopher}
-            alt=""
-            class="h-6 w-6"
-          />{/snippet}
-        {#snippet text()}
-          <span
-            class="relative inline-block px-1 py-[0.5] bg-sd-fg rounded-sm group hover:bg-sd-accent transition-colors"
-          >
-            <h1
-              class="prose text-4xl font-black uppercase italic tracking-tight leading-none bg-sd-bg bg-clip-text text-transparent"
+  <div class="sticky top-0 z-50">
+    <TopBar>
+      {#snippet left()}
+        <Logo href="/">
+          {#snippet icon()}<img
+              src={gopher}
+              alt=""
+              class="h-6 w-6"
+            />{/snippet}
+          {#snippet text()}
+            <span
+              class="relative inline-block px-1 py-[0.5] bg-sd-fg rounded-sm group hover:bg-sd-accent transition-colors"
             >
-              Just Go!
-            </h1>
-          </span>
-        {/snippet}
-      </Logo>
-    {/snippet}
+              <h1
+                class="prose text-4xl font-black uppercase italic tracking-tight leading-none bg-sd-bg bg-clip-text text-transparent"
+              >
+                Just Go!
+              </h1>
+            </span>
+          {/snippet}
+        </Logo>
+      {/snippet}
 
-    {#snippet right()}
-      <a
-        href="/colors"
-        class="text-sm no-underline text-sd-muted hover:text-sd-accent"
-        >Colors</a
-      >
-      <ThemeToggle />
-    {/snippet}
-  </TopBar>
+      {#snippet right()}
+        <a
+          href="/colors"
+          class="text-sm no-underline text-sd-muted hover:text-sd-accent"
+          >Colors</a
+        >
+        <ThemeToggle />
+      {/snippet}
+    </TopBar>
+  </div>
 
   <div class="relative z-10">
     {@render children()}
