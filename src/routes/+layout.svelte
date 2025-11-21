@@ -2,6 +2,8 @@
   import '../app.css'
   import favicon from '$lib/assets/favicon.svg'
   import TopBar from '$lib/components/svelte-doc/TopBar.svelte'
+  import Logo from '$lib/components/svelte-doc/Logo.svelte'
+  import ThemeToggle from '$lib/components/svelte-doc/ThemeToggle.svelte'
 
   let { children, data } = $props()
 </script>
@@ -14,7 +16,17 @@
 </svelte:head>
 
 <div class="min-h-screen bg-sd-bg text-sd-fg relative gradient-container">
-  <TopBar homeHref="/" currentPath={data?.path ?? ''} />
+  <TopBar>
+    <svelte:fragment slot="left">
+      <Logo href="/" label="Home" currentPath={data?.path ?? ''} />
+    </svelte:fragment>
+
+    <svelte:fragment slot="right">
+      <a href="/colors" class="text-sm no-underline text-sd-muted hover:text-sd-accent">Colors</a>
+      <ThemeToggle />
+    </svelte:fragment>
+  </TopBar>
+
   <div class="relative z-10">
     {@render children()}
   </div>
