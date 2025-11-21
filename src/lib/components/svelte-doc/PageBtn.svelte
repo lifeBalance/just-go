@@ -15,7 +15,6 @@
 <Card
   href={p.href}
   rel={p.direction}
-  target="_self"
   class={cardClass}
   ariaLabel={(isPrev ? 'Previous: ' : 'Next: ') + p.label}
 >
