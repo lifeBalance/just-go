@@ -8,7 +8,7 @@ const allMods = import.meta.glob('/src/content/**/*.md', {
   eager: true,
 }) as Record<string, MdModule>
 // Glob all sidebars once; filter by section path
-const allSidebars = import.meta.glob('/src/content/**/_sidebar.json', {
+const allTocs = import.meta.glob('/src/content/**/_toc.{ts,js}', {
   eager: true,
 }) as Record<string, any>
 
@@ -20,10 +20,16 @@ function filterMods(section: string): Record<string, MdModule> {
   )
 }
 
-function readSidebar(fsPath: string): SidebarConfig {
-  const mod = allSidebars[fsPath]
-  const raw = mod?.default ?? null
-  return parseSidebarConfig(raw)
+function readTocFor(root: string): SidebarConfig {
+  for (const ext of ['.ts', '.js']) {
+    const p = `${root}/_toc${ext}`
+    const mod = (allTocs as Record<string, any>)[p]
+    const raw = mod?.default ?? null
+    if (raw !== null && raw !== undefined) {
+      return parseSidebarConfig(raw)
+    }
+  }
+  return parseSidebarConfig(null)
 }
 
 function capitalize(name: string) {
@@ -56,7 +62,7 @@ export function createSection(section: string) {
       const groups = Array.from(groupSet)
 
        // Parent (root) sidebar for ordering, alias, hidden
-       const rootSidebar = readSidebar(`${contentRoot}/_sidebar.json`)
+       const rootSidebar = readTocFor(contentRoot)
        const rootAlias = rootSidebar.alias
        const rootHidden = rootSidebar.hidden
 
@@ -83,7 +89,7 @@ export function createSection(section: string) {
          })
 
          // Local sidebar inside the group folder
-         const localSidebar = readSidebar(`${contentRoot}/${g}/_sidebar.json`)
+         const localSidebar = readTocFor(`${contentRoot}/${g}`)
          const listedItems = localSidebar.ordered
            .map((e) => (e.path.endsWith('/') ? e.path.slice(0, -1) : e.path))
            .filter((p) => p)
@@ -135,7 +141,7 @@ export function createSection(section: string) {
          return { label, href: entry.url, items: [], dir: slug } as any
        }
 
-       // Root ordering: respect the root _sidebar.json order exactly, mixing docs and groups
+       // Root ordering: respect the root _toc.ts order exactly, mixing docs and groups
        const listed = rootSidebar.ordered.map((e) => e.path).filter(Boolean)
        const listedGroups = listed.filter((p) => /\/$/.test(p)).map((p) => p.slice(0, -1))
        const listedDocs = listed.filter((p) => !/\/$/.test(p))

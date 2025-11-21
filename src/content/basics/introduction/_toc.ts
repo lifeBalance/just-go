@@ -1,0 +1,5 @@
+export default [
+  { path: 'overview', label: 'Overview' },
+  { path: 'lorem', label: 'Lorem chipsum' },
+  { path: 'introduction', label: 'Intro' },
+]
