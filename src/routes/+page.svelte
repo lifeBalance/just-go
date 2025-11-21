@@ -1,7 +1,7 @@
 <script lang="ts">
   import Card from '$lib/components/svelte-doc/Card.svelte'
-  import partyGopher from '/src/assets/party-gopher.gif'
-  import dancingGopher from '/src/assets/dancing-gopher.gif'
+  import partyGopher from '$lib/assets/party-gopher.gif'
+  import dancingGopher from '$lib/assets/dancing-gopher.gif'
 </script>
 
 <section class="mx-auto max-w-5xl p-6">

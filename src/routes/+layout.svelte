@@ -1,10 +1,10 @@
 <script lang="ts">
   import '../app.css'
-  import favicon from '$lib/assets/favicon.svg'
+  import favicon from '$lib/assets/gopher.png'
   import TopBar from '$lib/components/svelte-doc/TopBar.svelte'
   import Logo from '$lib/components/svelte-doc/Logo.svelte'
   import ThemeToggle from '$lib/components/svelte-doc/ThemeToggle.svelte'
-  import gopher from '../assets/gopher.png'
+  import gopher from '$lib/assets/gopher.png'
 
   let { children, data } = $props()
 </script>
