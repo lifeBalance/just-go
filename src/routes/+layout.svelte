@@ -5,8 +5,24 @@
   import Logo from '$lib/components/svelte-doc/Logo.svelte'
   import ThemeToggle from '$lib/components/svelte-doc/ThemeToggle.svelte'
   import gopher from '$lib/assets/gopher.png'
+  import gopherPink from '$lib/assets/gopher-pink.png'
+  import { onMount } from 'svelte'
 
   let { children, data } = $props()
+
+  let logoSrc = $state<string>(gopher)
+
+  onMount(() => {
+    const root = document.documentElement
+    const setByAttr = () => {
+      const isDark = root.getAttribute('data-theme') === 'dark'
+      logoSrc = isDark ? gopher : gopherPink
+    }
+    setByAttr()
+    const mo = new MutationObserver(setByAttr)
+    mo.observe(root, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => mo.disconnect()
+  })
 </script>
 
 <svelte:head>
@@ -22,7 +38,7 @@
       {#snippet left()}
         <Logo href="/">
           {#snippet icon()}<img
-              src={gopher}
+              src={logoSrc}
               alt=""
               class="h-6 w-6"
             />{/snippet}
@@ -62,8 +78,8 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 45vw;
-    height: 45vh;
+    width: 100vw;
+    height: 100vh;
     pointer-events: none;
     z-index: 20; /* above page content (z-10), below TopBar (z-50) */
     background: radial-gradient(

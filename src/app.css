@@ -6,7 +6,7 @@
   --color-sd-bg: oklch(0.91 0.01 262);
   --color-sd-fg: lch(32 11.15 284.8);
   --color-sd-muted: lch(42 11.3 282.59);
-  --color-sd-accent: #65d6e7;
+  --color-sd-accent: #f471b7;
   --color-sd-border: lch(78 7.69 271.97);
   --color-sd-hover: oklch(0.93 0.01 0);
 }
