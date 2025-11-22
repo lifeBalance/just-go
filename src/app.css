@@ -32,6 +32,9 @@
   --topbar-height: 4rem;
 }
 
+/* Global page background bound to theme */
+html, body { background-color: var(--sd-bg); color: var(--sd-fg); min-height: 100%; }
+
 /* Tie Tailwind Typography (prose) colors to site tokens */
 .prose {
   --tw-prose-body: var(--color-sd-muted);
