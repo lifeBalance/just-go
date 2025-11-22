@@ -6,8 +6,8 @@
 </script>
 
 <section class="mx-auto max-w-5xl p-6">
-  <div class="flex justify-center items-center mb-20">
-    <Hero />
+  <div class="flex justify-center items-center mt-10 mb-20">
+    <Hero rotate='-2deg'/>
   </div>
   <div class="flex justify-around items-center">
     <img
