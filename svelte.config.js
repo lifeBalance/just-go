@@ -1,20 +1,27 @@
 import adapter from '@sveltejs/adapter-auto'
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 import { mdsvex } from 'mdsvex'
-import remarkExpressiveCode from 'remark-expressive-code'
+import rehypeExpressiveCode from 'rehype-expressive-code'
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  extensions: ['.svelte', '.md'],
+  extensions: ['.svelte', '.md', '.mdx'],
   preprocess: [
     vitePreprocess(),
     mdsvex({
-      extensions: ['.md'],
-      remarkPlugins: [
+      extensions: ['.md', '.mdx'],
+      highlight: false,
+      rehypePlugins: [
         [
-          remarkExpressiveCode,
+          rehypeExpressiveCode,
           {
-            themes: ['github-dark'],
+            themes: ['dracula', 'catppuccin-latte'],
+            themeCssSelector: (theme) => {
+              return theme.name === 'dracula'
+                ? ':root:not([data-theme="dark"])'
+                : ':root[data-theme="dark"]'
+            },
+            useDarkModeMediaQuery: false,
           },
         ],
       ],

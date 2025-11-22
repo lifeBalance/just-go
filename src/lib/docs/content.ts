@@ -7,7 +7,7 @@ export function createContentEntries(
 ): ContentEntry[] {
   const baseNoSlash = base.replace(/^\//, '')
   return Object.entries(mods).map(([fs, mod]) => {
-    const isIndex = /\/index\.md$/.test(fs)
+    const isIndex = /\/index\.(md|mdx)$/.test(fs)
     const url = fsPathToRoute(fs)
     const rel = url.replace(new RegExp('^/' + baseNoSlash + '/'), '')
     const dir = rel.split('/').slice(0, -1).join('/') || ''

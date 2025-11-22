@@ -4,7 +4,7 @@ import type { ContentEntry, NavGroup } from './types'
 import { parseSidebarConfig, type SidebarConfig } from './sidebar'
 
 // Glob all content once; filter by section at runtime
-const allMods = import.meta.glob('/src/content/**/*.md', {
+const allMods = import.meta.glob('/src/content/**/*.{md,mdx}', {
   eager: true,
 }) as Record<string, MdModule>
 // Glob all sidebars once; filter by section path

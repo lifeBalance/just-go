@@ -1,9 +1,7 @@
----
-title: Introductionx
----
-
 # Overview Overview Overview Overview Overview
 
+A quick overview of Go basicsa.
+
 A quick overview of Go basics.
 A quick overview of Go basics.
 A quick overview of Go basics.
@@ -11,7 +9,11 @@ A quick overview of Go basics.
 A quick overview of Go basics.
 A quick overview of Go basics.
 A quick overview of Go basics.
-A quick overview of Go basics.
+
+```js
+const arr = [1, 2, 3]
+console.log('hello')
+```
 A quick overview of Go basics.
 A quick overview of Go basics.
 A quick overview of Go basics.

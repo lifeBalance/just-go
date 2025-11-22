@@ -20,7 +20,7 @@
     "expressive-code": "^0.38.2",
     "mdsvex": "^0.11.2",
     "prettier-plugin-svelte": "^3.4.0",
-    "remark-expressive-code": "^0.38.3",
+    "rehype-expressive-code": "^0.41.3",
     "svelte": "^5.41.0",
     "svelte-check": "^4.3.3",
     "tailwindcss": "^4.1.14",
