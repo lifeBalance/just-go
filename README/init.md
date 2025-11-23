@@ -46,3 +46,22 @@ export default defineConfig({
 import '../styles/global.css'
 ---
 ```
+
+## Aliases
+
+I added the following to the `tsconfig.json`, to enjoy [import aliases](https://docs.astro.build/en/guides/typescript/#import-aliases):
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@styles/*": ["src/styles/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "@components/*": ["src/components/*"],
+      "@utils/*": ["src/utils/*"],
+      "@assets/*": ["src/assets/*"]
+    }
+  }
+}
+```

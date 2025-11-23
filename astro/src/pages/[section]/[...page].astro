@@ -1,0 +1,47 @@
+---
+import { createSection } from '../../lib/docs/section'
+
+const section = Astro.params.section as string
+const pageParam = (Astro.params as any).page
+const sec = createSection('/' + section)
+const resolver = sec.resolver()
+const seg = Array.isArray(pageParam) ? pageParam.join('/') : pageParam
+const mod = resolver(seg)
+if (!mod) {
+  throw new Error(`Doc not found: /${section}/${seg}`)
+}
+const Page = (mod as any).default
+const { nav } = sec.nav()
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{section} — {seg}</title>
+  </head>
+  <body>
+    <main style="display:flex; gap:2rem; align-items:flex-start;">
+      <aside style="width:280px; position:sticky; top:1rem;">
+        <nav>
+          {nav.map((group) => (
+            <section>
+              <h3>{group.label}</h3>
+              {group.href ? (
+                <a href={group.href}>{group.label}</a>
+              ) : (
+                <ul>
+                  {group.items.map((it) => (
+                    <li><a href={it.url}>{it.title}</a></li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ))}
+        </nav>
+      </aside>
+      <article style="flex:1; min-width:0;">
+        <Page />
+      </article>
+    </main>
+  </body>
+</html>
