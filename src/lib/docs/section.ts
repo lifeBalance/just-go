@@ -82,11 +82,13 @@ export function createSection(section: string) {
          if (rootHidden.has(groupKey)) return null
 
          // Collect direct items within this group (one level deep)
-         const items = entries.filter((e) => {
-           const rel = e.url.replace(new RegExp('^' + base + '/'), '')
-           const parts = rel.split('/').filter(Boolean)
-           return parts[0] === g && parts.length === 2 && !e.isIndex
-         })
+          const items = entries.filter((e) => {
+            const rel = e.url.replace(new RegExp('^' + base + '/'), '')
+            const parts = rel.split('/').filter(Boolean)
+            // Include both files directly under the group and folder index docs
+            return parts[0] === g && parts.length === 2
+          })
+
 
          // Local sidebar inside the group folder
          const localSidebar = readTocFor(`${contentRoot}/${g}`)

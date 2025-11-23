@@ -9,8 +9,8 @@ export function normalizePath(path: string): string {
 export function fsPathToRoute(fsPath: string): string {
   return fsPath
     .replace(/^\/src\/content/, '')
-    .replace(/index\.md$/, '')
-    .replace(/\.md$/, '')
+    .replace(/index\.(md|mdx)$/, '')
+    .replace(/\.(md|mdx)$/, '')
 }
 
 // Turn an absolute route into a section-relative slug

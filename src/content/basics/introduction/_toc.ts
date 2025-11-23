@@ -1,5 +1,5 @@
 export default [
-  { path: 'introduction', label: 'Intro' },
-  { path: 'overview', label: 'Overview' },
+  { path: 'hello-world', label: 'Hello World' },
   { path: 'lorem', label: 'Lorem chipsum' },
+  { path: 'overview', label: 'Overview' },
 ]
