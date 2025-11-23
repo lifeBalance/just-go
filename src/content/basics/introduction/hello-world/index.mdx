@@ -1,0 +1,53 @@
+<script>
+  import Code from '$lib/components/svelte-doc/Code.svelte'
+  import demo from './demo.go?raw'
+</script>
+
+# Hello World
+
+Nothing like the good old hello world to break the ice in any programming language. Here's what it looks like in Go:
+
+<Code code={demo} language="go" title="hello.go" />
+
+To run this code, save it in a file called `hello.go` and execute the following command in your terminal:
+
+```bash
+go run hello.go
+Hello, world!
+```
+
+That's it! You've just written and executed your first Go program.
+
+## Packages
+
+In Go, every file begins with a `package` declaration. The `main` package is a special package that tells the Go compiler that this file should be compiled as an executable program. If you were to create a library instead, you would use a different package name.
+
+```go
+package main
+```
+
+## Importing Packages
+
+Go has a rich standard library, and you can also import third-party packages. In our example, we imported the `fmt` package, which provides functions for formatted I/O, including printing to the console.
+
+```go
+import "fmt"
+```
+
+## The main Function
+
+The `main` function is the entry point of a Go program. When you run the program, execution starts from this function. Every executable Go program must have a `main` function in the `main` package.
+
+```go
+func main() {
+    // code to be executed
+}
+```
+
+## Printing to the Console
+
+Inside the `main` function, we used `fmt.Println` to print "Hello, world!" to the console. The `Println` function adds a newline at the end of the output.
+
+```go
+fmt.Println("Hello, world!")
+```

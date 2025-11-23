@@ -2,6 +2,8 @@ import { error, redirect } from '@sveltejs/kit'
 import { createSection } from '$lib/docs/section'
 import { resolveOrNext, getPrevNext } from '$lib/docs/routing'
 
+export const csr = false
+
 export const load = ({ params, url }: { params: { section: string; page?: string }; url: URL }) => {
   const sectionName = params.section
   const segment = params.page ?? ''

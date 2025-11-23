@@ -2,6 +2,7 @@ import adapter from '@sveltejs/adapter-auto'
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 import { mdsvex } from 'mdsvex'
 import rehypeExpressiveCode from 'rehype-expressive-code'
+import { expressiveCodeOptions } from './src/lib/expressive-code.config.js'
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -11,20 +12,7 @@ const config = {
     mdsvex({
       extensions: ['.md', '.mdx'],
       highlight: false,
-      rehypePlugins: [
-        [
-          rehypeExpressiveCode,
-          {
-            themes: ['dracula', 'catppuccin-latte'],
-            themeCssSelector: (theme) => {
-              return theme.name === 'dracula'
-                ? ':root:not([data-theme="dark"])'
-                : ':root[data-theme="dark"]'
-            },
-            useDarkModeMediaQuery: false,
-          },
-        ],
-      ],
+      rehypePlugins: [[rehypeExpressiveCode, expressiveCodeOptions]],
     }),
   ],
   kit: {
