@@ -77,7 +77,7 @@
 
   <!-- Right Sidebar - On This Page -->
   <aside
-    class="hidden xl:block sticky self-start overflow-y-auto w-64 shrink-0 border-l border-sd-border"
+    class="hidden xl:block sticky self-start overflow-y-auto w-64 shrink-0 border-l border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
     style="top: {topBarHeight}; height: calc(100vh - {topBarHeight});"
   >
     <div class="p-4">
