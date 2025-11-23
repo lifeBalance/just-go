@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte'
   import { onMount } from 'svelte'
-  import { theme, setTheme, toggleTheme } from '$lib/actions/theme'
+  import { theme, setTheme, toggleTheme } from '@lib/actions/theme'
   let dark = $state<boolean>(false)
 
   function toggle() {
