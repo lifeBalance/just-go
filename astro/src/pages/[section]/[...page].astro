@@ -35,10 +35,16 @@ const { nav } = sectionApi.nav()
 if (segment) {
   const parts = String(segment).split('/').filter(Boolean)
   if (parts.length === 1) {
-    const grp = nav.find((g) => g.dir === parts[0]) as any
-    const firstUrl = grp?.items?.[0]?.url ?? grp?.href
-    if (firstUrl) {
-      return Astro.redirect(firstUrl)
+    // Guard: if segment resolves to a doc, do NOT redirect
+    const tryResolve = sectionApi.resolver()
+    const maybeMod = tryResolve(segment)
+    if (!maybeMod) {
+      const grp = nav.find((g) => g.dir === parts[0]) as any
+      const firstUrl = grp?.items?.[0]?.url // only redirect for real groups with items
+      const current = `/${section}` + (segment ? `/${segment}` : '')
+      if (firstUrl && firstUrl.replace(/\/$/, '') !== current.replace(/\/$/, '')) {
+        return Astro.redirect(firstUrl)
+      }
     }
   }
 }

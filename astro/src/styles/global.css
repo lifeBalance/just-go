@@ -31,15 +31,15 @@
   --sd-hover: var(--color-sd-hover);
   --topbar-height: 4rem;
   /* Content width variables */
-  --content-max-w: 72rem;
+  --content-max-w: 80rem;
   --content-pad-x: 1.5rem;
 }
 
 @media (min-width: 640px) {
-  :root { --content-max-w: 64rem; }
+  :root { --content-max-w: 72rem; }
 }
 @media (min-width: 1024px) {
-  :root { --content-max-w: 72rem; }
+  :root { --content-max-w: 80rem; }
 }
 
 /* Shared container for topbar and pages */
