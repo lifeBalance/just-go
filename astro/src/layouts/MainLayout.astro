@@ -7,8 +7,15 @@ import { ClientRouter } from 'astro:transitions'
 <html lang='en'>
   <head>
     <meta charset='utf-8' />
-    <meta name='viewport' content='width=device-width' />
-    <link rel='icon' type='image/svg+xml' href='/favicon.svg' />
+    <meta
+      name='viewport'
+      content='width=device-width'
+    />
+    <link
+      rel='icon'
+      type='image/svg+xml'
+      href='/favicon.svg'
+    />
     <title>Just Go!</title>
   </head>
   <body class='min-h-screen bg-sd-bg text-sd-fg'>
@@ -17,48 +24,5 @@ import { ClientRouter } from 'astro:transitions'
     <main class='site-container'>
       <slot />
     </main>
-    <script>
-      // Prefetch docs links (sidebar + prev/next) on hover and when in viewport
-      const addPrefetch = (href: string) => {
-        try {
-          if (!href || href.startsWith('#')) return
-          const exists = document.querySelector(`link[rel="prefetch"][href="${href}"]`)
-          if (exists) return
-          const link = document.createElement('link')
-          link.rel = 'prefetch'
-          link.href = href
-          document.head.appendChild(link)
-        } catch {}
-      }
-      const observePrefetch = (root: Document | HTMLElement | null) => {
-        if (!root) return
-        const anchors = root.querySelectorAll('a[href]') as NodeListOf<HTMLAnchorElement>
-        const io = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
-          for (const e of entries) {
-            if (e.isIntersecting) {
-              const target = e.target as HTMLAnchorElement
-              const href = target.getAttribute('href')
-              if (href) addPrefetch(href)
-            }
-          }
-        })
-        anchors.forEach((a: HTMLAnchorElement) => {
-          a.addEventListener('mouseover', () => {
-            const href = a.getAttribute('href')
-            if (href) addPrefetch(href)
-          })
-          io.observe(a)
-        })
-      }
-      // Sidebar and page buttons live in the main layout content
-      const init = () => {
-        observePrefetch(document.body)
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init)
-      } else {
-        init()
-      }
-    </script>
   </body>
 </html>

@@ -4,7 +4,7 @@ import DocsSidebar from '@components/DocsSidebar.svelte'
 import { createSection } from '@lib/docs/section'
 import { fsPathToRoute } from '@lib/docs/paths'
 import { getPrevNext } from '@lib/docs/routing'
-import PageBtn from '@components/PageBtn.svelte'
+import PageBtn from '@components/PageBtn.astro'
 import Breadcrumb from '@components/Breadcrumb.svelte'
 import DocsToc from '@components/DocsToc.svelte'
 import Footer from '@components/Footer.astro'
@@ -95,8 +95,7 @@ const { prev, next } = getPrevNext(nav, currentPath)
             <PageBtn
               href={prev.url}
               label={prev.title}
-              direction='prev'
-              client:load
+               direction='prev'
             />
           ) : (
             <span />
@@ -107,8 +106,7 @@ const { prev, next } = getPrevNext(nav, currentPath)
             <PageBtn
               href={next.url}
               label={next.title}
-              direction='next'
-              client:load
+               direction='next'
             />
           ) : (
             <span />

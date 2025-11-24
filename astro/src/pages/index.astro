@@ -1,7 +1,28 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro'
-import Landing from '@components/Landing.svelte'
+import Card from '@components/Card.astro'
+import Hero from '@components/Hero.svelte'
+import partyGopher from '@assets/party-gopher.gif?url'
+import dancingGopher from '@assets/dancing-gopher.gif?url'
 ---
 <MainLayout>
-  <Landing />
+  <section class="site-container p-6">
+    <div class="flex justify-center items-center mt-10 mb-20">
+      <Hero rotate="-2deg" />
+    </div>
+    <div class="flex justify-around items-center">
+      <img src={dancingGopher} alt="Just Go Logo" class="w-16 h-16 mr-4" />
+      <img src={partyGopher} alt="Just Go Logo" class="w-16 h-16 mr-4" />
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+      <Card href="/basics" astroPrefetch={false}>
+        <h2 class="text-xl font-semibold">Basics</h2>
+        <p class="text-sm text-sd-muted">Start with the language fundamentals.</p>
+      </Card>
+      <Card href="/svelte-doc" astroPrefetch={false}>
+        <h2 class="text-xl font-semibold">Svelte‑Doc</h2>
+        <p class="text-sm text-sd-muted">Build doc sites with SvelteKit helpers.</p>
+      </Card>
+    </div>
+  </section>
 </MainLayout>
