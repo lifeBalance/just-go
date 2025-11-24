@@ -30,6 +30,23 @@
   --sd-border: var(--color-sd-border);
   --sd-hover: var(--color-sd-hover);
   --topbar-height: 4rem;
+  /* Content width variables */
+  --content-max-w: 72rem;
+  --content-pad-x: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  :root { --content-max-w: 64rem; }
+}
+@media (min-width: 1024px) {
+  :root { --content-max-w: 72rem; }
+}
+
+/* Shared container for topbar and pages */
+.site-container {
+  max-width: var(--content-max-w);
+  margin-inline: auto;
+  padding-inline: var(--content-pad-x);
 }
 
 /* Global page background bound to theme */
