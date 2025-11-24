@@ -1,8 +1,8 @@
 // @ts-check
 import { defineConfig } from 'astro/config'
-import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import svelte from '@astrojs/svelte'
+import mdx from '@astrojs/mdx'
 
 // Vite alias aligned with your tsconfig
 const alias = {
@@ -15,6 +15,6 @@ const alias = {
 }
 
 export default defineConfig({
-  integrations: [svelte()],
+  integrations: [svelte(), mdx()],
   vite: { plugins: [tailwindcss()], resolve: { alias } },
 })

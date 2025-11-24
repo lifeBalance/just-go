@@ -1,0 +1,37 @@
+---
+import MainLayout from '@layouts/MainLayout.astro'
+import DocsSidebar from '@components/DocsSidebar.svelte'
+import { createSection } from '@lib/docs/section'
+
+export async function getStaticPaths() {
+  // Discover all sections by scanning content files
+  const mods = import.meta.glob('/src/content/*/**/*.{md,mdx}', { eager: true })
+  const sections = new Set<string>()
+  for (const fs of Object.keys(mods)) {
+    const m = fs.match(/^\/src\/content\/([^\/]+)\//)
+    if (m) sections.add(m[1])
+  }
+  return Array.from(sections).map((section) => ({ params: { section } }))
+}
+
+const section = String(Astro.params.section || '')
+const { nav } = createSection(section).nav()
+
+// If the section has content, redirect to the first listed doc
+const first = nav[0]
+const firstUrl = first?.items?.[0]?.url ?? (first as any)?.href
+if (firstUrl) {
+  return Astro.redirect(firstUrl)
+}
+---
+<MainLayout>
+  <section class="mx-auto max-w-6xl p-6">
+    <div class="flex gap-6 items-start">
+      <DocsSidebar nav={nav} heading="Contents" currentPath={`/${section}`} />
+      <article class="flex-1 min-w-0">
+        <h1 class="text-2xl font-bold">{section}</h1>
+        <p>Select a document from the sidebar.</p>
+      </article>
+    </div>
+  </section>
+</MainLayout>

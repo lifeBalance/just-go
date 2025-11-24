@@ -1,0 +1,59 @@
+---
+import MainLayout from '@layouts/MainLayout.astro'
+import DocsSidebar from '@components/DocsSidebar.svelte'
+import { createSection } from '@lib/docs/section'
+import { fsPathToRoute } from '@lib/docs/paths'
+
+export async function getStaticPaths() {
+  // Generate a path for every MD/MDX content file
+  const mods = import.meta.glob('/src/content/**/*.{md,mdx}', { eager: true })
+  const paths: Array<{ params: { section: string; page: string } }> = []
+  for (const fs of Object.keys(mods)) {
+    const route = fsPathToRoute(fs) // e.g. /basics/introduction/overview
+    const parts = route.split('/').filter(Boolean)
+    const section = parts[0]
+    const page = parts.slice(1).join('/') // catch-all as a single string
+    paths.push({ params: { section, page } })
+  }
+  return paths
+}
+
+const section = String(Astro.params.section || '')
+const pageParam = (Astro.params as any).page
+const segment = Array.isArray(pageParam) ? pageParam.join('/') : (pageParam || '')
+
+const sectionApi = createSection(section)
+const { nav } = sectionApi.nav()
+
+// If segment points to a group (folder) without an index doc,
+// redirect to the group's first item as defined by _toc.ts
+if (segment) {
+  const parts = String(segment).split('/').filter(Boolean)
+  if (parts.length === 1) {
+    const grp = nav.find((g) => g.dir === parts[0]) as any
+    const firstUrl = grp?.items?.[0]?.url ?? grp?.href
+    if (firstUrl) {
+      return Astro.redirect(firstUrl)
+    }
+  }
+}
+
+const currentPath = `/${section}` + (segment ? `/${segment}` : '')
+
+// Build a route -> module map to render MD/MDX in Astro
+const mods = import.meta.glob('/src/content/**/*.{md,mdx}', { eager: true }) as Record<string, any>
+const routeMap = new Map<string, any>(Object.entries(mods).map(([fs, mod]) => [fsPathToRoute(fs).replace(/\/$/, ''), mod]))
+const targetRoute = currentPath.replace(/\/$/, '')
+const mod = routeMap.get(targetRoute)
+const Page = mod?.default
+---
+<MainLayout>
+  <section class="mx-auto max-w-6xl p-6">
+    <div class="flex gap-6 items-start">
+      <DocsSidebar nav={nav} heading="" currentPath={currentPath} />
+      <article class="flex-1 min-w-0 prose">
+        {Page ? <Page /> : <p>⚠️ Unable to resolve content for {currentPath}</p>}
+      </article>
+    </div>
+  </section>
+</MainLayout>

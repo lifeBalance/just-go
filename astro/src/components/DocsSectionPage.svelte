@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createSection } from '$lib/docs/section'
+  import { createSection } from '@lib/docs/section'
   export let section: string
   export let segment: string = ''
   // console.log('mod', section)

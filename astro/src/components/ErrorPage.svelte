@@ -42,7 +42,7 @@
 </script>
 
 <script lang="ts">
-  import { cn } from '$lib/utils/cn'
+  const cn = (...classes: Array<string | undefined | null | false>) => classes.filter(Boolean).join(' ')
   export let title: string
   export let message: string
   export let status: number | undefined = undefined
