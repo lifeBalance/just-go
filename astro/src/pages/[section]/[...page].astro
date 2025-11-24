@@ -3,6 +3,8 @@ import MainLayout from '@layouts/MainLayout.astro'
 import DocsSidebar from '@components/DocsSidebar.svelte'
 import { createSection } from '@lib/docs/section'
 import { fsPathToRoute } from '@lib/docs/paths'
+import { getPrevNext } from '@lib/docs/routing'
+import PageBtn from '@components/PageBtn.svelte'
 
 export async function getStaticPaths() {
   // Generate a path for every MD/MDX content file
@@ -46,6 +48,7 @@ const routeMap = new Map<string, any>(Object.entries(mods).map(([fs, mod]) => [f
 const targetRoute = currentPath.replace(/\/$/, '')
 const mod = routeMap.get(targetRoute)
 const Page = mod?.default
+const { prev, next } = getPrevNext(nav, currentPath)
 ---
 <MainLayout>
   <section class="mx-auto max-w-6xl p-6">
@@ -53,6 +56,10 @@ const Page = mod?.default
       <DocsSidebar nav={nav} heading="" currentPath={currentPath} />
       <article class="flex-1 min-w-0 prose">
         {Page ? <Page /> : <p>⚠️ Unable to resolve content for {currentPath}</p>}
+        <div class="mt-8 flex items-center justify-between">
+          {prev ? <PageBtn href={prev.url} label={prev.title} direction="prev" /> : <span />}
+          {next ? <PageBtn href={next.url} label={next.title} direction="next" /> : <span />}
+        </div>
       </article>
     </div>
   </section>
