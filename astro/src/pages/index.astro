@@ -1,18 +1,12 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro'
 import Card from '@components/Card.astro'
-import Hero from '@components/Hero.svelte'
-import partyGopher from '@assets/party-gopher.gif?url'
-import dancingGopher from '@assets/dancing-gopher.gif?url'
+import Hero from '@components/Hero.astro'
 ---
 <MainLayout>
   <section class="site-container p-6">
     <div class="flex justify-center items-center mt-10 mb-20">
       <Hero rotate="-2deg" />
-    </div>
-    <div class="flex justify-around items-center">
-      <img src={dancingGopher} alt="Just Go Logo" class="w-16 h-16 mr-4" />
-      <img src={partyGopher} alt="Just Go Logo" class="w-16 h-16 mr-4" />
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
       <Card href="/basics" astroPrefetch={false}>
