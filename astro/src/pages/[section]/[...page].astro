@@ -54,12 +54,19 @@ const { prev, next } = getPrevNext(nav, currentPath)
 <MainLayout>
   <section class='mx-auto max-w-6xl'>
     <div class='flex gap-6 items-start'>
-      <DocsSidebar
-        nav={nav}
-        heading=''
-        currentPath={currentPath}
-        client:load
-      />
+      <aside
+        class='sticky self-start overflow-y-auto w-64 shrink-0 border-r border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+        style='top: 4rem; height: calc(100vh - 4rem);'
+      >
+        <div class='p-4'>
+          <DocsSidebar
+            nav={nav}
+            heading=''
+            currentPath={currentPath}
+            client:load
+          />
+        </div>
+      </aside>
       <article class='flex-1 min-w-0 prose'>
         <div class='pb-4'>
           <Breadcrumb
