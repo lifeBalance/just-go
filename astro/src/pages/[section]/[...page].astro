@@ -10,15 +10,21 @@ import DocsToc from '@components/DocsToc.svelte'
 import Footer from '@components/Footer.astro'
 
 export async function getStaticPaths() {
-  // Generate a path for every MD/MDX content file
+  // Generate paths for all sections and docs under /src/content
   const mods = import.meta.glob('/src/content/**/*.{md,mdx}', { eager: true })
+  const sections = new Set<string>()
   const paths: Array<{ params: { section: string; page: string } }> = []
   for (const fs of Object.keys(mods)) {
     const route = fsPathToRoute(fs) // e.g. /basics/introduction/overview
     const parts = route.split('/').filter(Boolean)
     const section = parts[0]
-    const page = parts.slice(1).join('/') // catch-all as a single string
-    paths.push({ params: { section, page } })
+    const page = parts.slice(1).join('/')
+    if (section) sections.add(section)
+    if (page) paths.push({ params: { section, page } })
+  }
+  // Add section root paths to consolidate routing (page = '')
+  for (const section of sections) {
+    paths.push({ params: { section, page: '' } })
   }
   return paths
 }
@@ -29,6 +35,15 @@ const segment = Array.isArray(pageParam) ? pageParam.join('/') : pageParam || ''
 
 const sectionApi = createSection(section)
 const { nav } = sectionApi.nav()
+
+// If segment is empty (section root), redirect to the first listed doc
+if (!segment) {
+  const first = nav[0]
+  const firstUrl = first?.items?.[0]?.url ?? (first as any)?.href
+  if (firstUrl) {
+    return Astro.redirect(firstUrl)
+  }
+}
 
 // If segment points to a group (folder) without an index doc,
 // redirect to the group's first item as defined by _toc.ts
