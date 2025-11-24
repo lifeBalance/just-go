@@ -3,7 +3,7 @@ import MainLayout from '@layouts/MainLayout.astro'
 import DocsSidebar from '@components/DocsSidebar.svelte'
 import { createSection } from '@lib/docs/section'
 import { fsPathToRoute } from '@lib/docs/paths'
-import { getPrevNext } from '@lib/docs/routing'
+import { getPrevNext, resolveOrNext } from '@lib/docs/routing'
 import PageBtn from '@components/PageBtn.astro'
 import Breadcrumb from '@components/Breadcrumb.svelte'
 import DocsToc from '@components/DocsToc.svelte'
@@ -34,41 +34,18 @@ const pageParam = (Astro.params as any).page
 const segment = Array.isArray(pageParam) ? pageParam.join('/') : pageParam || ''
 
 const sectionApi = createSection(section)
-const { nav } = sectionApi.nav()
+const result = resolveOrNext(sectionApi, segment)
 
-// If segment is empty (section root), redirect to the first listed doc
-if (!segment) {
-  const first = nav[0]
-  const firstUrl = first?.items?.[0]?.url ?? (first as any)?.href
-  if (firstUrl) {
-    return Astro.redirect(firstUrl)
-  }
+if (result.kind === 'redirect') {
+  return Astro.redirect(result.url)
 }
 
-// If segment points to a group (folder) without an index doc,
-// redirect to the group's first item as defined by _toc.ts
-if (segment) {
-  const parts = String(segment).split('/').filter(Boolean)
-  if (parts.length === 1) {
-    // Guard: if segment resolves to a doc, do NOT redirect
-    const tryResolve = sectionApi.resolver()
-    const maybeMod = tryResolve(segment)
-    if (!maybeMod) {
-      const grp = nav.find((g) => g.dir === parts[0]) as any
-      const firstUrl = grp?.items?.[0]?.url // only redirect for real groups with items
-      const current = `/${section}` + (segment ? `/${segment}` : '')
-      if (firstUrl && firstUrl.replace(/\/$/, '') !== current.replace(/\/$/, '')) {
-        return Astro.redirect(firstUrl)
-      }
-    }
-  }
-}
+const nav = result.nav
+const currentSegment = result.kind === 'ok' ? result.segment : segment
+const currentPath = `/${section}` + (currentSegment ? `/${currentSegment}` : '')
 
-const currentPath = `/${section}` + (segment ? `/${segment}` : '')
-
-// Resolve the module via the shared section resolver to avoid duplication
 const resolve = sectionApi.resolver()
-const mod = resolve(segment) as any
+const mod = resolve(currentSegment) as any
 const Page = mod?.default
 const { prev, next } = getPrevNext(nav, currentPath)
 ---
