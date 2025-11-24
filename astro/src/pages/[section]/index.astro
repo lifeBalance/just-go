@@ -27,7 +27,7 @@ if (firstUrl) {
 <MainLayout>
   <section class="mx-auto max-w-6xl p-6">
     <div class="flex gap-6 items-start">
-      <DocsSidebar nav={nav} heading="Contents" currentPath={`/${section}`} />
+      <DocsSidebar nav={nav} heading="Contents" currentPath={`/${section}`} client:load />
       <article class="flex-1 min-w-0">
         <h1 class="text-2xl font-bold">{section}</h1>
         <p>Select a document from the sidebar.</p>
