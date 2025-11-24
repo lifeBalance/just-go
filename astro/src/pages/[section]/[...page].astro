@@ -6,6 +6,7 @@ import { fsPathToRoute } from '@lib/docs/paths'
 import { getPrevNext } from '@lib/docs/routing'
 import PageBtn from '@components/PageBtn.svelte'
 import Breadcrumb from '@components/Breadcrumb.svelte'
+import DocsToc from '@components/DocsToc.svelte'
 
 export async function getStaticPaths() {
   // Generate a path for every MD/MDX content file
@@ -23,7 +24,7 @@ export async function getStaticPaths() {
 
 const section = String(Astro.params.section || '')
 const pageParam = (Astro.params as any).page
-const segment = Array.isArray(pageParam) ? pageParam.join('/') : (pageParam || '')
+const segment = Array.isArray(pageParam) ? pageParam.join('/') : pageParam || ''
 
 const sectionApi = createSection(section)
 const { nav } = sectionApi.nav()
@@ -43,28 +44,74 @@ if (segment) {
 
 const currentPath = `/${section}` + (segment ? `/${segment}` : '')
 
-// Build a route -> module map to render MD/MDX in Astro
-const mods = import.meta.glob('/src/content/**/*.{md,mdx}', { eager: true }) as Record<string, any>
-const routeMap = new Map<string, any>(Object.entries(mods).map(([fs, mod]) => [fsPathToRoute(fs).replace(/\/$/, ''), mod]))
-const targetRoute = currentPath.replace(/\/$/, '')
-const mod = routeMap.get(targetRoute)
+// Resolve the module via the shared section resolver to avoid duplication
+const resolve = sectionApi.resolver()
+const mod = resolve(segment) as any
 const Page = mod?.default
 const { prev, next } = getPrevNext(nav, currentPath)
 ---
+
 <MainLayout>
-  <section class="mx-auto max-w-6xl p-6">
-    <div class="flex gap-6 items-start">
-      <DocsSidebar nav={nav} heading="" currentPath={currentPath} client:load />
-      <article class="flex-1 min-w-0 prose">
-        <div class="pb-4">
-          <Breadcrumb path={currentPath} nav={nav} />
+  <section class='mx-auto max-w-6xl'>
+    <div class='flex gap-6 items-start'>
+      <DocsSidebar
+        nav={nav}
+        heading=''
+        currentPath={currentPath}
+        client:load
+      />
+      <article class='flex-1 min-w-0 prose'>
+        <div class='pb-4'>
+          <Breadcrumb
+            path={currentPath}
+            nav={nav}
+          />
         </div>
-        {Page ? <Page /> : <p>⚠️ Unable to resolve content for {currentPath}</p>}
-        <div class="mt-8 flex items-center justify-between">
-          {prev ? <PageBtn href={prev.url} label={prev.title} direction="prev" client:load /> : <span />}
-          {next ? <PageBtn href={next.url} label={next.title} direction="next" client:load /> : <span />}
+        <div id='content'>
+          {
+            Page ? (
+              <Page />
+            ) : (
+              <p>⚠️ Unable to resolve content for {currentPath}</p>
+            )
+          }
+        </div>
+        <div class='mt-8 flex items-center justify-between'>
+          {
+            prev ? (
+              <PageBtn
+                href={prev.url}
+                label={prev.title}
+                direction='prev'
+                client:load
+              />
+            ) : (
+              <span />
+            )
+          }
+          {
+            next ? (
+              <PageBtn
+                href={next.url}
+                label={next.title}
+                direction='next'
+                client:load
+              />
+            ) : (
+              <span />
+            )
+          }
         </div>
       </article>
+      <!-- Right Sidebar - On This Page -->
+      <aside
+        class='hidden xl:block sticky self-start overflow-y-auto w-64 shrink-0 border-l border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+        style='top: 4rem; height: calc(100vh - 4rem);'
+      >
+        <div class='p-4'>
+          <DocsToc client:load />
+        </div>
+      </aside>
     </div>
   </section>
 </MainLayout>
