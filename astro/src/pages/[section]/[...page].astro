@@ -5,6 +5,7 @@ import { createSection } from '@lib/docs/section'
 import { fsPathToRoute } from '@lib/docs/paths'
 import { getPrevNext } from '@lib/docs/routing'
 import PageBtn from '@components/PageBtn.svelte'
+import Breadcrumb from '@components/Breadcrumb.svelte'
 
 export async function getStaticPaths() {
   // Generate a path for every MD/MDX content file
@@ -55,6 +56,9 @@ const { prev, next } = getPrevNext(nav, currentPath)
     <div class="flex gap-6 items-start">
       <DocsSidebar nav={nav} heading="" currentPath={currentPath} client:load />
       <article class="flex-1 min-w-0 prose">
+        <div class="pb-4">
+          <Breadcrumb path={currentPath} nav={nav} />
+        </div>
         {Page ? <Page /> : <p>⚠️ Unable to resolve content for {currentPath}</p>}
         <div class="mt-8 flex items-center justify-between">
           {prev ? <PageBtn href={prev.url} label={prev.title} direction="prev" client:load /> : <span />}
