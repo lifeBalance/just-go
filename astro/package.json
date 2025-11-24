@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "just-go-astro",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -11,6 +11,7 @@
   "dependencies": {
     "@astrojs/mdx": "^4.3.12",
     "@astrojs/svelte": "^7.2.2",
+    "@expressive-code/plugin-collapsible-sections": "^0.41.3",
     "@iconify-icons/mdi": "^1.2.48",
     "@iconify/svelte": "^4.2.0",
     "@tailwindcss/typography": "^0.5.19",

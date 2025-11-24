@@ -3,6 +3,8 @@ import { defineConfig } from 'astro/config'
 import tailwindcss from '@tailwindcss/vite'
 import svelte from '@astrojs/svelte'
 import mdx from '@astrojs/mdx'
+import expressiveCode from 'astro-expressive-code'
+import ecConfig from './src/expressive-code.config.mjs'
 
 // Vite alias aligned with your tsconfig
 const alias = {
@@ -15,6 +17,6 @@ const alias = {
 }
 
 export default defineConfig({
-  integrations: [svelte(), mdx()],
+  integrations: [svelte(), expressiveCode(ecConfig), mdx()],
   vite: { plugins: [tailwindcss()], resolve: { alias } },
 })
