@@ -7,6 +7,7 @@ import { getPrevNext } from '@lib/docs/routing'
 import PageBtn from '@components/PageBtn.svelte'
 import Breadcrumb from '@components/Breadcrumb.svelte'
 import DocsToc from '@components/DocsToc.svelte'
+import Footer from '@components/Footer.astro'
 
 export async function getStaticPaths() {
   // Generate a path for every MD/MDX content file
@@ -54,6 +55,7 @@ const { prev, next } = getPrevNext(nav, currentPath)
 <MainLayout>
   <section class='mx-auto max-w-6xl'>
     <div class='flex gap-6 items-start'>
+      <!-- Left Sidebar - Table of Contents -->
       <aside
         class='sticky self-start overflow-y-auto w-64 shrink-0 border-r border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
         style='top: 4rem; height: calc(100vh - 4rem);'
@@ -67,14 +69,19 @@ const { prev, next } = getPrevNext(nav, currentPath)
           />
         </div>
       </aside>
-      <article class='flex-1 min-w-0 prose'>
-        <div class='pb-4'>
+
+      <!-- Central section - Main Content -->
+      <article class='flex-1 min-w-0 pb-12'>
+        <div class='py-4'>
           <Breadcrumb
             path={currentPath}
             nav={nav}
           />
         </div>
-        <div id='content'>
+        <div
+          id='content'
+          class='prose'
+        >
           {
             Page ? (
               <Page />
@@ -109,7 +116,13 @@ const { prev, next } = getPrevNext(nav, currentPath)
             )
           }
         </div>
+
+        <Footer
+          left='Just Go!'
+          right='Happy coding!'
+        />
       </article>
+
       <!-- Right Sidebar - On This Page -->
       <aside
         class='hidden xl:block sticky self-start overflow-y-auto w-64 shrink-0 border-l border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
