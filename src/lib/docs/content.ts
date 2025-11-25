@@ -1,4 +1,4 @@
-import { fsPathToRoute } from './paths'
+import { fsPathToRoute } from './section'
 import type { ContentEntry } from './types'
 
 export function createContentEntries(
