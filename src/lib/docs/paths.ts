@@ -14,7 +14,7 @@ export function fsPathToRoute(fsPath: string): string {
 }
 
 
-export type SectionPageParam = { section: string; page: string }
+export type SectionPageParam = { section: string; page?: string }
 
 // Build `[section]/[...page]` params from content files
 export function listSectionPageParams(): SectionPageParam[] {
@@ -29,9 +29,9 @@ export function listSectionPageParams(): SectionPageParam[] {
     if (section) sections.add(section)
     if (page) out.push({ section, page })
   }
-  // Add section root paths to consolidate routing (page = '')
+  // Add section root paths (omit page for optional param)
   for (const section of sections) {
-    out.push({ section, page: '' })
+    out.push({ section })
   }
   return out
 }

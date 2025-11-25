@@ -6,8 +6,8 @@ export type FlatNavItem = { url: string; title: string }
 function flattenNav(nav: NavGroup[]): FlatNavItem[] {
   const items: FlatNavItem[] = []
   for (const g of nav) {
-    if ((g as any).href && (!g.items || g.items.length === 0)) {
-      items.push({ url: (g as any).href, title: g.label })
+    if (g.href && g.items.length === 0) {
+      items.push({ url: g.href, title: g.label })
     } else {
       for (const it of g.items) items.push({ url: it.url, title: it.title })
     }
@@ -36,13 +36,13 @@ function classifySegment(segment: string): 'root' | 'group' | 'doc' {
 function firstUrlForSection(nav: NavGroup[]): string | undefined {
   const first = nav[0]
   if (!first) return undefined
-  return first.items[0]?.url ?? (first as any).href
+  return first.items[0]?.url ?? first.href
 }
 
 function firstUrlForGroup(nav: NavGroup[], dir: string): string | undefined {
   const group = nav.find((g) => g.dir === dir)
   if (!group) return undefined
-  return group.items[0]?.url ?? (group as any).href
+  return group.items[0]?.url ?? group.href
 }
 
 import type { createSection } from './section'
