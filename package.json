@@ -26,6 +26,16 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "astro-icon": "^1.1.5"
+    "astro-icon": "^1.1.5",
+    "prettier-plugin-astro": "^0.14.1"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "plugins": [
+      "prettier-plugin-astro"
+    ],
+    "astroAllowShorthand": true
   }
 }

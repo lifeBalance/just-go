@@ -1,19 +1,25 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro'
-import DocsSidebar from '@components/DocsSidebar.svelte'
-import { createSection } from '@lib/docs/section'
-import { getDocStaticPaths } from '@lib/docs/section'
-import { getPrevNext, resolveOrNext } from '@lib/docs/section'
 import PageBtn from '@components/PageBtn.astro'
+import Footer from '@components/Footer.astro'
+import DocsSidebar from '@components/DocsSidebar.svelte'
 import Breadcrumb from '@components/Breadcrumb.svelte'
 import DocsToc from '@components/DocsToc.svelte'
-import Footer from '@components/Footer.astro'
+import {
+  createSection,
+  getDocStaticPaths,
+  getPrevNext,
+  resolveOrNext,
+} from '@lib/docs/section'
 
 export async function getStaticPaths() {
   return getDocStaticPaths()
 }
 
-const { section, page } = Astro.params as { section: string; page?: string | string[] }
+const { section, page } = Astro.params as {
+  section: string
+  page?: string | string[]
+}
 const segment = Array.isArray(page) ? page.join('/') : page || ''
 
 const sectionApi = createSection(section)
@@ -34,34 +40,23 @@ const { prev, next } = getPrevNext(nav, currentPath)
 ---
 
 <MainLayout>
-  <div class='flex gap-6 items-start'>
+  <div class="flex gap-6 items-start">
     <!-- Left Sidebar - Table of Contents -->
     <aside
-      class='sticky self-start overflow-y-auto w-64 shrink-0 border-r border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
-      style='top: 4rem; height: calc(100vh - 4rem);'
+      class="sticky self-start overflow-y-auto w-64 shrink-0 border-r border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      style="top: 4rem; height: calc(100vh - 4rem);"
     >
-      <div class='p-4'>
-        <DocsSidebar
-          nav={nav}
-          heading=''
-          currentPath={currentPath}
-          client:load
-        />
+      <div class="p-4">
+        <DocsSidebar {nav} heading="" {currentPath} client:load />
       </div>
     </aside>
 
     <!-- Central section - Main Content -->
-    <article class='flex-1 min-w-0 pb-12'>
-      <div class='py-4'>
-        <Breadcrumb
-          path={currentPath}
-          nav={nav}
-        />
+    <article class="flex-1 min-w-0 pb-12">
+      <div class="py-4">
+        <Breadcrumb path={currentPath} {nav} />
       </div>
-      <div
-        id='content'
-        class='prose'
-      >
+      <div id="content" class="prose">
         {
           Page ? (
             <Page />
@@ -70,43 +65,32 @@ const { prev, next } = getPrevNext(nav, currentPath)
           )
         }
       </div>
-      <div class='mt-8 flex items-center justify-between'>
+      <div class="mt-8 flex items-center justify-between">
         {
           prev ? (
-            <PageBtn
-              href={prev.url}
-              label={prev.title}
-              direction='prev'
-            />
+            <PageBtn href={prev.url} label={prev.title} direction="prev" />
           ) : (
             <span />
           )
         }
         {
           next ? (
-            <PageBtn
-              href={next.url}
-              label={next.title}
-              direction='next'
-            />
+            <PageBtn href={next.url} label={next.title} direction="next" />
           ) : (
             <span />
           )
         }
       </div>
 
-      <Footer
-        left='Just Go!'
-        right='Happy coding!'
-      />
+      <Footer left="Just Go!" right="Happy coding!" />
     </article>
 
     <!-- Right Sidebar - On This Page -->
     <aside
-      class='hidden xl:block sticky self-start overflow-y-auto w-64 shrink-0 border-l border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
-      style='top: 4rem; height: calc(100vh - 4rem);'
+      class="hidden xl:block sticky self-start overflow-y-auto w-64 shrink-0 border-l border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      style="top: 4rem; height: calc(100vh - 4rem);"
     >
-      <div class='p-4'>
+      <div class="p-4">
         <DocsToc client:load />
       </div>
     </aside>
