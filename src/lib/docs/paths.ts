@@ -4,11 +4,11 @@ export function normalizePath(path: string): string {
 
 // Convert an absolute content fs path (from MD/MDX file) to a route
 // Examples:
-//   - /src/content/basics/introduction/index.mdx -> /basics/introduction/
-//   - /src/content/basics/variables/intro.md     -> /basics/variables/intro
+//   - /docs/basics/introduction/index.mdx -> /basics/introduction/
+//   - /docs/basics/variables/intro.md     -> /basics/variables/intro
 export function fsPathToRoute(fsPath: string): string {
   return fsPath
-    .replace(/^\/src\/content/, '')
+    .replace(/^\/docs/, '')
     .replace(/index\.(md|mdx)$/, '')
     .replace(/\.(md|mdx)$/, '')
 }
@@ -28,7 +28,7 @@ export type SectionPageParam = { section: string; page: string }
 
 // Build `[section]/[...page]` params from content files
 export function listSectionPageParams(): SectionPageParam[] {
-  const mods = import.meta.glob('/src/content/**/*.{md,mdx}', { eager: true })
+  const mods = import.meta.glob('/docs/**/*.{md,mdx}', { eager: true })
   const sections = new Set<string>()
   const out: SectionPageParam[] = []
   for (const fs of Object.keys(mods)) {

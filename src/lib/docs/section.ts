@@ -4,17 +4,17 @@ import type { ContentEntry, NavGroup } from './types'
 import { parseSidebarConfig, type SidebarConfig } from './sidebar'
 
 // Glob all content once; filter by section at runtime
-const allMods = import.meta.glob('/src/content/**/*.{md,mdx}', {
+const allMods = import.meta.glob('/docs/**/*.{md,mdx}', {
   eager: true,
 }) as Record<string, MdModule>
 // Glob all sidebars once; filter by section path
-const allTocs = import.meta.glob('/src/content/**/_toc.{ts,js}', {
+const allTocs = import.meta.glob('/docs/**/_toc.{ts,js}', {
   eager: true,
 }) as Record<string, any>
 
 function filterMods(section: string): Record<string, MdModule> {
   const sec = section.replace(/^\/+|\/+$/g, '')
-  const prefix = `/src/content/${sec}/`
+  const prefix = `/docs/${sec}/`
   return Object.fromEntries(
     Object.entries(allMods).filter(([fs]) => fs.startsWith(prefix)),
   )
@@ -39,7 +39,7 @@ function capitalize(name: string) {
 export function createSection(section: string) {
   const sec = section.replace(/^\/+|\/+$/g, '')
   const base = `/${sec}`
-  const contentRoot = `/src/content/${sec}`
+  const contentRoot = `/docs/${sec}`
   const mods = filterMods(section)
   return {
     base,
