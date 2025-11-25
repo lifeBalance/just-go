@@ -179,8 +179,6 @@ export function createSection(section: string) {
     nav(): { nav: NavGroup[] } {
       const entries = this.entries()
 
-      // Rel parts helper relative to base
-      const relParts = (url: string) => Path.toRelative(url, base).split('/').filter(Boolean)
 
       // Parent (root) sidebar
       const rootSidebar = store.getTocForPath(contentRoot)
@@ -190,7 +188,7 @@ export function createSection(section: string) {
       // Collect top-level docs (files directly under the section)
       const topDocs: Map<string, ContentEntry> = new Map()
       for (const e of entries) {
-        const parts = relParts(e.url)
+        const parts = Path.toRelative(e.url, base).split('/').filter(Boolean)
         if (parts.length === 1 && !e.isIndex) {
           topDocs.set(parts[0], e)
         }
@@ -199,7 +197,7 @@ export function createSection(section: string) {
       // Precompute group index for efficient lookups
       const groupIndex = new Map<string, Map<string, ContentEntry>>()
       for (const e of entries) {
-        const parts = relParts(e.url)
+        const parts = Path.toRelative(e.url, base).split('/').filter(Boolean)
         if (parts.length === 2) {
           const g = parts[0]
           const slug = parts[1]
