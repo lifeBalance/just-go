@@ -69,6 +69,10 @@ export function listSectionPageParams(): SectionPageParam[] {
   return out
 }
 
+export function getDocStaticPaths() {
+  return listSectionPageParams().map(({ section, page }) => ({ params: { section, page } }))
+}
+
 // Navigation helpers & routing logic (colocated for simplicity)
 export type FlatNavItem = { url: string; title: string }
 
@@ -161,7 +165,7 @@ export function createSection(section: string) {
         const dir = rel.split('/').slice(0, -1).join('/') || ''
         const fallbackTitle = isIndex ? (dir || baseNoSlash) : rel.split('/').pop() || ''
         const title = (mod as any)?.metadata?.title ?? fallbackTitle
-        return { url, dir, title, isIndex, mod }
+        return { url, title, isIndex }
       })
     },
     resolver() {

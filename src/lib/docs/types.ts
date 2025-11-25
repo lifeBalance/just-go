@@ -7,8 +7,6 @@ export type NavGroup = {
 }
 export type ContentEntry = {
   url: string
-  dir: string
   title: string
   isIndex: boolean
-  mod?: any
 }

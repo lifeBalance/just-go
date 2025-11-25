@@ -2,7 +2,7 @@
 import MainLayout from '@layouts/MainLayout.astro'
 import DocsSidebar from '@components/DocsSidebar.svelte'
 import { createSection } from '@lib/docs/section'
-import { listSectionPageParams } from '@lib/docs/section'
+import { getDocStaticPaths } from '@lib/docs/section'
 import { getPrevNext, resolveOrNext } from '@lib/docs/section'
 import PageBtn from '@components/PageBtn.astro'
 import Breadcrumb from '@components/Breadcrumb.svelte'
@@ -10,14 +10,11 @@ import DocsToc from '@components/DocsToc.svelte'
 import Footer from '@components/Footer.astro'
 
 export async function getStaticPaths() {
-  return listSectionPageParams().map(({ section, page }) => ({
-    params: { section, page },
-  }))
+  return getDocStaticPaths()
 }
 
-const section = String(Astro.params.section || '')
-const pageParam = (Astro.params as any).page
-const segment = Array.isArray(pageParam) ? pageParam.join('/') : pageParam || ''
+const { section, page } = Astro.params as { section: string; page?: string | string[] }
+const segment = Array.isArray(page) ? page.join('/') : page || ''
 
 const sectionApi = createSection(section)
 const result = resolveOrNext(sectionApi, segment)
