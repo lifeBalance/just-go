@@ -13,7 +13,18 @@ export function fsPathToRoute(fsPath: string): string {
     .replace(/\.(md|mdx)$/, '')
 }
 type MdModule = { default: unknown }
-import type { ContentEntry, NavGroup } from './types'
+export type NavItem = { url: string; title: string }
+export type NavGroup = {
+  dir: string
+  label: string
+  href?: string
+  items: NavItem[]
+}
+export type ContentEntry = {
+  url: string
+  title: string
+  isIndex: boolean
+}
 import { parseSidebarConfig, type SidebarConfig } from './sidebar'
 
 // Glob all content once; filter by section at runtime
@@ -230,7 +241,7 @@ export function createSection(section: string) {
 
         const groupLabel = rootAlias.get(groupKey) || capitalize(g)
 
-        const navItems: import('./types').NavItem[] = []
+        const navItems: NavItem[] = []
         for (const slug of finalItemSlugs) {
           if (itemHidden.has(slug)) continue
           const entry = itemBySlug.get(slug)!
