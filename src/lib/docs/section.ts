@@ -1,5 +1,5 @@
-import { fsPathToRoute } from './paths'
-import { makeResolver, type MdModule } from './resolver'
+import { fsPathToRoute, normalizePath } from './paths'
+type MdModule = { default: unknown }
 import type { ContentEntry, NavGroup } from './types'
 import { parseSidebarConfig, type SidebarConfig } from './sidebar'
 
@@ -56,7 +56,15 @@ export function createSection(section: string) {
       })
     },
     resolver() {
-      return makeResolver(mods, base)
+      const entries = Object.entries(mods)
+      const routeMap = new Map<string, MdModule>(
+        entries.map(([fs, mod]) => [normalizePath(fsPathToRoute(fs)), mod as MdModule]),
+      )
+      const baseNorm = normalizePath(base)
+      return (seg: string) => {
+        const target = normalizePath(baseNorm + (seg ? '/' + seg : ''))
+        return routeMap.get(target)
+      }
     },
     nav(): { nav: NavGroup[] } {
       const entries = this.entries()
