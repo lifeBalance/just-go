@@ -99,7 +99,7 @@ export function createSection(section: string) {
 
         const groupLabel = rootAlias.get(groupKey) || capitalize(g)
 
-        const navItems = [] as { url: string; title: string }[]
+        const navItems: import('./types').NavItem[] = []
         for (const slug of finalItemSlugs) {
           if (itemHidden.has(slug)) continue
           const entry = itemBySlug.get(slug)!
@@ -108,7 +108,7 @@ export function createSection(section: string) {
         }
 
         if (navItems.length === 0) return null
-        return { label: groupLabel, items: navItems, dir: g } as any
+        return { label: groupLabel, items: navItems, dir: g }
       }
 
       function buildDoc(slug: string): NavGroup | null {
@@ -116,7 +116,7 @@ export function createSection(section: string) {
         const entry = topDocs.get(slug)
         if (!entry) return null
         const label = rootAlias.get(slug) || entry.title || capitalize(slug)
-        return { label, href: entry.url, items: [], dir: slug } as any
+        return { label, href: entry.url, items: [], dir: slug }
       }
 
       const listed = rootSidebar.ordered.map((e) => e.path).filter(Boolean)
