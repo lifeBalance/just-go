@@ -1,3 +1,5 @@
+import { parseSidebarConfig, type SidebarConfig } from './sidebar'
+
 // Single source of truth for path operations
 const Path = {
   normalize: (p: string) => p.replace(/\/$/, ''),
@@ -26,11 +28,6 @@ export type ContentEntry = {
   title: string
   isIndex: boolean
 }
-import { parseSidebarConfig, type SidebarConfig } from './sidebar'
-
-
-
-
 
 class ContentStore {
   private mods = import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>
@@ -236,55 +233,47 @@ export function createSection(section: string) {
         }
       }
 
-      function buildGroup(g: string): NavGroup | null {
-        const groupKey = `${g}/`
-        if (rootHidden.has(groupKey)) return null
-
-        const itemBySlug = groupIndex.get(g) ?? new Map<string, ContentEntry>()
-
-        const localSidebar = store.getTocForPath(`${contentRoot}/${g}`)
-        const listedItems = localSidebar.ordered
-          .map((e) => (e.path.endsWith('/') ? e.path.slice(0, -1) : e.path))
-          .filter((p) => p)
-        const itemAlias = localSidebar.alias
-        const itemHidden = localSidebar.hidden
-
-        const finalItemSlugs = listedItems.filter((s) => itemBySlug.has(s))
-
-        const groupLabel = rootAlias.get(groupKey) || capitalize(g)
-
-        const navItems: NavItem[] = []
-        for (const slug of finalItemSlugs) {
-          if (itemHidden.has(slug)) continue
-          const entry = itemBySlug.get(slug)!
-          const title = itemAlias.get(slug) || entry.title || capitalize(slug)
-          navItems.push({ url: entry.url, title })
+      // Unified builder for both groups and single docs
+      function buildNavItem(path: string): NavGroup | null {
+        const isGroup = Path.isGroup(path)
+        const key = path
+        if (isGroup) {
+          // Group visibility and label come from root sidebar
+          if (rootHidden.has(key)) return null
+          const dir = path.slice(0, -1)
+          const itemBySlug = groupIndex.get(dir) ?? new Map<string, ContentEntry>()
+          const localSidebar = store.getTocForPath(`${contentRoot}/${dir}`)
+          const listedItems = localSidebar.ordered
+            .map((e) => (Path.isGroup(e.path) ? e.path.slice(0, -1) : e.path))
+            .filter((p) => p)
+          const itemAlias = localSidebar.alias
+          const itemHidden = localSidebar.hidden
+          const finalItemSlugs = listedItems.filter((s) => itemBySlug.has(s))
+          const groupLabel = rootAlias.get(key) || capitalize(dir)
+          const navItems: NavItem[] = []
+          for (const slug of finalItemSlugs) {
+            if (itemHidden.has(slug)) continue
+            const entry = itemBySlug.get(slug)!
+            const title = itemAlias.get(slug) || entry.title || capitalize(slug)
+            navItems.push({ url: entry.url, title })
+          }
+          if (navItems.length === 0) return null
+          return { label: groupLabel, items: navItems, dir }
         }
-
-        if (navItems.length === 0) return null
-        return { label: groupLabel, items: navItems, dir: g }
-      }
-
-      function buildDoc(slug: string): NavGroup | null {
-        if (rootHidden.has(slug)) return null
-        const entry = topDocs.get(slug)
+        // Single doc at section root
+        if (rootHidden.has(key)) return null
+        const entry = topDocs.get(key)
         if (!entry) return null
-        const label = rootAlias.get(slug) || entry.title || capitalize(slug)
-        return { label, href: entry.url, items: [], dir: slug }
+        const label = rootAlias.get(key) || entry.title || capitalize(key)
+        return { label, href: entry.url, items: [], dir: key }
       }
 
       const listed = rootSidebar.ordered.map((e) => e.path).filter(Boolean)
 
       const nav: NavGroup[] = []
       for (const pth of listed) {
-        if (Path.isGroup(pth)) {
-          const g = pth.slice(0, -1)
-          const grp = buildGroup(g)
-          if (grp) nav.push(grp)
-        } else {
-          const doc = buildDoc(pth)
-          if (doc) nav.push(doc)
-        }
+        const node = buildNavItem(pth)
+        if (node) nav.push(node)
       }
 
       return { nav }
