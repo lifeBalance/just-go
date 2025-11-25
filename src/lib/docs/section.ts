@@ -17,6 +17,11 @@ const Path = {
 }
 type MdModule = { default: unknown }
 export type NavItem = { url: string; title: string }
+
+export type ResolveResult =
+  | { kind: 'ok'; segment: string; nav: NavGroup[] }
+  | { kind: 'redirect'; url: string; nav: NavGroup[] }
+  | { kind: 'not_found'; nav: NavGroup[] }
 export type NavGroup = {
   dir: string
   label: string
@@ -28,6 +33,7 @@ export type ContentEntry = {
   title: string
   isIndex: boolean
 }
+
 
 class ContentStore {
   private mods = import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>
@@ -113,32 +119,11 @@ export function getPrevNext(
   }
 }
 
-function classifySegment(segment: string): 'root' | 'group' | 'doc' {
-  const parts = (segment || '').split('/').filter(Boolean)
-  if (parts.length === 0) return 'root'
-  if (parts.length === 1) return 'group'
-  return 'doc'
-}
-
-function firstUrlForSection(nav: NavGroup[]): string | undefined {
-  const first = nav[0]
-  if (!first) return undefined
-  return first.items[0]?.url ?? first.href
-}
-
-function firstUrlForGroup(nav: NavGroup[], dir: string): string | undefined {
-  const group = nav.find((g) => g.dir === dir)
-  if (!group) return undefined
-  return group.items[0]?.url ?? group.href
-}
 
 export function resolveOrNext(
   section: ReturnType<typeof createSection>,
-  segment: string
-):
-  | { kind: 'ok'; segment: string; nav: NavGroup[] }
-  | { kind: 'redirect'; url: string; nav: NavGroup[] }
-  | { kind: 'not_found'; nav: NavGroup[] } {
+  segment: string,
+): ResolveResult {
   const resolve = section.resolver()
   const { nav } = section.nav()
 
@@ -146,21 +131,17 @@ export function resolveOrNext(
     return { kind: 'ok', segment, nav }
   }
 
-  const kind = classifySegment(segment)
-  if (kind === 'root') {
-    const url = firstUrlForSection(nav)
-    if (url) return { kind: 'redirect', url, nav }
-    return { kind: 'not_found', nav }
-  }
+  const parts = (segment || '').split('/').filter(Boolean)
+  const fallbackUrl = parts.length === 0
+    ? (nav[0]?.items[0]?.url ?? nav[0]?.href)
+    : (() => {
+        const grp = nav.find((g) => g.dir === parts[0])
+        return grp?.items[0]?.url ?? grp?.href
+      })()
 
-  if (kind === 'group') {
-    const dir = (segment || '').split('/').filter(Boolean)[0]
-    const url = firstUrlForGroup(nav, dir)
-    if (url) return { kind: 'redirect', url, nav }
-    return { kind: 'not_found', nav }
-  }
-
-  return { kind: 'not_found', nav }
+  return fallbackUrl
+    ? { kind: 'redirect', url: fallbackUrl, nav }
+    : { kind: 'not_found', nav }
 }
 
 export function createSection(section: string) {
