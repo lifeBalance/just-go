@@ -2,10 +2,10 @@ export function normalizePath(path: string): string {
   return path.replace(/\/$/, '')
 }
 
-// Convert an absolute content fs path (from MD file) to a route
+// Convert an absolute content fs path (from MD/MDX file) to a route
 // Examples:
-//   - /src/content/basics/introduction/index.md -> /basics/introduction/
-//   - /src/content/basics/variables/intro.md    -> /basics/variables/intro
+//   - /src/content/basics/introduction/index.mdx -> /basics/introduction/
+//   - /src/content/basics/variables/intro.md     -> /basics/variables/intro
 export function fsPathToRoute(fsPath: string): string {
   return fsPath
     .replace(/^\/src\/content/, '')
@@ -22,4 +22,26 @@ export function relSlug(route: string, base: string): string {
     new RegExp('^' + baseNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\/'),
     '',
   )
+}
+
+export type SectionPageParam = { section: string; page: string }
+
+// Build `[section]/[...page]` params from content files
+export function listSectionPageParams(): SectionPageParam[] {
+  const mods = import.meta.glob('/src/content/**/*.{md,mdx}', { eager: true })
+  const sections = new Set<string>()
+  const out: SectionPageParam[] = []
+  for (const fs of Object.keys(mods)) {
+    const route = fsPathToRoute(fs)
+    const parts = route.split('/').filter(Boolean)
+    const section = parts[0] || ''
+    const page = parts.slice(1).join('/')
+    if (section) sections.add(section)
+    if (page) out.push({ section, page })
+  }
+  // Add section root paths to consolidate routing (page = '')
+  for (const section of sections) {
+    out.push({ section, page: '' })
+  }
+  return out
 }

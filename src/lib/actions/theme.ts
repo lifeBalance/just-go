@@ -1,9 +1,5 @@
 // Svelte action + helpers for reading and setting the theme
-// Usage:
-// <div use:theme={{ onChange: (isDark) => (dark = isDark) }} on:themechange={(e) => (dark = e.detail.dark)}>
-//   ...
-// </div>
-// import { getTheme, setTheme, toggleTheme } from '$lib/actions/theme'
+// Copied from SvelteKit app for reuse in Astro
 
 export type ThemeValue = 'dark' | 'light'
 export type ThemeActionParams = {
@@ -44,17 +40,14 @@ export function theme(node: HTMLElement, params?: ThemeActionParams) {
 
   const notify = () => {
     const isDark = root.getAttribute(ATTR) === 'dark'
-    // Fire a DOM event for easy consumption
     node.dispatchEvent(
       new CustomEvent('themechange', {
-        detail: { dark: isDark, theme: isDark ? 'dark' : 'light' as ThemeValue }
-      })
+        detail: { dark: isDark, theme: isDark ? 'dark' : 'light' as ThemeValue },
+      }),
     )
-    // Optional callback
     params?.onChange?.(isDark)
   }
 
-  // Emit initial state by default
   if (params?.immediate !== false) notify()
 
   const mo = new MutationObserver((mutations) => {
@@ -70,6 +63,6 @@ export function theme(node: HTMLElement, params?: ThemeActionParams) {
   return {
     destroy() {
       mo.disconnect()
-    }
+    },
   }
 }

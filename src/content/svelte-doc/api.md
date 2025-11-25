@@ -1,7 +1,3 @@
----
-title: API
----
-
 # API
 
 - `createSection(section: string)` → `{ base, entries(), resolver(), orderIndex(), nav() }`

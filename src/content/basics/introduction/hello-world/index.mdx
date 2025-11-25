@@ -1,19 +1,22 @@
-<script>
-  import Code from '$lib/components/svelte-doc/Code.svelte'
-  import demo from './demo.go?raw'
-</script>
-
 # Hello World
 
 Nothing like the good old hello world to break the ice in any programming language. Here's what it looks like in Go:
 
-<Code code={demo} language="go" title="hello.go" />
+```go title="hello.go"
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, world!")
+}
+```
 
 To run this code, save it in a file called `hello.go` and execute the following command in your terminal:
 
 ```bash
 go run hello.go
-Hello, world!
+Hello, world!       # 👈 This is the output ✅
 ```
 
 That's it! You've just written and executed your first Go program.
@@ -38,8 +41,10 @@ import "fmt"
 
 The `main` function is the entry point of a Go program. When you run the program, execution starts from this function. Every executable Go program must have a `main` function in the `main` package.
 
-```go
+```go  collapse={2-4}
 func main() {
+    // code to be executed
+    // code to be executed
     // code to be executed
 }
 ```

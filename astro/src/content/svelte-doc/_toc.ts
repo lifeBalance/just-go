@@ -1,5 +1,0 @@
-export default [
-  { path: 'getting-started', label: 'Getting started' },
-  { path: 'structure', label: 'Structure' },
-  { path: 'api', label: 'API' },
-]

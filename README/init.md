@@ -6,6 +6,24 @@ I had to create a new project in another folder, since the installer didn't allo
 npm create astro@latest
 ```
 
+> [!NOTE]
+> Or even easier:
+>
+> ```sh
+> npm create astro@latest -- --template minimal
+> ```
+
+The resulting project structure is quite simple:
+
+```text
+/
+├── public/
+├── src/
+│   └── pages/
+│       └── index.astro
+└── package.json
+```
+
 Then I copied all the files to the `just-go` folder.
 
 ## TailwindCss
@@ -22,21 +40,21 @@ npm install tailwindcss @tailwindcss/vite
 
 ```js
 // @ts-check
-import { defineConfig } from 'astro/config'
-import tailwindcss from '@tailwindcss/vite' // ✅ Here
+import { defineConfig } from "astro/config";
+import tailwindcss from "@tailwindcss/vite"; // ✅ Here
 
 // https://astro.build/config
 export default defineConfig({
   vite: {
     plugins: [tailwindcss()], // ✅ Here
   },
-})
+});
 ```
 
 3. Create a `./src/styles/global.css` file and add an @import for Tailwind CSS:
 
 ```css
-@import 'tailwindcss';
+@import "tailwindcss";
 ```
 
 4. In the `src/layouts/Layout.astro`, we just have to import the stylesheet:

@@ -1,54 +1,31 @@
 {
-  "name": "just-go",
-  "private": true,
-  "version": "0.0.1",
+  "name": "just-go-astro",
   "type": "module",
+  "version": "0.0.1",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "prepare": "svelte-kit sync || echo ''",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
-  },
-  "devDependencies": {
-    "@sveltejs/adapter-auto": "^7.0.0",
-    "@sveltejs/kit": "^2.47.1",
-    "@sveltejs/vite-plugin-svelte": "^6.2.1",
-    "@tailwindcss/typography": "^0.5.19",
-    "@tailwindcss/vite": "^4.1.14",
-    "expressive-code": "^0.38.2",
-    "mdsvex": "^0.11.2",
-    "prettier-plugin-svelte": "^3.4.0",
-    "rehype-expressive-code": "^0.41.3",
-    "svelte": "^5.41.0",
-    "svelte-check": "^4.3.3",
-    "tailwindcss": "^4.1.14",
-    "typescript": "^5.9.3",
-    "vite": "^7.1.10"
-  },
-  "prettier": {
-    "semi": false,
-    "singleQuote": true,
-    "singleAttributePerLine": true,
-    "jsxSingleQuote": true,
-    "plugins": [
-      "prettier-plugin-svelte"
-    ],
-    "overrides": [
-      {
-        "files": "*.svelte",
-        "options": {
-          "parser": "svelte"
-        }
-      }
-    ]
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
-    "@iconify/svelte": "^5.1.0",
+    "@astrojs/mdx": "^4.3.12",
+    "@astrojs/svelte": "^7.2.2",
+    "@expressive-code/plugin-collapsible-sections": "^0.41.3",
+    "@iconify-icons/mdi": "^1.2.48",
+    "@iconify/svelte": "^4.2.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tailwindcss/vite": "^4.1.17",
+    "astro": "^5.16.0",
+    "astro-expressive-code": "^0.41.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "svelte": "^5.43.14",
     "tailwind-merge": "^3.4.0",
-    "unified": "^11.0.5"
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "astro-icon": "^1.1.5"
   }
 }

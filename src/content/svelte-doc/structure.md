@@ -1,7 +1,3 @@
----
-title: Folder Structure
----
-
 # Folder Structure
 
 - Content: `src/content/<section>/**/*.md`

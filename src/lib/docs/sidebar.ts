@@ -20,7 +20,6 @@ export function parseSidebarConfig(raw: unknown, folderIsRoot = false): SidebarC
 
   if (!raw) return { ordered, alias, hidden }
 
-  // Support legacy array of strings
   if (Array.isArray(raw)) {
     for (const e of raw as any[]) {
       if (typeof e === 'string') {
@@ -48,7 +47,5 @@ export function parseSidebarConfig(raw: unknown, folderIsRoot = false): SidebarC
     return { ordered, alias, hidden }
   }
 
-  // Object format not supported per discussion; prefer array of objects
-  // If an object was passed, ignore keys and return empty (fallback to alpha)
   return { ordered, alias, hidden }
 }
