@@ -14,10 +14,12 @@ const Path = {
     const esc = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     return url.replace(new RegExp('^' + esc + '/'), '')
   },
+  getParts: (url: string, base: string) =>
+    Path.toRelative(url, base).split('/').filter(Boolean),
 }
+
 type MdModule = { default: unknown }
 export type NavItem = { url: string; title: string }
-
 export type ResolveResult =
   | { kind: 'ok'; segment: string; nav: NavGroup[] }
   | { kind: 'redirect'; url: string; nav: NavGroup[] }
@@ -34,10 +36,13 @@ export type ContentEntry = {
   isIndex: boolean
 }
 
-
 class ContentStore {
-  private mods = import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>
-  private tocs = import.meta.glob('/docs/**/_toc.{ts,js}', { eager: true }) as Record<string, any>
+  private mods = import.meta.glob('/docs/**/*.{md,mdx}', {
+    eager: true,
+  }) as Record<string, MdModule>
+  private tocs = import.meta.glob('/docs/**/_toc.{ts,js}', {
+    eager: true,
+  }) as Record<string, any>
 
   getAllModPaths(): string[] {
     return Object.keys(this.mods)
@@ -45,15 +50,16 @@ class ContentStore {
 
   getModsForSection(section: string) {
     const prefix = `/docs/${Path.trimSlashes(section)}/`
-    return Object.fromEntries(Object.entries(this.mods).filter(([path]) => path.startsWith(prefix)))
+    return Object.fromEntries(
+      Object.entries(this.mods).filter(([path]) => path.startsWith(prefix))
+    )
   }
 
   getTocForPath(root: string): SidebarConfig {
     const tocPath = ['.ts', '.js']
       .map((ext) => `${root}/_toc${ext}`)
       .find((p) => this.tocs[p])
-    const raw = tocPath ? this.tocs[tocPath]?.default ?? null : null
-    return parseSidebarConfig(raw)
+    return parseSidebarConfig(tocPath ? this.tocs[tocPath]?.default : null)
   }
 }
 
@@ -69,6 +75,7 @@ export function listSectionPageParams(): SectionPageParam[] {
   const fsList = store.getAllModPaths()
   const sections = new Set<string>()
   const out: SectionPageParam[] = []
+
   for (const fs of fsList) {
     const route = Path.fsToRoute(fs)
     const parts = route.split('/').filter(Boolean)
@@ -77,6 +84,7 @@ export function listSectionPageParams(): SectionPageParam[] {
     if (section) sections.add(section)
     if (page) out.push({ section, page })
   }
+
   for (const section of sections) {
     out.push({ section })
   }
@@ -89,19 +97,12 @@ export function getDocStaticPaths() {
   }))
 }
 
-// Navigation helpers & routing logic (colocated for simplicity)
 type FlatNavItem = { url: string; title: string }
 
 function flattenNav(nav: NavGroup[]): FlatNavItem[] {
-  const items: FlatNavItem[] = []
-  for (const g of nav) {
-    if (g.href && g.items.length === 0) {
-      items.push({ url: g.href, title: g.label })
-    } else {
-      for (const it of g.items) items.push({ url: it.url, title: it.title })
-    }
-  }
-  return items
+  return nav.flatMap((g) =>
+    g.href && !g.items.length ? [{ url: g.href, title: g.label }] : g.items
+  )
 }
 
 export function getPrevNext(
@@ -112,17 +113,18 @@ export function getPrevNext(
   const idx = flat.findIndex(
     (i) => Path.normalize(i.url) === Path.normalize(currentPath)
   )
+
   if (idx === -1) return {}
+
   return {
     prev: idx > 0 ? flat[idx - 1] : undefined,
     next: idx < flat.length - 1 ? flat[idx + 1] : undefined,
   }
 }
 
-
 export function resolveOrNext(
   section: ReturnType<typeof createSection>,
-  segment: string,
+  segment: string
 ): ResolveResult {
   const resolve = section.resolver()
   const { nav } = section.nav()
@@ -132,16 +134,37 @@ export function resolveOrNext(
   }
 
   const parts = (segment || '').split('/').filter(Boolean)
-  const fallbackUrl = parts.length === 0
-    ? (nav[0]?.items[0]?.url ?? nav[0]?.href)
-    : (() => {
-        const grp = nav.find((g) => g.dir === parts[0])
-        return grp?.items[0]?.url ?? grp?.href
-      })()
+  const fallbackUrl =
+    parts.length === 0
+      ? (nav[0]?.items[0]?.url ?? nav[0]?.href)
+      : (() => {
+          const grp = nav.find((g) => g.dir === parts[0])
+          return grp?.items[0]?.url ?? grp?.href
+        })()
 
   return fallbackUrl
     ? { kind: 'redirect', url: fallbackUrl, nav }
     : { kind: 'not_found', nav }
+}
+
+// Helper to categorize entries by depth for efficient lookups
+function categorizeEntries(entries: ContentEntry[], base: string) {
+  const topDocs = new Map<string, ContentEntry>()
+  const groupIndex = new Map<string, Map<string, ContentEntry>>()
+
+  for (const entry of entries) {
+    const parts = Path.getParts(entry.url, base)
+
+    if (parts.length === 1 && !entry.isIndex) {
+      topDocs.set(parts[0], entry)
+    } else if (parts.length === 2) {
+      const [group, slug] = parts
+      if (!groupIndex.has(group)) groupIndex.set(group, new Map())
+      groupIndex.get(group)!.set(slug, entry)
+    }
+  }
+
+  return { topDocs, groupIndex }
 }
 
 export function createSection(section: string) {
@@ -149,8 +172,10 @@ export function createSection(section: string) {
   const base = `/${sec}`
   const contentRoot = `/docs/${sec}`
   const mods = store.getModsForSection(section)
+
   return {
     base,
+
     entries(): ContentEntry[] {
       return Object.entries(mods).map(([fs, mod]) => {
         const isIndex = /\/index\.(md|mdx)$/.test(fs)
@@ -162,94 +187,81 @@ export function createSection(section: string) {
         return { url, title, isIndex }
       })
     },
+
     resolver() {
-      const entries = Object.entries(mods)
-      const routeMap = new Map<string, MdModule>(
-        entries.map(([fs, mod]) => [
+      const routeMap = new Map(
+        Object.entries(mods).map(([fs, mod]) => [
           Path.normalize(Path.fsToRoute(fs)),
           mod as MdModule,
         ])
       )
       const baseNorm = Path.normalize(base)
+
       return (seg: string) => {
         const target = Path.normalize(baseNorm + (seg ? '/' + seg : ''))
         return routeMap.get(target)
       }
     },
+
     nav(): { nav: NavGroup[] } {
       const entries = this.entries()
-
-
-      // Parent (root) sidebar
       const rootSidebar = store.getTocForPath(contentRoot)
-      const rootAlias = rootSidebar.alias
-      const rootHidden = rootSidebar.hidden
+      const { topDocs, groupIndex } = categorizeEntries(entries, base)
 
-      // Collect top-level docs (files directly under the section)
-      const topDocs: Map<string, ContentEntry> = new Map()
-      for (const e of entries) {
-        const parts = Path.toRelative(e.url, base).split('/').filter(Boolean)
-        if (parts.length === 1 && !e.isIndex) {
-          topDocs.set(parts[0], e)
-        }
-      }
+      function buildGroup(dir: string): NavGroup | null {
+        const groupKey = `${dir}/`
+        if (rootSidebar.hidden.has(groupKey)) return null
 
-      // Precompute group index for efficient lookups
-      const groupIndex = new Map<string, Map<string, ContentEntry>>()
-      for (const e of entries) {
-        const parts = Path.toRelative(e.url, base).split('/').filter(Boolean)
-        if (parts.length === 2) {
-          const g = parts[0]
-          const slug = parts[1]
-          if (!groupIndex.has(g)) groupIndex.set(g, new Map())
-          groupIndex.get(g)!.set(slug, e)
-        }
-      }
+        const itemBySlug = groupIndex.get(dir) ?? new Map()
+        const localSidebar = store.getTocForPath(`${contentRoot}/${dir}`)
 
-      // Unified builder for both groups and single docs
-      function buildNavItem(path: string): NavGroup | null {
-        const isGroup = Path.isGroup(path)
-        const key = path
-        if (isGroup) {
-          // Group visibility and label come from root sidebar
-          if (rootHidden.has(key)) return null
-          const dir = path.slice(0, -1)
-          const itemBySlug = groupIndex.get(dir) ?? new Map<string, ContentEntry>()
-          const localSidebar = store.getTocForPath(`${contentRoot}/${dir}`)
-          const listedItems = localSidebar.ordered
-            .map((e) => (Path.isGroup(e.path) ? e.path.slice(0, -1) : e.path))
-            .filter((p) => p)
-          const itemAlias = localSidebar.alias
-          const itemHidden = localSidebar.hidden
-          const finalItemSlugs = listedItems.filter((s) => itemBySlug.has(s))
-          const groupLabel = rootAlias.get(key) || capitalize(dir)
-          const navItems: NavItem[] = []
-          for (const slug of finalItemSlugs) {
-            if (itemHidden.has(slug)) continue
+        const navItems: NavItem[] = localSidebar.ordered
+          .map((e) => (Path.isGroup(e.path) ? e.path.slice(0, -1) : e.path))
+          .filter(
+            (slug) =>
+              slug && itemBySlug.has(slug) && !localSidebar.hidden.has(slug)
+          )
+          .map((slug) => {
             const entry = itemBySlug.get(slug)!
-            const title = itemAlias.get(slug) || entry.title || capitalize(slug)
-            navItems.push({ url: entry.url, title })
-          }
-          if (navItems.length === 0) return null
-          return { label: groupLabel, items: navItems, dir }
+            return {
+              url: entry.url,
+              title:
+                localSidebar.alias.get(slug) || entry.title || capitalize(slug),
+            }
+          })
+
+        if (!navItems.length) return null
+
+        return {
+          label: rootSidebar.alias.get(groupKey) || capitalize(dir),
+          items: navItems,
+          dir,
         }
-        // Single doc at section root
-        if (rootHidden.has(key)) return null
-        const entry = topDocs.get(key)
+      }
+
+      function buildDoc(slug: string): NavGroup | null {
+        if (rootSidebar.hidden.has(slug)) return null
+
+        const entry = topDocs.get(slug)
         if (!entry) return null
-        const label = rootAlias.get(key) || entry.title || capitalize(key)
-        return { label, href: entry.url, items: [], dir: key }
+
+        return {
+          label: rootSidebar.alias.get(slug) || entry.title || capitalize(slug),
+          href: entry.url,
+          items: [],
+          dir: slug,
+        }
       }
 
-      const listed = rootSidebar.ordered.map((e) => e.path).filter(Boolean)
-
-      const nav: NavGroup[] = []
-      for (const pth of listed) {
-        const node = buildNavItem(pth)
-        if (node) nav.push(node)
+      return {
+        nav: rootSidebar.ordered
+          .map((e) => e.path)
+          .filter(Boolean)
+          .map((path) =>
+            Path.isGroup(path) ? buildGroup(path.slice(0, -1)) : buildDoc(path)
+          )
+          .filter((node): node is NavGroup => node !== null),
       }
-
-      return { nav }
     },
   }
 }
