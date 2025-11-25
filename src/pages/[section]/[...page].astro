@@ -1,10 +1,13 @@
 ---
+// Imports: layout and shared UI components rendered around docs content
 import MainLayout from '@layouts/MainLayout.astro'
 import PageBtn from '@components/PageBtn.astro'
 import Footer from '@components/Footer.astro'
 import DocsSidebar from '@components/DocsSidebar.svelte'
 import Breadcrumb from '@components/Breadcrumb.svelte'
 import DocsToc from '@components/DocsToc.svelte'
+
+// Docs engine API: section factory, static paths, prev/next, and resolver/redirect logic
 import {
   createSection,
   getDocStaticPaths,
@@ -12,30 +15,48 @@ import {
   resolveOrNext,
 } from '@lib/docs/section'
 
+// Static paths: enumerate all routes based on files under /docs/**
 export async function getStaticPaths() {
   return getDocStaticPaths()
 }
 
+// Params from the dynamic route ([section]/[...page])
+// - section: top-level folder under /docs
+// - page: catch-all path within the section (can be array or string)
 const { section, page } = Astro.params as {
   section: string
   page?: string | string[]
 }
+// Normalize page to a simple "segment" string (e.g., "variables/intro")
 const segment = Array.isArray(page) ? page.join('/') : page || ''
 
+// Build a section-scoped API and decide what to do with the current segment
+// - ok: render the resolved MD/MDX module
+// - redirect: send the user to the first listed item for section/group
+// - not_found: unable to resolve (handled below with a fallback message)
 const sectionApi = createSection(section)
 const result = resolveOrNext(sectionApi, segment)
 
+// If section or group root was requested, redirect to its first listed item
 if (result.kind === 'redirect') {
   return Astro.redirect(result.url)
 }
 
+// From here on, we definitely have a concrete target to show or a safe fallback
 const nav = result.nav
 const currentSegment = result.kind === 'ok' ? result.segment : segment
+// Absolute path to the current doc, used by:
+// - Breadcrumb.
+// - Nav item highlighting.
+// - Prev/next page buttons.
 const currentPath = `/${section}` + (currentSegment ? `/${currentSegment}` : '')
 
+// Resolve the compiled MD/MDX module for the current segment and pick its default export
 const resolve = sectionApi.resolver()
 const mod = resolve(currentSegment) as any
 const Page = mod?.default
+
+// Compute prev/next links based on the flattened, ordered nav structure
 const { prev, next } = getPrevNext(nav, currentPath)
 ---
 
