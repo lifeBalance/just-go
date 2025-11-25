@@ -1,6 +1,7 @@
 import { parseSidebarConfig, type SidebarConfig } from './sidebar'
 
 // Single source of truth for path operations
+// Path utilities for routes and FS paths
 const Path = {
   normalize: (p: string) => p.replace(/\/$/, ''),
   trimSlashes: (p: string) => p.replace(/^\/+|\/+$/g, ''),
@@ -36,6 +37,7 @@ export type ContentEntry = {
   isIndex: boolean
 }
 
+// ContentStore: caches docs and _toc modules; provides lookups
 class ContentStore {
   private mods = import.meta.glob('/docs/**/*.{md,mdx}', {
     eager: true,
@@ -71,6 +73,7 @@ function capitalize(name: string) {
 
 export type SectionPageParam = { section: string; page?: string }
 
+// Enumerate {section, page} pairs from /docs for static paths
 export function listSectionPageParams(): SectionPageParam[] {
   const fsList = store.getAllModPaths()
   const sections = new Set<string>()
