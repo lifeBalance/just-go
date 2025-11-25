@@ -28,34 +28,33 @@ export type ContentEntry = {
 }
 import { parseSidebarConfig, type SidebarConfig } from './sidebar'
 
-// Glob all content once; filter by section at runtime
-const allMods = import.meta.glob('/docs/**/*.{md,mdx}', {
-  eager: true,
-}) as Record<string, MdModule>
-// Glob all sidebars once; filter by section path
-const allTocs = import.meta.glob('/docs/**/_toc.{ts,js}', {
-  eager: true,
-}) as Record<string, any>
 
-function filterMods(section: string): Record<string, MdModule> {
-  const sec = section.replace(/^\/+|\/+$/g, '')
-  const prefix = `/docs/${sec}/`
-  return Object.fromEntries(
-    Object.entries(allMods).filter(([fs]) => fs.startsWith(prefix))
-  )
-}
 
-function readTocFor(root: string): SidebarConfig {
-  for (const ext of ['.ts', '.js']) {
-    const p = `${root}/_toc${ext}`
-    const mod = (allTocs as Record<string, any>)[p]
-    const raw = mod?.default ?? null
-    if (raw !== null && raw !== undefined) {
-      return parseSidebarConfig(raw)
-    }
+
+
+class ContentStore {
+  private mods = import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>
+  private tocs = import.meta.glob('/docs/**/_toc.{ts,js}', { eager: true }) as Record<string, any>
+
+  getAllModPaths(): string[] {
+    return Object.keys(this.mods)
   }
-  return parseSidebarConfig(null)
+
+  getModsForSection(section: string) {
+    const prefix = `/docs/${Path.trimSlashes(section)}/`
+    return Object.fromEntries(Object.entries(this.mods).filter(([path]) => path.startsWith(prefix)))
+  }
+
+  getTocForPath(root: string): SidebarConfig {
+    const tocPath = ['.ts', '.js']
+      .map((ext) => `${root}/_toc${ext}`)
+      .find((p) => this.tocs[p])
+    const raw = tocPath ? this.tocs[tocPath]?.default ?? null : null
+    return parseSidebarConfig(raw)
+  }
 }
+
+const store = new ContentStore()
 
 function capitalize(name: string) {
   return name.replace(/(^|\/ )\w/g, (m) => m.toUpperCase())
@@ -64,7 +63,7 @@ function capitalize(name: string) {
 export type SectionPageParam = { section: string; page?: string }
 
 export function listSectionPageParams(): SectionPageParam[] {
-  const fsList = Object.keys(allMods)
+  const fsList = store.getAllModPaths()
   const sections = new Set<string>()
   const out: SectionPageParam[] = []
   for (const fs of fsList) {
@@ -171,7 +170,7 @@ export function createSection(section: string) {
   const sec = Path.trimSlashes(section)
   const base = `/${sec}`
   const contentRoot = `/docs/${sec}`
-  const mods = filterMods(section)
+  const mods = store.getModsForSection(section)
   return {
     base,
     entries(): ContentEntry[] {
@@ -212,7 +211,7 @@ export function createSection(section: string) {
       }
 
       // Parent (root) sidebar
-      const rootSidebar = readTocFor(contentRoot)
+      const rootSidebar = store.getTocForPath(contentRoot)
       const rootAlias = rootSidebar.alias
       const rootHidden = rootSidebar.hidden
 
@@ -243,7 +242,7 @@ export function createSection(section: string) {
 
         const itemBySlug = groupIndex.get(g) ?? new Map<string, ContentEntry>()
 
-        const localSidebar = readTocFor(`${contentRoot}/${g}`)
+        const localSidebar = store.getTocForPath(`${contentRoot}/${g}`)
         const listedItems = localSidebar.ordered
           .map((e) => (e.path.endsWith('/') ? e.path.slice(0, -1) : e.path))
           .filter((p) => p)
