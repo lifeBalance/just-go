@@ -53,8 +53,9 @@ export function createSection(section: string) {
       const entries = this.entries()
 
       // Rel parts helper relative to base
+      const basePrefix = new RegExp('^' + base + '/')
       const relParts = (url: string) => {
-        const rel = url.replace(new RegExp('^' + base + '/'), '')
+        const rel = url.replace(basePrefix, '')
         return rel.split('/').filter(Boolean)
       }
 
