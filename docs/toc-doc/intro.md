@@ -25,3 +25,62 @@ There are two main routes:
 - There's also a **dynamic route** in `pages/[section]/[...page].astro` that automatically picks up all the subfolders under the `/docs` directory.
 
 Users can also add their own custom routes, as I did with the `colors.astro`, which is a page where I could render the colors used in my dark and light themes, to see how they looked like.
+
+## Example Folder Structure
+
+A minimal section under `/docs` might look like this:
+
+```
+/docs/
+  basics/
+    _toc.ts
+    getting-started.md
+    variables/
+      _toc.ts
+      intro.md
+      scope.md
+```
+
+- `/docs/basics/_toc.ts` controls the order at the section root. There are two types of items:
+    1. Items ending with `/` denote **groups** (rendered in the sidebar using an accordion component)
+    2. Items without `/` denote single docs.
+- `/docs/basics/variables/_toc.ts` controls the order inside the `variables` group.
+- Files not listed in `_toc.ts` are ignored in the sidebar/navigation.
+
+## Dynamic Route Behavior
+
+The dynamic route lives at `src/pages/[section]/[...page].astro`.
+
+- Visiting `/{section}` (no page segment): the router redirects to the first listed item of that section, based on `/docs/{section}/_toc.ts`.
+- Visiting `/{section}/{group}` (one segment): the router redirects to the first listed item of that group, based on `/docs/{section}/{group}/_toc.ts`.
+- Visiting `/{section}/{slug}` (full path to a document): the MD/MDX module is resolved and rendered.
+
+This behavior ensures users always land on a concrete document — never an empty placeholder — while keeping ordering and labels driven entirely by your `_toc.ts` files.
+
+## Add a New Section
+
+1. Create the section folder under `/docs`:
+   - `/docs/<section>/`
+2. Add a `_toc.ts` to control ordering and labels:
+   ```ts
+   // /docs/<section>/_toc.ts
+   export default [
+     { path: 'introduction/', label: 'Introduction' }, // group
+     { path: 'getting-started', label: 'Getting Started' }, // single doc
+   ]
+   ```
+   - Groups end with `/`; items don’t.
+   - Omitted files won’t show up in the sidebar or prev/next.
+3. Add your content files in Markdown or MDX:
+   - At the section root: `/docs/<section>/getting-started.md`
+   - Inside groups: `/docs/<section>/introduction/overview.mdx`
+   - Optionally add `_toc.ts` per group to control item order within that folder.
+4. Optional: Use `index.mdx`
+   - Placing `index.mdx` in a folder maps that folder to the folder’s URL (e.g., `/docs/<section>/intro/index.mdx` → `/<section>/intro`).
+5. Optional: Set a title via frontmatter
+   - If present (`metadata.title`), it’s used for display; otherwise title is derived from the filename/folder.
+6. Link the section from the landing page
+   - Add a card/link to `/<section>` in `src/pages/index.astro`.
+7. Verify redirects
+   - Navigate to `/<section>` → should redirect to the first `_toc.ts` entry.
+   - Navigate to `/<section>/<group>` → should redirect to the first listed item for that group.
