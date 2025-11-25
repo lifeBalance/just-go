@@ -1,16 +1,17 @@
-// Path utilities colocated for simplicity
-export function normalizePath(path: string): string {
-  return path.replace(/\/$/, '')
-}
-
-// Convert a source file path under `/docs` to a public route
-// - /docs/basics/introduction/index.mdx -> /basics/introduction/
-// - /docs/basics/variables/intro.md     -> /basics/variables/intro
-export function fsPathToRoute(fsPath: string): string {
-  return fsPath
-    .replace(/^\/docs/, '')
-    .replace(/index\.(md|mdx)$/, '')
-    .replace(/\.(md|mdx)$/, '')
+// Single source of truth for path operations
+const Path = {
+  normalize: (p: string) => p.replace(/\/$/, ''),
+  trimSlashes: (p: string) => p.replace(/^\/+|\/+$/g, ''),
+  isGroup: (p: string) => /\/$/.test(p),
+  fsToRoute: (fs: string) =>
+    fs
+      .replace(/^\/docs/, '')
+      .replace(/index\.(md|mdx)$/, '')
+      .replace(/\.(md|mdx)$/, ''),
+  toRelative: (url: string, base: string) => {
+    const esc = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return url.replace(new RegExp('^' + esc + '/'), '')
+  },
 }
 type MdModule = { default: unknown }
 export type NavItem = { url: string; title: string }
@@ -40,7 +41,7 @@ function filterMods(section: string): Record<string, MdModule> {
   const sec = section.replace(/^\/+|\/+$/g, '')
   const prefix = `/docs/${sec}/`
   return Object.fromEntries(
-    Object.entries(allMods).filter(([fs]) => fs.startsWith(prefix)),
+    Object.entries(allMods).filter(([fs]) => fs.startsWith(prefix))
   )
 }
 
@@ -67,7 +68,7 @@ export function listSectionPageParams(): SectionPageParam[] {
   const sections = new Set<string>()
   const out: SectionPageParam[] = []
   for (const fs of fsList) {
-    const route = fsPathToRoute(fs)
+    const route = Path.fsToRoute(fs)
     const parts = route.split('/').filter(Boolean)
     const section = parts[0] || ''
     const page = parts.slice(1).join('/')
@@ -81,7 +82,9 @@ export function listSectionPageParams(): SectionPageParam[] {
 }
 
 export function getDocStaticPaths() {
-  return listSectionPageParams().map(({ section, page }) => ({ params: { section, page } }))
+  return listSectionPageParams().map(({ section, page }) => ({
+    params: { section, page },
+  }))
 }
 
 // Navigation helpers & routing logic (colocated for simplicity)
@@ -99,9 +102,14 @@ function flattenNav(nav: NavGroup[]): FlatNavItem[] {
   return items
 }
 
-export function getPrevNext(nav: NavGroup[], currentPath: string): { prev?: FlatNavItem; next?: FlatNavItem } {
+export function getPrevNext(
+  nav: NavGroup[],
+  currentPath: string
+): { prev?: FlatNavItem; next?: FlatNavItem } {
   const flat = flattenNav(nav)
-  const idx = flat.findIndex((i) => normalizePath(i.url) === normalizePath(currentPath))
+  const idx = flat.findIndex(
+    (i) => Path.normalize(i.url) === Path.normalize(currentPath)
+  )
   if (idx === -1) return {}
   return {
     prev: idx > 0 ? flat[idx - 1] : undefined,
@@ -130,7 +138,7 @@ function firstUrlForGroup(nav: NavGroup[], dir: string): string | undefined {
 
 export function resolveOrNext(
   section: ReturnType<typeof createSection>,
-  segment: string,
+  segment: string
 ):
   | { kind: 'ok'; segment: string; nav: NavGroup[] }
   | { kind: 'redirect'; url: string; nav: NavGroup[] }
@@ -159,9 +167,8 @@ export function resolveOrNext(
   return { kind: 'not_found', nav }
 }
 
-
 export function createSection(section: string) {
-  const sec = section.replace(/^\/+|\/+$/g, '')
+  const sec = Path.trimSlashes(section)
   const base = `/${sec}`
   const contentRoot = `/docs/${sec}`
   const mods = filterMods(section)
@@ -172,10 +179,10 @@ export function createSection(section: string) {
       const baseRelPrefix = new RegExp('^/' + baseNoSlash + '/')
       return Object.entries(mods).map(([fs, mod]) => {
         const isIndex = /\/index\.(md|mdx)$/.test(fs)
-        const url = fsPathToRoute(fs)
-        const rel = url.replace(baseRelPrefix, '')
+        const url = Path.fsToRoute(fs)
+        const rel = Path.toRelative(url, base)
         const dir = rel.split('/').slice(0, -1).join('/') || ''
-        const fallbackTitle = isIndex ? (dir || baseNoSlash) : rel.split('/').pop() || ''
+        const fallbackTitle = isIndex ? dir || sec : rel.split('/').pop() || ''
         const title = (mod as any)?.metadata?.title ?? fallbackTitle
         return { url, title, isIndex }
       })
@@ -183,11 +190,14 @@ export function createSection(section: string) {
     resolver() {
       const entries = Object.entries(mods)
       const routeMap = new Map<string, MdModule>(
-        entries.map(([fs, mod]) => [normalizePath(fsPathToRoute(fs)), mod as MdModule]),
+        entries.map(([fs, mod]) => [
+          Path.normalize(Path.fsToRoute(fs)),
+          mod as MdModule,
+        ])
       )
-      const baseNorm = normalizePath(base)
+      const baseNorm = Path.normalize(base)
       return (seg: string) => {
-        const target = normalizePath(baseNorm + (seg ? '/' + seg : ''))
+        const target = Path.normalize(baseNorm + (seg ? '/' + seg : ''))
         return routeMap.get(target)
       }
     },
@@ -240,7 +250,6 @@ export function createSection(section: string) {
         const itemAlias = localSidebar.alias
         const itemHidden = localSidebar.hidden
 
-
         const finalItemSlugs = listedItems.filter((s) => itemBySlug.has(s))
 
         const groupLabel = rootAlias.get(groupKey) || capitalize(g)
@@ -269,7 +278,7 @@ export function createSection(section: string) {
 
       const nav: NavGroup[] = []
       for (const pth of listed) {
-        if (/\/$/.test(pth)) {
+        if (Path.isGroup(pth)) {
           const g = pth.slice(0, -1)
           const grp = buildGroup(g)
           if (grp) nav.push(grp)
