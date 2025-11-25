@@ -33,8 +33,29 @@ function readTocFor(root: string): SidebarConfig {
 }
 
 function capitalize(name: string) {
-  return name.replace(/(^|\/)\w/g, (m) => m.toUpperCase())
+  return name.replace(/(^|\/ )\w/g, (m) => m.toUpperCase())
 }
+
+export type SectionPageParam = { section: string; page?: string }
+
+export function listSectionPageParams(): SectionPageParam[] {
+  const mods = import.meta.glob('/docs/**/*.{md,mdx}', { eager: true })
+  const sections = new Set<string>()
+  const out: SectionPageParam[] = []
+  for (const fs of Object.keys(mods)) {
+    const route = fsPathToRoute(fs)
+    const parts = route.split('/').filter(Boolean)
+    const section = parts[0] || ''
+    const page = parts.slice(1).join('/')
+    if (section) sections.add(section)
+    if (page) out.push({ section, page })
+  }
+  for (const section of sections) {
+    out.push({ section })
+  }
+  return out
+}
+
 
 export function createSection(section: string) {
   const sec = section.replace(/^\/+|\/+$/g, '')
