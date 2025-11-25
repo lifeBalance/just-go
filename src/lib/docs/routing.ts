@@ -47,7 +47,7 @@ function firstUrlForGroup(nav: NavGroup[], dir: string): string | undefined {
   return group.items[0]?.url ?? (group as any).href
 }
 
-import { createSection } from './section'
+import type { createSection } from './section'
 
 export function resolveOrNext(
   section: ReturnType<typeof createSection>,

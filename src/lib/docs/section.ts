@@ -53,12 +53,7 @@ export function createSection(section: string) {
       const entries = this.entries()
 
       // Determine top-level groups (first path segment after base)
-      const groupSet = new Set<string>()
-      for (const e of entries) {
-        const rel = e.url.replace(new RegExp('^' + base + '/'), '')
-        const parts = rel.split('/').filter(Boolean)
-        if (parts.length >= 1) groupSet.add(parts[0])
-      }
+      // (No longer needed since ordering is driven by _toc.ts)
 
       // Parent (root) sidebar
       const rootSidebar = readTocFor(contentRoot)

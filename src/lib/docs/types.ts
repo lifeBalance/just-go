@@ -1,4 +1,4 @@
-export type NavItem = { url: string; title: string; weight: number }
+export type NavItem = { url: string; title: string }
 export type NavGroup = {
   dir: string
   label: string
