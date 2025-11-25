@@ -52,8 +52,11 @@ export function createSection(section: string) {
     nav(): { nav: NavGroup[] } {
       const entries = this.entries()
 
-      // Determine top-level groups (first path segment after base)
-      // (No longer needed since ordering is driven by _toc.ts)
+      // Rel parts helper relative to base
+      const relParts = (url: string) => {
+        const rel = url.replace(new RegExp('^' + base + '/'), '')
+        return rel.split('/').filter(Boolean)
+      }
 
       // Parent (root) sidebar
       const rootSidebar = readTocFor(contentRoot)
@@ -63,8 +66,7 @@ export function createSection(section: string) {
       // Collect top-level docs (files directly under the section)
       const topDocs: Map<string, ContentEntry> = new Map()
       for (const e of entries) {
-        const rel = e.url.replace(new RegExp('^' + base + '/'), '')
-        const parts = rel.split('/').filter(Boolean)
+        const parts = relParts(e.url)
         if (parts.length === 1 && !e.isIndex) {
           topDocs.set(parts[0], e)
         }
@@ -75,8 +77,7 @@ export function createSection(section: string) {
         if (rootHidden.has(groupKey)) return null
 
         const items = entries.filter((e) => {
-          const rel = e.url.replace(new RegExp('^' + base + '/'), '')
-          const parts = rel.split('/').filter(Boolean)
+          const parts = relParts(e.url)
           return parts[0] === g && parts.length === 2
         })
 
@@ -89,8 +90,7 @@ export function createSection(section: string) {
 
         const itemBySlug = new Map<string, ContentEntry>()
         for (const e of items) {
-          const rel = e.url.replace(new RegExp('^' + base + '/'), '')
-          const parts = rel.split('/').filter(Boolean)
+          const parts = relParts(e.url)
           const slug = parts[1]
           itemBySlug.set(slug, e)
         }
