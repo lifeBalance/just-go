@@ -13,7 +13,7 @@ function normalizeItem(slug: string) {
   return slug.replace(/\/+/g, '/').replace(/^(\.\/)+/, '').replace(/\/$/, '')
 }
 
-export function parseSidebarConfig(raw: unknown, folderIsRoot = false): SidebarConfig {
+export function parseSidebarConfig(raw: unknown): SidebarConfig {
   const ordered: SidebarEntry[] = []
   const alias = new Map<string, string>()
   const hidden = new Set<string>()

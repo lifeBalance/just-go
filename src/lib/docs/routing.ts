@@ -1,4 +1,5 @@
 import type { NavGroup } from './types'
+import { normalizePath } from './paths'
 
 export type FlatNavItem = { url: string; title: string }
 
@@ -14,9 +15,6 @@ function flattenNav(nav: NavGroup[]): FlatNavItem[] {
   return items
 }
 
-function normalizePath(path: string) {
-  return path.replace(/\/$/, '')
-}
 
 export function getPrevNext(nav: NavGroup[], currentPath: string): { prev?: FlatNavItem; next?: FlatNavItem } {
   const flat = flattenNav(nav)
