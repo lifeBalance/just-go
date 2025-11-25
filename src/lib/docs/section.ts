@@ -90,7 +90,7 @@ export function getDocStaticPaths() {
 }
 
 // Navigation helpers & routing logic (colocated for simplicity)
-export type FlatNavItem = { url: string; title: string }
+type FlatNavItem = { url: string; title: string }
 
 function flattenNav(nav: NavGroup[]): FlatNavItem[] {
   const items: FlatNavItem[] = []
@@ -152,8 +152,6 @@ export function createSection(section: string) {
   return {
     base,
     entries(): ContentEntry[] {
-      const baseNoSlash = base.replace(/^\//, '')
-      const baseRelPrefix = new RegExp('^/' + baseNoSlash + '/')
       return Object.entries(mods).map(([fs, mod]) => {
         const isIndex = /\/index\.(md|mdx)$/.test(fs)
         const url = Path.fsToRoute(fs)
@@ -182,11 +180,7 @@ export function createSection(section: string) {
       const entries = this.entries()
 
       // Rel parts helper relative to base
-      const basePrefix = new RegExp('^' + base + '/')
-      const relParts = (url: string) => {
-        const rel = url.replace(basePrefix, '')
-        return rel.split('/').filter(Boolean)
-      }
+      const relParts = (url: string) => Path.toRelative(url, base).split('/').filter(Boolean)
 
       // Parent (root) sidebar
       const rootSidebar = store.getTocForPath(contentRoot)
