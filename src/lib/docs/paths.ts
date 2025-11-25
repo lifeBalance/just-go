@@ -13,16 +13,6 @@ export function fsPathToRoute(fsPath: string): string {
     .replace(/\.(md|mdx)$/, '')
 }
 
-// Turn an absolute route into a section-relative slug
-// Example: relSlug('/basics/variables/intro', '/basics') => 'variables/intro'
-export function relSlug(route: string, base: string): string {
-  const baseNorm = normalizePath(base)
-  const routeNorm = normalizePath(route)
-  return routeNorm.replace(
-    new RegExp('^' + baseNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\/'),
-    '',
-  )
-}
 
 export type SectionPageParam = { section: string; page: string }
 

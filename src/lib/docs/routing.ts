@@ -2,7 +2,7 @@ import type { NavGroup } from './types'
 
 export type FlatNavItem = { url: string; title: string }
 
-export function flattenNav(nav: NavGroup[]): FlatNavItem[] {
+function flattenNav(nav: NavGroup[]): FlatNavItem[] {
   const items: FlatNavItem[] = []
   for (const g of nav) {
     if ((g as any).href && (!g.items || g.items.length === 0)) {
@@ -28,20 +28,20 @@ export function getPrevNext(nav: NavGroup[], currentPath: string): { prev?: Flat
   }
 }
 
-export function classifySegment(segment: string): 'root' | 'group' | 'doc' {
+function classifySegment(segment: string): 'root' | 'group' | 'doc' {
   const parts = (segment || '').split('/').filter(Boolean)
   if (parts.length === 0) return 'root'
   if (parts.length === 1) return 'group'
   return 'doc'
 }
 
-export function firstUrlForSection(nav: NavGroup[]): string | undefined {
+function firstUrlForSection(nav: NavGroup[]): string | undefined {
   const first = nav[0]
   if (!first) return undefined
   return first.items[0]?.url ?? (first as any).href
 }
 
-export function firstUrlForGroup(nav: NavGroup[], dir: string): string | undefined {
+function firstUrlForGroup(nav: NavGroup[], dir: string): string | undefined {
   const group = nav.find((g) => g.dir === dir)
   if (!group) return undefined
   return group.items[0]?.url ?? (group as any).href
