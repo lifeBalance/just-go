@@ -1,4 +1,4 @@
-import { parseSidebarConfig, type SidebarConfig } from './sidebar'
+import { parseTocConfig, type TocConfig } from './tocParser'
 
 // Single source of truth for path operations
 // Path utilities for routes and FS paths
@@ -57,11 +57,11 @@ class ContentStore {
     )
   }
 
-  getTocForPath(root: string): SidebarConfig {
+  getTocForPath(root: string): TocConfig {
     const tocPath = ['.ts', '.js']
       .map((ext) => `${root}/_toc${ext}`)
       .find((p) => this.tocs[p])
-    return parseSidebarConfig(tocPath ? this.tocs[tocPath]?.default : null)
+    return parseTocConfig(tocPath ? this.tocs[tocPath]?.default : null)
   }
 }
 
