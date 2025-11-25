@@ -63,10 +63,10 @@ function capitalize(name: string) {
 export type SectionPageParam = { section: string; page?: string }
 
 export function listSectionPageParams(): SectionPageParam[] {
-  const mods = import.meta.glob('/docs/**/*.{md,mdx}', { eager: true })
+  const fsList = Object.keys(allMods)
   const sections = new Set<string>()
   const out: SectionPageParam[] = []
-  for (const fs of Object.keys(mods)) {
+  for (const fs of fsList) {
     const route = fsPathToRoute(fs)
     const parts = route.split('/').filter(Boolean)
     const section = parts[0] || ''
@@ -169,10 +169,11 @@ export function createSection(section: string) {
     base,
     entries(): ContentEntry[] {
       const baseNoSlash = base.replace(/^\//, '')
+      const baseRelPrefix = new RegExp('^/' + baseNoSlash + '/')
       return Object.entries(mods).map(([fs, mod]) => {
         const isIndex = /\/index\.(md|mdx)$/.test(fs)
         const url = fsPathToRoute(fs)
-        const rel = url.replace(new RegExp('^/' + baseNoSlash + '/'), '')
+        const rel = url.replace(baseRelPrefix, '')
         const dir = rel.split('/').slice(0, -1).join('/') || ''
         const fallbackTitle = isIndex ? (dir || baseNoSlash) : rel.split('/').pop() || ''
         const title = (mod as any)?.metadata?.title ?? fallbackTitle
@@ -214,14 +215,23 @@ export function createSection(section: string) {
         }
       }
 
+      // Precompute group index for efficient lookups
+      const groupIndex = new Map<string, Map<string, ContentEntry>>()
+      for (const e of entries) {
+        const parts = relParts(e.url)
+        if (parts.length === 2) {
+          const g = parts[0]
+          const slug = parts[1]
+          if (!groupIndex.has(g)) groupIndex.set(g, new Map())
+          groupIndex.get(g)!.set(slug, e)
+        }
+      }
+
       function buildGroup(g: string): NavGroup | null {
         const groupKey = `${g}/`
         if (rootHidden.has(groupKey)) return null
 
-        const items = entries.filter((e) => {
-          const parts = relParts(e.url)
-          return parts[0] === g && parts.length === 2
-        })
+        const itemBySlug = groupIndex.get(g) ?? new Map<string, ContentEntry>()
 
         const localSidebar = readTocFor(`${contentRoot}/${g}`)
         const listedItems = localSidebar.ordered
@@ -230,12 +240,6 @@ export function createSection(section: string) {
         const itemAlias = localSidebar.alias
         const itemHidden = localSidebar.hidden
 
-        const itemBySlug = new Map<string, ContentEntry>()
-        for (const e of items) {
-          const parts = relParts(e.url)
-          const slug = parts[1]
-          itemBySlug.set(slug, e)
-        }
 
         const finalItemSlugs = listedItems.filter((s) => itemBySlug.has(s))
 
