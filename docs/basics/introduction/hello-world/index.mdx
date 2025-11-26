@@ -1,10 +1,10 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
-import mainHelloWorld from './code/hello-world/main.go?raw'
+import mainHelloWorld from './code/hello/main.go?raw'
 
 # Hello World
 
-Nothing like the good old hello world to break the ice in any programming language. First of all, let's create a folder named `hello-world` to hold our project; inside we'll create a file named `main.go`:
+Nothing like the good old [hello world](https://en.wikipedia.org/wiki/%22Hello,_World!%22_program) to break the ice in any programming language. First of all, let's create a folder named `hello` to hold our project; inside we'll create a file named `main.go`:
 
 ```
 hello/
@@ -20,7 +20,7 @@ Here's what `main.go` looks like:
 
 <Code code={mainHelloWorld} lang="go" title="main.go" />
 
-To run this code, we can open a terminal and change into the project folder (`cd hello`) and execute the following command in your terminal:
+To execute this code, we can open a terminal and change into the project folder (`cd hello`); once there, we have to run the following command:
 
 ```bash
 go run main.go
@@ -29,38 +29,46 @@ Hello, world!       # 👈 This is the output ✅
 
 That's it! You've just written and executed your first Go program 🎉
 
+<Admonition type="info" title="How it works">
+  [go](https://pkg.go.dev/cmd/go) is a tool to manage Go source code. The `run`
+  command compiles and runs the named `main` Go package. You can run `go help`
+  to learn more about the available commands.
+</Admonition>
+
 ## Packages
 
-In Go, every file begins with a `package` declaration. The `main` package is a special package that tells the Go compiler that this file should be compiled as an executable program. If you were to create a library instead, you would use a different package name.
+In Go, every file begins with a `package` declaration, that it's a way of grouping all the files in the same directory under a given name. In this case we're using the name `main`, which tells the compiler that this file should be compiled as part of an **executable program**.
 
-```go
-package main
-```
+<Code code={mainHelloWorld} lang="go" title="main.go" mark={1} />
+
+<Admonition type="important">
+  Every **executable** Go program must have a `main` package.
+</Admonition>
+
+If we were to create a library instead, we would use a different package name.
 
 ## Importing Packages
 
-Go has a rich standard library, and you can also import third-party packages. In our example, we imported the `fmt` package, which provides functions for formatted I/O, including printing to the console.
+Go has a rich standard library, and you can also import **third-party packages**. In our example, we imported the [fmt](https://pkg.go.dev/fmt) package, which provides functions for formatted I/O, including printing to the console.
 
-```go
-import "fmt"
-```
+<Code code={mainHelloWorld} lang="go" title="main.go" mark={3} />
+
+We can search for available packages in the [https://pkg.go.dev/](https://pkg.go.dev) site.
 
 ## The main Function
 
-The `main` function is the entry point of a Go program. When you run the program, execution starts from this function. Every executable Go program must have a `main` function in the `main` package.
+The `main` function is the entry point of a Go program. When you run the program, execution starts from this function.
 
-```go collapse={2-4}
-func main() {
-    // code to be executed
-    // code to be executed
-    // code to be executed
-}
-```
+<Code code={mainHelloWorld} lang="go" title="main.go" mark={[5, 6, 7]} />
+
+<Admonition type="important">
+  Every executable Go program must have a `main` function in the `main` package.
+</Admonition>
 
 ## Printing to the Console
 
-Inside the `main` function, we used `fmt.Println` to print "Hello, world!" to the console. The `Println` function adds a newline at the end of the output.
+Inside the `main` function, we used [fmt.Println](https://pkg.go.dev/fmt@go1.25.4#Println) to print the text `Hello, world!` to the console.
 
-```go
-fmt.Println("Hello, world!")
-```
+<Code code={mainHelloWorld} lang="go" title="main.go" mark={6} />
+
+This function adds a **newline** at the end of the output.
