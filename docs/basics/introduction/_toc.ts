@@ -1,5 +1,5 @@
 export default [
-  { path: 'hello-world', label: 'Hello World' },
-  { path: 'lorem', label: 'Lorem chipsum' },
   { path: 'overview', label: 'Overview' },
+  { path: 'installing-go', label: 'Installing Go' },
+  { path: 'hello-world', label: 'Hello World' },
 ]

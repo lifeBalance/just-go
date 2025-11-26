@@ -1,25 +1,33 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import mainHelloWorld from './code/hello-world/main.go?raw'
+
 # Hello World
 
-Nothing like the good old hello world to break the ice in any programming language. Here's what it looks like in Go:
+Nothing like the good old hello world to break the ice in any programming language. First of all, let's create a folder named `hello-world` to hold our project; inside we'll create a file named `main.go`:
 
-```go title="hello.go"
-package main
-
-import "fmt"
-
-func main() {
-    fmt.Println("Hello, world!")
-}
+```
+hello/
+    └── main.go
 ```
 
-To run this code, save it in a file called `hello.go` and execute the following command in your terminal:
+<Admonition type="tip" title="Tip">
+  You can name the file anything you want, but `main.go` is a common convention
+  for the main entry point of a Go program.
+</Admonition>
+
+Here's what `main.go` looks like:
+
+<Code code={mainHelloWorld} lang="go" title="main.go" />
+
+To run this code, we can open a terminal and change into the project folder (`cd hello`) and execute the following command in your terminal:
 
 ```bash
-go run hello.go
+go run main.go
 Hello, world!       # 👈 This is the output ✅
 ```
 
-That's it! You've just written and executed your first Go program.
+That's it! You've just written and executed your first Go program 🎉
 
 ## Packages
 
@@ -41,7 +49,7 @@ import "fmt"
 
 The `main` function is the entry point of a Go program. When you run the program, execution starts from this function. Every executable Go program must have a `main` function in the `main` package.
 
-```go  collapse={2-4}
+```go collapse={2-4}
 func main() {
     // code to be executed
     // code to be executed
