@@ -15,33 +15,40 @@ import { Icon } from 'astro-icon/components'
 
 const props = Astro.props as {
   variant?: 'note' | 'tip' | 'warning' | 'error'
+  /** Legacy alias used in some docs */
+  type?: 'note' | 'tip' | 'warning' | 'error' | 'info' | 'important'
   title?: string
+  /** Custom icon name (Iconify), e.g., "mdi:lightbulb-on-outline" */
   icon?: string
+  /** Legacy alias for icon name */
+  name?: string
   showIcon?: boolean
   class?: string
 }
 
-const variant = props.variant ?? 'note'
+const typeToVariant: Record<string, 'note' | 'tip' | 'warning' | 'error'> = {
+  note: 'note',
+  tip: 'tip',
+  warning: 'warning',
+  error: 'error',
+  info: 'note',
+  important: 'warning',
+}
+
+const variant = props.variant ?? (props.type ? typeToVariant[props.type] ?? 'note' : 'note')
 const showIcon = props.showIcon ?? true
 
-const wrapper = cva(
-  'my-4 rounded-md border p-4 text-sm',
-  {
-    variants: {
-      variant: {
-        note:
-          'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-100',
-        tip:
-          'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-100',
-        warning:
-          'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-100',
-        error:
-          'bg-red-50 border-red-200 text-red-900 dark:bg-red-950/40 dark:border-red-800 dark:text-red-100',
-      },
+const wrapper = cva('admonition my-4 rounded-md border p-4 text-sm', {
+  variants: {
+    variant: {
+      note: 'admonition--note',
+      tip: 'admonition--tip',
+      warning: 'admonition--warning',
+      error: 'admonition--error',
     },
-    defaultVariants: { variant: 'note' },
-  }
-)
+  },
+  defaultVariants: { variant: 'note' },
+})
 
 const titleMap: Record<'note' | 'tip' | 'warning' | 'error', string> = {
   note: 'Note',
@@ -58,20 +65,59 @@ const iconMap: Record<'note' | 'tip' | 'warning' | 'error', string> = {
 }
 
 const label = props.title ?? titleMap[variant]
-const iconName = props.icon ?? iconMap[variant]
+const requestedIcon = props.icon ?? props.name
+const iconName = requestedIcon ?? iconMap[variant]
 const classes = [wrapper({ variant }), props.class].filter(Boolean).join(' ')
 ---
 
 <div class={classes} role="note" aria-label={label}>
-  <div class="flex items-start gap-3">
-    {showIcon && (
-      <Icon name={iconName} width="20" height="20" class="mt-0.5 shrink-0" aria-hidden="true" />
-    )}
-    <div class="min-w-0">
-      <div class="font-semibold mb-1">{label}</div>
-      <div class="prose :where(p):my-0">
-        <slot />
-      </div>
+  <div class="flex items-center gap-3">
+    {
+      showIcon && (
+        <Icon
+          name={iconName}
+          width="20"
+          height="20"
+          class="admonition__icon mt-0.5 shrink-0"
+          aria-hidden="true"
+        />
+      )
+    }
+    <div class="admonition__title font-semibold">{label}</div>
+  </div>
+  <div class="min-w-0">
+    <div class="prose :where(p):my-0">
+      <slot />
     </div>
   </div>
 </div>
+
+<style>
+.admonition {
+  /* derive visuals from the variant accent */
+  border-color: oklch(from var(--_accent) l c h / 0.55);
+  background-color: oklch(from var(--_accent) l c h / 0.12);
+}
+
+.admonition__title,
+.admonition__icon {
+  color: var(--_accent);
+}
+
+/* wire variant classes to theme tokens */
+.admonition--note { --_accent: var(--color-admonition-note); }
+.admonition--tip { --_accent: var(--color-admonition-tip); }
+.admonition--warning { --_accent: var(--color-admonition-warning); }
+.admonition--error { --_accent: var(--color-admonition-error); }
+
+/* dark theme tweaks */
+[data-theme='dark'] .admonition {
+  background-color: oklch(from var(--_accent) l c h / 0.18);
+  border-color: oklch(from var(--_accent) l c h / 0.5);
+}
+
+[data-theme='dark'] .admonition__title,
+[data-theme='dark'] .admonition__icon {
+  color: oklch(from var(--_accent) l c h / 0.9);
+}
+</style>
