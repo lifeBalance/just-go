@@ -1,0 +1,77 @@
+---
+import { cva } from 'class-variance-authority'
+import { Icon } from 'astro-icon/components'
+
+/**
+ * Admonition component
+ * - Variants: note | tip | warning | error
+ * - Props:
+ *   - variant?: 'note' | 'tip' | 'warning' | 'error' (default: 'note')
+ *   - title?: string (override default label for the variant)
+ *   - icon?: string (Iconify name, e.g., 'mdi:lightbulb-on-outline')
+ *   - showIcon?: boolean (default: true)
+ *   - class?: string (additional classes)
+ */
+
+const props = Astro.props as {
+  variant?: 'note' | 'tip' | 'warning' | 'error'
+  title?: string
+  icon?: string
+  showIcon?: boolean
+  class?: string
+}
+
+const variant = props.variant ?? 'note'
+const showIcon = props.showIcon ?? true
+
+const wrapper = cva(
+  'mb-4 rounded-md border p-4 text-sm',
+  {
+    variants: {
+      variant: {
+        note:
+          'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-100',
+        tip:
+          'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-100',
+        warning:
+          'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-100',
+        error:
+          'bg-red-50 border-red-200 text-red-900 dark:bg-red-950/40 dark:border-red-800 dark:text-red-100',
+      },
+    },
+    defaultVariants: { variant: 'note' },
+  }
+)
+
+const titleMap: Record<'note' | 'tip' | 'warning' | 'error', string> = {
+  note: 'Note',
+  tip: 'Tip',
+  warning: 'Warning',
+  error: 'Error',
+}
+
+const iconMap: Record<'note' | 'tip' | 'warning' | 'error', string> = {
+  note: 'mdi:information-outline',
+  tip: 'mdi:lightbulb-on-outline',
+  warning: 'mdi:alert-circle-outline',
+  error: 'mdi:alert-octagon-outline',
+}
+
+const label = props.title ?? titleMap[variant]
+const iconName = props.icon ?? iconMap[variant]
+const classes = [wrapper({ variant }), props.class].filter(Boolean).join(' ')
+---
+
+<div class={classes} role="note" aria-label={label}>
+  <div class="flex items-start gap-3">
+    {showIcon && (
+      <Icon name={iconName} width="20" height="20" class="mt-0.5 shrink-0" aria-hidden="true" />
+    )}
+    <div class="min-w-0">
+      <div class="font-semibold mb-1">{label}</div>
+      <div class="prose :where(p):my-0">
+        <slot />
+      </div>
+    </div>
+  </div>
+</div>
