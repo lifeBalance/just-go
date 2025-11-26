@@ -3,7 +3,7 @@
 import MainLayout from '@layouts/MainLayout.astro'
 import PageBtn from '@components/PageBtn.astro'
 import Footer from '@components/Footer.astro'
-import DocsSidebar from '@components/DocsSidebar.svelte'
+import TocSidebar from '@components/TocSidebar.astro'
 import Breadcrumb from '@components/Breadcrumb.astro'
 import DocsToc from '@components/DocsToc.svelte'
 
@@ -68,7 +68,7 @@ const { prev, next } = getPrevNext(nav, currentPath)
       style="top: 4rem; height: calc(100vh - 4rem);"
     >
       <div class="p-4">
-        <DocsSidebar {nav} heading="" {currentPath} client:load />
+        <TocSidebar {nav} heading="" {currentPath} />
       </div>
     </aside>
 
