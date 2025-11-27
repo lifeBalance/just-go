@@ -1,0 +1,101 @@
+import mainGreet from './code/greet/main.go?raw'
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+# Our Second Program
+
+Let's create a program that asks for the user's name and then greets them personally. We'll create a new folder named `greet` and inside it, a file named `main.go`:
+
+```
+greet/
+    └── main.go
+```
+
+Here's what `main.go` looks like:
+
+<Code code={mainGreet} lang="go" title="main.go" />
+
+You can run this program the same way we ran our previous one. Open a terminal, change into the `greet` folder (`cd greet`), and run:
+
+```bash
+go run main.go
+```
+
+When prompted, enter your name and press Enter. You should see a personalized greeting! For example:
+
+```bash
+Enter your name: Bob
+Hello, Bob!
+```
+
+## Breaking Down the Code
+
+This program is a bit more complex than our previous "Hello, world!" example, so let's break it down step by step.
+
+### Getting User Input
+
+The first thing we do in our `main` function is to **declare** a variable named `personName`, and **assign** it the value returned by the `getUserName` function.
+
+<Code code={mainGreet} lang="go" title="main.go" mark={6} />
+
+The `:=` operator is a shorthand for declaring and initializing a variable in one step. The type of the variable is inferred from the value returned by the `getUserName` function. Let's take a look at that function:
+
+<Code code={mainGreet} lang="go" title="main.go" mark={{ range: '10-15' }} />
+
+1. Here we have another way of declaring variables using the `var` keyword. The variable `whom` is declared as a `string` type.
+
+```go
+var whom string
+```
+
+2. We then use `fmt.Print` to print a message asking the user to enter their name (nothing new here).
+
+```go
+fmt.Print("Enter your name: ")
+```
+
+3. The [fmt.Scan](https://pkg.go.dev/fmt#Scan) function reads the input from the user and stores it in the `whom` variable. Note that we pass the **address** of the variable using the `&` operator.
+
+```go
+fmt.Scan(&whom)
+```
+
+4. Finally, we return the value of `whom` to the caller.
+
+```go
+return whom
+```
+
+<Admonition type="warning" title="Important: Variable Addresses">
+  The `fmt.Scan` function reads input from standard input (the keyboard) and
+  stores it in the variable whose **address** is passed as an argument. In this
+  case, we use the `&` operator to get the address of the `whom` variable.
+</Admonition>
+
+## Functions calling Functions
+
+Note that in our `main` function, after getting the user's name, we call another function named `greetUser`, passing the `personName` variable as an argument:
+
+<Code code={mainGreet} lang="go" title="main.go" mark={7} />
+
+This is how we can **organize** our code into smaller, reusable pieces. Each piece has some responsibility:
+
+- The `getUserName` function is responsible for getting the user's name from input.
+- The `greetUser` function takes a string parameter named `whom` and prints a personalized greeting to the console.
+
+In `main` we orchestrate the flow of the program by calling these functions in sequence. Storing the user's name in a variable allows us to pass it around to different functions as needed.
+
+### String Concatenation
+
+In the `greetUser` function, we use the `+` operator to concatenate (join) strings together:
+
+```go
+fmt.Println("Hello,", whom+"!")
+```
+
+Here, we have used two different approaches to compose our string to be printed:
+
+- First we use a comma `,` to separate the string literal `"Hello,"` from the variable `whom` (when using `fmt.Println`, a comma automatically adds a space between the two values being printed).
+- Then we use the `+` operator to concatenate the `whom` variable (which contains the user's name) with the exclamation mark `"!"` to form the complete greeting message.
+
+The result is then printed to the console using `fmt.Println`.

@@ -1,6 +1,6 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
-import mainHelloWorld from './code/hello/main.go?raw'
+import mainHelloWorld from '../code/hello/main.go?raw'
 
 # Hello World
 
@@ -35,11 +35,17 @@ That's it! You've just written and executed your first Go program 🎉
   to learn more about the available commands.
 </Admonition>
 
-## Packages
+## Structure of a Go Program
+
+Let's break down the code in `main.go` to understand how programs are structured in Go.
+
+### Declaring Packages
 
 In Go, every file begins with a `package` declaration, that it's a way of grouping all the files in the same directory under a given name. In this case we're using the name `main`, which tells the compiler that this file should be compiled as part of an **executable program**.
 
 <Code code={mainHelloWorld} lang="go" title="main.go" mark={1} />
+
+This program only contains one file, but as we start writing more complex applications using multiple files, packages help us organize our code better.
 
 <Admonition type="important">
   Every **executable** Go program must have a `main` package.
@@ -47,28 +53,49 @@ In Go, every file begins with a `package` declaration, that it's a way of groupi
 
 If we were to create a library instead, we would use a different package name.
 
-## Importing Packages
+### Importing Packages
 
-Go has a rich standard library, and you can also import **third-party packages**. In our example, we imported the [fmt](https://pkg.go.dev/fmt) package, which provides functions for formatted I/O, including printing to the console.
+Packages are declared, so that other parts of our application can use the code defined in them. To use code from other packages, we need to import them using the `import` statement.
 
 <Code code={mainHelloWorld} lang="go" title="main.go" mark={3} />
 
-We can search for available packages in the [https://pkg.go.dev/](https://pkg.go.dev) site.
+Go has a rich standard library, filled with predefined packages,which we can import and use into our programs. In our example, we imported the [fmt](https://pkg.go.dev/fmt) package, which provides functions for formatted I/O, including printing to the console.
 
-## The main Function
+<Admonition type="tip">
+  The Go ecosystem has a vast number of third-party packages available for
+  various tasks. We can search for available packages in the
+  [https://pkg.go.dev/](https://pkg.go.dev) site.
+</Admonition>
+
+### The main Function
 
 The `main` function is the entry point of a Go program. When you run the program, execution starts from this function.
 
 <Code code={mainHelloWorld} lang="go" title="main.go" mark={[5, 6, 7]} />
 
 <Admonition type="important">
-  Every executable Go program must have a `main` function in the `main` package.
+  Every executable Go program must have a `main` function in the `main` package. But not all programs have to be executable; **libraries**, for example, don't need a `main` function.
 </Admonition>
 
-## Printing to the Console
+### Printing to the Console
 
-Inside the `main` function, we used [fmt.Println](https://pkg.go.dev/fmt@go1.25.4#Println) to print the text `Hello, world!` to the console.
+In a previous section we explained how we imported the [fmt](https://pkg.go.dev/fmt) package. Once such a package has been imported, we can access any of its functionality by using **dot notation**, i.e. the **name of the package**, followed by the **name of the function** we want to use:
+
+```
+<package>.<function>
+```
+
+The [fmt.Println](https://pkg.go.dev/fmt@go1.25.4#Println) prints any string of text we pass as an argument (in this case `Hello, world!`) to the console.
 
 <Code code={mainHelloWorld} lang="go" title="main.go" mark={6} />
 
-This function adds a **newline** at the end of the output.
+If you don't want a **newline** at the end of the text, you could use the [fmt.Print](https://pkg.go.dev/fmt@go1.25.4#Print) function.
+
+<Admonition type="tip">
+  If you're using a proper **code editor** such as VSCode, you should be able of writing `fmt`, press the **tab key** (or whatever is your shortcut for autocompletion), and the editor automatically writes the import statement for you.
+
+  Also, once the package is imported, you should be able of writing `fmt.` and get a list of all the available functions in that package. Leveraging your code editor's autocompletion feature is essential for a few reasons:
+  - Avoid typos in the function names.
+  - It's a great way to learn more about the functions included in a package.
+  - It speeds up your coding process.
+</Admonition>
