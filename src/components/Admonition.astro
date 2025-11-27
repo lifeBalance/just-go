@@ -35,16 +35,62 @@ const typeToVariant: Record<string, 'note' | 'tip' | 'warning' | 'error'> = {
   important: 'warning',
 }
 
-const variant = props.variant ?? (props.type ? typeToVariant[props.type] ?? 'note' : 'note')
+const variant =
+  props.variant ?? (props.type ? (typeToVariant[props.type] ?? 'note') : 'note')
 const showIcon = props.showIcon ?? true
 
-const wrapper = cva('admonition my-4 rounded-md border p-4 text-sm', {
+// Utility functions to generate color classes
+function buildOklchColor(variantName: string, alpha: number): string {
+  const cssVarName = `--color-admonition-${variantName}`
+  return `oklch(from_var(${cssVarName})_l_c_h_/_${alpha})`
+}
+
+function buildBackgroundClass(variantName: string): string {
+  const colorValue = buildOklchColor(variantName, 0.12)
+  return `bg-[color:${colorValue}]`
+}
+
+function buildBorderClass(variantName: string): string {
+  const colorValue = buildOklchColor(variantName, 0.55)
+  return `border-[color:${colorValue}]`
+}
+
+function buildTextClass(variantName: string): string {
+  const cssVarName = `--color-admonition-${variantName}`
+  return `text-[color:var(${cssVarName})]`
+}
+
+const wrapper = cva('my-4 rounded-md border p-4 text-sm', {
   variants: {
     variant: {
-      note: 'admonition--note',
-      tip: 'admonition--tip',
-      warning: 'admonition--warning',
-      error: 'admonition--error',
+      note: `${buildBorderClass('note')} ${buildBackgroundClass('note')}`,
+      tip: `${buildBorderClass('tip')} ${buildBackgroundClass('tip')}`,
+      warning: `${buildBorderClass('warning')} ${buildBackgroundClass('warning')}`,
+      error: `${buildBorderClass('error')} ${buildBackgroundClass('error')}`,
+    },
+  },
+  defaultVariants: { variant: 'note' },
+})
+
+const iconClass = cva('mt-0.5 shrink-0', {
+  variants: {
+    variant: {
+      note: 'text-[color:var(--color-admonition-note)]',
+      tip: 'text-[color:var(--color-admonition-tip)]',
+      warning: 'text-[color:var(--color-admonition-warning)]',
+      error: 'text-[color:var(--color-admonition-error)]',
+    },
+  },
+  defaultVariants: { variant: 'note' },
+})
+
+const titleClass = cva('font-semibold', {
+  variants: {
+    variant: {
+      note: 'text-[color:var(--color-admonition-note)]',
+      tip: 'text-[color:var(--color-admonition-tip)]',
+      warning: 'text-[color:var(--color-admonition-warning)]',
+      error: 'text-[color:var(--color-admonition-error)]',
     },
   },
   defaultVariants: { variant: 'note' },
@@ -78,12 +124,12 @@ const classes = [wrapper({ variant }), props.class].filter(Boolean).join(' ')
           name={iconName}
           width="20"
           height="20"
-          class="admonition__icon mt-0.5 shrink-0"
+          class={iconClass({ variant })}
           aria-hidden="true"
         />
       )
     }
-    <div class="admonition__title font-semibold">{label}</div>
+    <div class={titleClass({ variant })}>{label}</div>
   </div>
   <div class="min-w-0">
     <div class="prose :where(p):my-0">
@@ -91,33 +137,3 @@ const classes = [wrapper({ variant }), props.class].filter(Boolean).join(' ')
     </div>
   </div>
 </div>
-
-<style>
-.admonition {
-  /* derive visuals from the variant accent */
-  border-color: oklch(from var(--_accent) l c h / 0.55);
-  background-color: oklch(from var(--_accent) l c h / 0.12);
-}
-
-.admonition__title,
-.admonition__icon {
-  color: var(--_accent);
-}
-
-/* wire variant classes to theme tokens */
-.admonition--note { --_accent: var(--color-admonition-note); }
-.admonition--tip { --_accent: var(--color-admonition-tip); }
-.admonition--warning { --_accent: var(--color-admonition-warning); }
-.admonition--error { --_accent: var(--color-admonition-error); }
-
-/* dark theme tweaks */
-[data-theme='dark'] .admonition {
-  background-color: oklch(from var(--_accent) l c h / 0.18);
-  border-color: oklch(from var(--_accent) l c h / 0.5);
-}
-
-[data-theme='dark'] .admonition__title,
-[data-theme='dark'] .admonition__icon {
-  color: oklch(from var(--_accent) l c h / 0.9);
-}
-</style>
