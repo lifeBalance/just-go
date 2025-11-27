@@ -3,4 +3,5 @@ export default [
   { path: 'installing-go', label: 'Installing Go' },
   { path: 'hello-world', label: 'Hello World' },
   { path: 'greet', label: 'Our Second Program' },
+  { path: 'first-module', label: 'Our First Module' },
 ]

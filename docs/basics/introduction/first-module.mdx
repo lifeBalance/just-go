@@ -1,0 +1,112 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import mainGreetMod from './code/greet2/main.go?raw'
+import utilsGreetMod from './code/greet2/utils/utils.go?raw'
+
+# Our First Go Module
+
+In the previous sections, we wrote a couple of very simple Go programs consisting of **single files**. There's nothing wrong with that, and for the most simple use cases, that may be all you need.
+
+<Admonition type="info" title="Throaway Scripts">
+  For quick experiments or throwaway scripts, that only pull code from packages
+  from the **standard library**, you can write single-file Go programs without
+  modules.
+</Admonition>
+
+But when our Go projects grow in size and our needs require the use of third-party packages, we'll want to organize our code into [modules](https://go.dev/ref/mod). Modules basically allow us to:
+
+- Organize related packages together.
+- Manage dependencies on third-party packages.
+- Version our code and its dependencies.
+
+## Creating a Module
+
+Let's start by creating a **folder** for our new project:
+
+```bash
+mkdir greet2
+```
+
+Now, navigate into that folder:
+
+```bash
+cd greet2
+```
+
+Next, we'll initialize a new **Go module** using the [go mod init](https://go.dev/ref/mod#go-mod-init) command followed by the [module path](https://go.dev/ref/mod#module-path):
+
+```
+go mod init greet2
+```
+
+For **local development**, we can use any name we like for our **module path**, such as in this case `greet2`. As a result of the command above, a new file named `go.mod` will be created in our project folder:
+
+```
+module greet2
+
+go 1.25.4
+```
+
+As you can see, the `go.mod` file contains the **module path** and the **Go version** used.
+
+<Admonition type="tip" title="Module Path" >
+The **module path** is typically a URL that points to where the module will be hosted, for example, the repository URL. So if we're hosting the module at `https://github.com/<userName>/<module-name>`, the module path would be `github.com/<userName>/<module-name>`.
+</Admonition>
+
+## Adding Code to the Module
+
+Now that we have our module set up, inside the `greet2` folder, let's create a new file named `main.go`, and let's copy over the code from our previous `greet` program:
+
+```go
+package main
+
+func main() {
+	personName := getUserName() // ⚠️ Warning: undefined function
+	greetUser(personName)       // ⚠️ Warning: undefined function
+}
+```
+
+As soon as you do that, you'll notice how our code editor marks the two functions `getUserName` and `greetUser` as **undefined**. That's because we haven't defined them yet.
+
+## Creating a Package
+
+Before defining any function, let's create a new folder named `utils` inside the `greet2` folder. Inside this folder we'll create a `utils.go` file:
+
+```
+greet2/
+    ├── go.mod
+    ├── main.go
+    └── utils/
+        └── utils.go
+```
+
+Let's paste the functions we used in our previous section in the `utils.go` file:
+
+<Code code={utilsGreetMod} lang="go" title="utils.go" />
+
+There are a couple of things to note here:
+
+- Note how we're using the `package` keyword to declare that this file belongs to the `utils` package.
+- Check how both functions `GetUserName` and `GreetUser` start with an uppercase letter. In Go, this is how we **export** functions, meaning they can be accessed from other packages.
+
+<Admonition type="warning" title="Packages go in Folders">
+    In Go, each package must reside in its own folder. The folder name typically matches the package name.
+</Admonition>
+
+## Using the Package
+
+Now, let's go back to our `main.go` file and update it to import the `utils` package, and use its functions:
+
+<Code code={mainGreetMod} lang="go" title="main.go" />
+
+As you can see, we've imported the `utils` package using the **module path**, followed by the **package name**: `greet2/utils` (separated with a `/`). Then we use **dot notation** to call the functions defined in the `utils` package.
+
+## Running the Module
+
+To run our module, open a terminal, navigate to the `greet2` folder, and run:
+
+```bash
+go run .
+```
+
+Note that we're using a dot `.` after the `go run` command. This tells Go to look for the `main` package in the current folder and run it.
