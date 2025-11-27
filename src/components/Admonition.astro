@@ -2,25 +2,11 @@
 import { cva } from 'class-variance-authority'
 import { Icon } from 'astro-icon/components'
 
-/**
- * Admonition component
- * - Variants: note | tip | warning | error
- * - Props:
- *   - variant?: 'note' | 'tip' | 'warning' | 'error' (default: 'note')
- *   - title?: string (override default label for the variant)
- *   - icon?: string (Iconify name, e.g., 'mdi:lightbulb-on-outline')
- *   - showIcon?: boolean (default: true)
- *   - class?: string (additional classes)
- */
-
 const props = Astro.props as {
   variant?: 'note' | 'tip' | 'warning' | 'error'
-  /** Legacy alias used in some docs */
   type?: 'note' | 'tip' | 'warning' | 'error' | 'info' | 'important'
   title?: string
-  /** Custom icon name (Iconify), e.g., "mdi:lightbulb-on-outline" */
   icon?: string
-  /** Legacy alias for icon name */
   name?: string
   showIcon?: boolean
   class?: string
@@ -39,34 +25,15 @@ const variant =
   props.variant ?? (props.type ? (typeToVariant[props.type] ?? 'note') : 'note')
 const showIcon = props.showIcon ?? true
 
-// Utility functions to generate color classes
-function buildOklchColor(variantName: string, alpha: number): string {
-  const cssVarName = `--color-admonition-${variantName}`
-  return `oklch(from_var(${cssVarName})_l_c_h_/_${alpha})`
-}
-
-function buildBackgroundClass(variantName: string): string {
-  const colorValue = buildOklchColor(variantName, 0.12)
-  return `bg-[color:${colorValue}]`
-}
-
-function buildBorderClass(variantName: string): string {
-  const colorValue = buildOklchColor(variantName, 0.55)
-  return `border-[color:${colorValue}]`
-}
-
-function buildTextClass(variantName: string): string {
-  const cssVarName = `--color-admonition-${variantName}`
-  return `text-[color:var(${cssVarName})]`
-}
-
 const wrapper = cva('my-4 rounded-md border p-4 text-sm', {
   variants: {
     variant: {
-      note: `${buildBorderClass('note')} ${buildBackgroundClass('note')}`,
-      tip: `${buildBorderClass('tip')} ${buildBackgroundClass('tip')}`,
-      warning: `${buildBorderClass('warning')} ${buildBackgroundClass('warning')}`,
-      error: `${buildBorderClass('error')} ${buildBackgroundClass('error')}`,
+      note: 'border-[oklch(from_var(--color-admonition-note)_l_c_h_/_0.55)] bg-[oklch(from_var(--color-admonition-note)_l_c_h_/_0.12)]',
+      tip: 'border-[oklch(from_var(--color-admonition-tip)_l_c_h_/_0.55)] bg-[oklch(from_var(--color-admonition-tip)_l_c_h_/_0.12)]',
+      warning:
+        'border-[oklch(from_var(--color-admonition-warning)_l_c_h_/_0.55)] bg-[oklch(from_var(--color-admonition-warning)_l_c_h_/_0.12)]',
+      error:
+        'border-[oklch(from_var(--color-admonition-error)_l_c_h_/_0.55)] bg-[oklch(from_var(--color-admonition-error)_l_c_h_/_0.12)]',
     },
   },
   defaultVariants: { variant: 'note' },
