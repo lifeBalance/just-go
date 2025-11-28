@@ -1,0 +1,103 @@
+# Variable Scope
+
+In the previouse section we saw how declaring a variable using the `:=` shorthand syntax is only allowed inside functions. That implies that we can also declare variables outside functions, using the `var` keyword.
+
+Variables in Go can have different **scope levels** depending on where they are declared:
+
+- **Block Scope**: Variables declared inside a **function** or a **block** (like an `if` statement or a loop) are only accessible within that block.
+- **Package Scope**: Variables declared at the package level (outside any function) are accessible throughout the entire package.
+
+## Block Scope
+
+Here's an example of block scope:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    if true {
+        blockVar := "I'm inside an if block"
+        fmt.Println(blockVar) // ✅ Accessible here
+    }
+    fmt.Println(blockVar) // ❌ Error: blockVar is not accessible here
+}
+```
+
+## Package Scope
+
+Here's an example of package scope:
+
+```go
+package main
+
+import "fmt"
+
+var packageVar string = "I'm a package-level variable"
+
+func main() {
+    fmt.Println(packageVar) // ✅ Accessible here
+}
+```
+
+It's not a good practice to overuse package-level variables, as they can make the code harder to maintain and understand. It's generally better to keep variables scoped as narrowly as possible.
+
+### Exporting Package-Level Variables
+
+In Go, if a package-level variable starts with an **uppercase letter**, it is **exported** and can be accessed from other packages. If it starts with a lowercase letter, it is unexported and can only be accessed within the same package.
+
+```go
+package somepackage
+
+var ExportedVar string = "I'm exported"
+
+var unexportedVar string = "I'm unexported"
+```
+
+Then from another package:
+
+```go
+package main
+
+import (
+    "fmt"
+    "somepackage"
+)
+
+func main() {
+    fmt.Println(somepackage.ExportedVar) // ✅ Accessible
+    fmt.Println(somepackage.unexportedVar) // ❌ Error: unexportedVar is not accessible
+}
+```
+
+<Admonition type="info" title="Caution with Exported Variables">
+Again, be cautious when using exported package-level variables, as they can lead to tight coupling between packages.
+</Admonition>
+
+It's fine to export **constants** to expose necessary data:
+
+```go
+package config
+
+const APIKey string = "12345"
+const BaseURL string = "https://api.example.com"
+const DatabasePort int = 5432
+```
+
+## Shadowing
+
+When a variable declared in an inner scope has the same name as a variable in an outer scope, the inner variable **shadows** the outer one:
+
+```go
+package main
+
+import "fmt"
+
+var name string = "Global Name" // Package-level variable
+
+func main() {
+    name := "Local Name" // Shadows the package-level variable
+    fmt.Println(name)    // Outputs: Local Name
+}
+```

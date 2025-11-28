@@ -1,0 +1,116 @@
+import Admonition from '@components/Admonition.astro'
+
+# Introduction
+
+In the previous sections we saw how variables can be created in two ways:
+
+- Using an explicit syntax.
+- Using a shorthand syntax.
+
+In this section we'll go a bit deeper, and introduce new features related to variables and constants.
+
+## Explicit Sintax
+
+Creating variables using the explicity syntax it's a two step process:
+
+```go
+var username string // Declaration
+username = "Bob"    // Assignment
+```
+
+1. The **first step** is known as **variable declaration**. Here we use the `var` keyword to announce that we'll be creating a variable, then we write the **name of the variable**, then its **type**.
+
+2. In the **second step** we assign a value to the variable. Note that the value we assign must match the **type** of the variable we specified in the declaration.
+
+Note that this syntax also allows to perform the assignment at the same time:
+
+```go
+var username string =  "Bob" // Declaration and Assignment
+```
+
+It's also possible to omit the type, in which case the Go compiler will infer the type from the value being assigned:
+
+```go
+var username = "Bob" // Look Ma, no type!
+```
+
+And we can **declare** multiple variables at the same time:
+
+```go
+var name1, name2 string
+```
+
+## Shorthand Syntax
+
+Go offers a shorthand syntax that allows us to declare and assign values in a slightly shorter fashion:
+
+```go
+username := "Bob" // Declaration and Assignment
+```
+
+In this case we don't have to use the `var` keyword to announce that we're declaring a variable; the Go compiler is smart enough to infer the fact from the `:=` operator.
+Also, the compiler is able to infer the **type** of the variable from the type of value we're using in the assignment.
+
+<Admonition>
+  The `:=` operator is known as the [short variable declaration
+  operator](https://go.dev/ref/spec#Short_variable_declarations). In **Python**
+  is known as the **walrus operator**.
+</Admonition>
+
+The shorthand syntax `:=` can only be used **inside functions**. If you try to use it at the package level, you'll get a compilation error.
+
+```go
+package main
+
+username := "Bob" // ❌ Error
+
+func main() {
+    username := "Bob" // ✅ Correct
+}
+```
+
+<Admonition type="error" title="Syntax Error">
+  Do not use the `:=` operator outside functions!
+</Admonition>
+
+## Constants
+
+Variables can be reassigned new values (hence the name _variable_) using the **assignment operator** (`=`):
+
+```go
+username := "Bob"
+username = "Robert" // Assign a new value
+```
+
+Constants in the other hand, cannot be reassigned:
+
+```go
+const username string = "Bob"
+username = "Robert"             // ❌ Error!
+```
+
+## Multiple Assignment
+
+Go allows us to assign several values at the same time:
+
+```go
+username1, username2 = "Bob", "Lisa"
+```
+
+This also works when we create the variables:
+
+```go
+var name1, name2 string = "Bob", "Lisa"
+```
+
+It works with **shorthand syntax**:
+
+```go
+name1, name2 := "Bob", "Lisa"
+```
+
+And it also works with **constants**:
+
+```go
+const name1, name2 string = "Bob", "Lisa"
+```

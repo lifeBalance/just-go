@@ -1,4 +1,4 @@
 export default [
-  { path: 'intro', label: 'Intro to Vars' },
-  { path: 'scope', label: 'Scope', hidden: true },
+  { path: 'intro', label: 'Introduction' },
+  { path: 'scope', label: 'Scope' },
 ]
