@@ -1,10 +1,12 @@
+import Admonition from '@components/Admonition.astro'
+
 # Variable Scope
 
-In the previouse section we saw how declaring a variable using the `:=` shorthand syntax is only allowed inside functions. That implies that we can also declare variables outside functions, using the `var` keyword.
+In the previous section we saw how declaring a variable using the `:=` shorthand syntax is only allowed inside functions. That implies that we can also declare variables outside functions!
 
 Variables in Go can have different **scope levels** depending on where they are declared:
 
-- **Block Scope**: Variables declared inside a **function** or a **block** (like an `if` statement or a loop) are only accessible within that block.
+- **Block Scope**: Variables declared inside a **function** or a **block** (like an `if` statement or a `for` loop) are only accessible within that block.
 - **Package Scope**: Variables declared at the package level (outside any function) are accessible throughout the entire package.
 
 ## Block Scope
@@ -21,7 +23,7 @@ func main() {
         blockVar := "I'm inside an if block"
         fmt.Println(blockVar) // ✅ Accessible here
     }
-    fmt.Println(blockVar) // ❌ Error: blockVar is not accessible here
+    fmt.Println(blockVar) // ❌ Error: not accessible here
 }
 ```
 
@@ -72,7 +74,7 @@ func main() {
 ```
 
 <Admonition type="info" title="Caution with Exported Variables">
-Again, be cautious when using exported package-level variables, as they can lead to tight coupling between packages.
+Again, be cautious when using exported package-level **variables**, as they can lead to weird bugs and tight coupling between packages.
 </Admonition>
 
 It's fine to export **constants** to expose necessary data:
