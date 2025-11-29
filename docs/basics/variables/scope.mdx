@@ -4,6 +4,10 @@ import Admonition from '@components/Admonition.astro'
 
 In the previous section we saw how declaring a variable using the `:=` shorthand syntax is only allowed inside functions. That implies that we can also declare variables outside functions!
 
+<Admonition type="info" title="Variable Scope">
+The **scope** of a variable refers to the region of the code where that variable is accessible. When we try to access a variable in some part of the code where it's not accessible, we say that it's **out of scope**.
+</Admonition>
+
 Variables in Go can have different **scope levels** depending on where they are declared:
 
 - **Block Scope**: Variables declared inside a **function** or a **block** (like an `if` statement or a `for` loop) are only accessible within that block.

@@ -74,7 +74,9 @@ The `main` function is the entry point of a Go program. When you run the program
 <Code code={mainHelloWorld} lang="go" title="main.go" mark={[5, 6, 7]} />
 
 <Admonition type="important">
-  Every executable Go program must have a `main` function in the `main` package. But not all programs have to be executable; **libraries**, for example, don't need a `main` function.
+  Every executable Go program must have a `main` function in the `main` package.
+  But not all programs have to be executable; **libraries**, for example, don't
+  need a `main` function.
 </Admonition>
 
 ### Printing to the Console
@@ -92,10 +94,41 @@ The [fmt.Println](https://pkg.go.dev/fmt@go1.25.4#Println) prints any string of 
 If you don't want a **newline** at the end of the text, you could use the [fmt.Print](https://pkg.go.dev/fmt@go1.25.4#Print) function.
 
 <Admonition type="tip">
-  If you're using a proper **code editor** such as VSCode, you should be able of writing `fmt`, press the **tab key** (or whatever is your shortcut for autocompletion), and the editor automatically writes the import statement for you.
+If you're using a proper **code editor** such as VSCode, you should be able of writing `fmt`, press the **tab key** (or whatever is your shortcut for autocompletion), and the editor automatically writes the import statement for you.
 
-  Also, once the package is imported, you should be able of writing `fmt.` and get a list of all the available functions in that package. Leveraging your code editor's autocompletion feature is essential for a few reasons:
-  - Avoid typos in the function names.
-  - It's a great way to learn more about the functions included in a package.
-  - It speeds up your coding process.
+Also, once the package is imported, you should be able of writing `fmt.` and get a list of all the available functions in that package. Leveraging your code editor's autocompletion feature is essential for a few reasons:
+
+- Avoid typos in the function names.
+- It's a great way to learn more about the functions included in a package.
+- It speeds up your coding process.
+
 </Admonition>
+
+## Compiling and Running Go Programs
+
+We mentioned at the beginning that Go is a compiled language. This means that before we can run our Go programs, they need to be **compiled** into machine code that the computer can understand.
+
+When we run the command `go run main.go`, the Go toolchain performs two steps:
+
+1. **Compilation**: It compiles the `main.go` file into an executable binary.
+2. **Execution**: It runs the compiled binary.
+
+<Admonition type="info" title="Compiling on the fly">
+  The `go run` command compiles the Go source code into a temporary binary and
+  immediately executes it. This is convenient for development and testing, but
+  for production use, it's recommended to compile the program into a permanent
+  binary using the `go build` command.
+</Admonition>
+
+If we want to compile the program and have the executable available in the filesystem, we can use the [go build](https://pkg.go.dev/cmd/go#hdr-Compile_packages_and_dependencies) command:
+
+```bash
+go build main.go
+```
+
+This command will create an executable file named `main` (or `main.exe` on Windows) in the current directory. We can then run this executable directly from the terminal:
+
+```bash
+./main       # On Unix-like systems (On windows, use main.exe)
+Hello, world!       # 👈 This is the output ✅
+```
