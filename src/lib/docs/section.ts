@@ -213,7 +213,7 @@ export function createSection(section: string) {
 
       function buildGroup(dir: string): NavGroup | null {
         const groupKey = `${dir}/`
-        if (rootSidebar.hidden.has(groupKey)) return null
+
 
         const itemBySlug = groupIndex.get(dir) ?? new Map()
         const localSidebar = store.getTocForPath(`${contentRoot}/${dir}`)
@@ -222,7 +222,7 @@ export function createSection(section: string) {
           .map((e) => (Path.isGroup(e.path) ? e.path.slice(0, -1) : e.path))
           .filter(
             (slug) =>
-              slug && itemBySlug.has(slug) && !localSidebar.hidden.has(slug)
+              slug && itemBySlug.has(slug)
           )
           .map((slug) => {
             const entry = itemBySlug.get(slug)!
@@ -243,7 +243,7 @@ export function createSection(section: string) {
       }
 
       function buildDoc(slug: string): NavGroup | null {
-        if (rootSidebar.hidden.has(slug)) return null
+
 
         const entry = topDocs.get(slug)
         if (!entry) return null

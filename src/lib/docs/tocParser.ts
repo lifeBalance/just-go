@@ -1,9 +1,8 @@
-export type TocEntry = { path: string; label?: string; hidden?: boolean }
+export type TocEntry = { path: string; label?: string }
 
 export type TocConfig = {
   ordered: TocEntry[]
   alias: Map<string, string>
-  hidden: Set<string>
 }
 
 // Normalize group slugs by:
@@ -33,9 +32,9 @@ function normalizeItem(slug: string) {
 export function parseTocConfig(raw: unknown): TocConfig {
   const ordered: TocEntry[] = []
   const alias = new Map<string, string>()
-  const hidden = new Set<string>()
 
-  if (!raw) return { ordered, alias, hidden }
+
+  if (!raw) return { ordered, alias }
 
   if (Array.isArray(raw)) {
     for (const e of raw as any[]) {
@@ -54,15 +53,12 @@ export function parseTocConfig(raw: unknown): TocConfig {
           alias.set(p, obj.label)
           entry.label = obj.label
         }
-        if (obj.hidden === true) {
-          hidden.add(p)
-          entry.hidden = true
-        }
+
         ordered.push(entry)
       }
     }
-    return { ordered, alias, hidden }
+    return { ordered, alias }
   }
 
-  return { ordered, alias, hidden }
+  return { ordered, alias }
 }
