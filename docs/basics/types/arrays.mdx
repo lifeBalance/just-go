@@ -1,0 +1,15 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+# Arrays
+
+In Go, an array is a collection of elements of the same type, stored in contiguous memory locations. They have a **fixed size**, which means that once an array is created, its size cannot be changed.
+
+## Declaring and Initializing Arrays
+
+Arrays can created like other variables, using the `var` keyword. You specify the type of elements and the number of elements required by enclosing the number in square brackets.
+
+```go
+var numbers [5]int // Declares an array of 5 integers
+var names [3]string = [3]string{"Alice", "Bob", "Charlie"} // Declares and initializes an array of 3 strings
+```

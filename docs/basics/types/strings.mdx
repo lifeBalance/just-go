@@ -1,0 +1,105 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+# Strings
+
+A string in Go is sequences of characters. You can create strings using **double quotes**:
+
+```go
+var greeting string = "Hello, World!"
+```
+
+One limitation of using double quotes, interpreted string literals is that our string cannot span multiple lines. If you need a string that spans multiple lines, you can use **backticks**:
+
+```go
+var multiLine string = `This is a
+multi-line string.`
+```
+
+The [predeclared identifier](https://golang.org/ref/spec#Predeclared_identifiers) for all type of strings is `string`.
+
+## String Literals
+
+Strings defined in our programs directly (by typing the text), using either **double quotes** or **backticks** are known as [string literals](https://golang.org/ref/spec#String_literals). There are two types:
+
+- String literals surrounded by double quotes are known as **interpreted string literals**.
+- Multiline strings are known as **raw string literals**.
+
+Interpreted string literals are the most commonly used, but raw string literals are useful for writing multiline messages, HTML, and regular expressions.
+
+## Runes
+
+Runes represent a single Unicode character and are defined using **single quotes**:
+
+```go
+var letter rune = 'A'
+```
+
+In other languages, we can use single quotes for strings, but in Go, single quotes are used for rune literals (which represent a **single character**).
+
+## Unicode and UTF-8
+
+In Go, [strings](https://go.dev/ref/spec#String_types) are sequences of [UTF-8](https://en.wikipedia.org/wiki/UTF-8) characters. That means that we can use emojis in our strings:
+
+```go
+var greeting string = "Hello, 🌍!"
+```
+
+<Admonition type="info" title="UTF-8 and variable-width characters">
+  **UTF-8** is the most widely used
+  [Unicode](https://en.wikipedia.org/wiki/Unicode) encoding. Each Unicode
+  character has a unique identifying number called a **code point** The UTF-8
+  encoding is the standard encoding for text files, XML and JSON files. It uses
+  between one and four bytes to represent each code point. **ASCII** is a subset
+  of UTF-8, its code points use one byte.
+</Admonition>
+
+In Go, each character in a string can use from 1 to 4 bytes depending on the character being stored. For example, whenever storing [ASCII](https://en.wikipedia.org/wiki/ASCII) characters, only 1 byte is used per character. But for storing other characters, like emojis, more bytes are needed.
+
+<Admonition type="info" title="Fixed-width characters">
+  In other languages, such as C, strings are sequences of characters with
+  exactly **1 byte**. ASCII is by far the most common character set used in C
+  implementations, and faces the limitation of being able to represent only 128
+  different characters. This is not the case in Go, where strings are sequences
+  of **bytes** that can represent a much larger set of characters thanks to
+  UTF-8 encoding.
+</Admonition>
+
+## Accessing Characters in a String
+
+You can access individual characters in a string using **indexing**. The index of the first character is `0`, the second character is at index `1`, and so on. For example:
+
+```go
+var greeting string = "Hello, World!"
+firstChar := greeting[0] // 'H'
+secondChar := greeting[1] // 'e'
+```
+
+In Go, strings are **immutable**, meaning that once created, it is impossible to change any of its characters:
+
+```go
+greeting[0] = 'h' // ❌ This will result in a compilation error
+```
+
+A string may consist of an **empty sequence of characters**, what is known as an **empty string**.
+
+## Escape sequences
+
+String literals support embedding **escape sequences**, which are characters with special meaning. The table below lists some of them:
+
+| Escape       | Meaning                                                           |
+| :----------- | :---------------------------------------------------------------- |
+| `\\`         | Backslash \                                                       |
+| `\ooo`       | Unicode character with the given 3-digit 8-bit octal code point   |
+| `\'`         | Single quote (‘); only allowed inside character literals          |
+| `\"`         | Double quote (”); only allowed inside interpreted string literals |
+| `\a`         | ASCII bell (BEL)                                                  |
+| `\b`         | ASCII backspace (BS)                                              |
+| `\f`         | ASCII formfeed (FF)                                               |
+| `\n`         | ASCII linefeed (LF)                                               |
+| `\r`         | ASCII carriage return (CR)                                        |
+| `\t`         | ASCII tab (TAB)                                                   |
+| `\uhhhh`     | Unicode character with the given 4-digit 16-bit hex code point    |
+| `\Uhhhhhhhh` | Unicode character with the given 8-digit 32-bit hex code point    |
+| `\v`         | ASCII vertical tab (VT)                                           |
+| `\xhh`       | Unicode character with the given 2-digit 8-bit hex code point     |

@@ -1,0 +1,66 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+# Numeric Types
+
+Go has several different types to represent numbers, but they fall into two categories:
+
+* Integer numbers.
+* Floating-point numbers.
+
+```go
+var count int = 100            // Integer type
+var price float64 = 19.99      // Floating-point type
+```
+
+## Booleans
+
+The [boolean type](https://golang.org/ref/spec#Boolean_types) only contains two values denoted by the predeclared constants `true` and `false`. The [predeclared identifier](https://golang.org/ref/spec#Predeclared_identifiers) for the boolean type is `bool`.
+
+## Integers
+
+Integer numbers are, like in maths, numbers without a decimal component. In mathematics, the set of integers consists of:
+
+* The number **zero** (0)
+* The **natural numbers** (1, 2, 3, ...)
+* And the **negative integers** (−1, −2, −3, ...)
+
+In math, the set of integer numbers is countably **infinite** but, in computer science we are constrained by the size of the memory. That means that integers are a data type that represents a finite subset of the mathematical integers.
+
+In Go we have several integer types which we can classify in 4 groups:
+
+1. **Unsigned integers**, in other words all positive numbers. We can differentiate 4 types in this group:
+
+  * `uint8` - the set of all unsigned 8-bit integers (0 to 255)
+  * `uint16` - the set of all unsigned 16-bit integers (0 to 65535)
+  * `uint32` - the set of all unsigned 32-bit integers (0 to 4294967295)
+  * `uint64` - the set of all unsigned 64-bit integers (0 to 18446744073709551615)
+
+2. **Signed integers**, also 4 types in this group:
+
+  * `int8` - the set of all signed 8-bit integers (-128 to 127)
+  * `int16` - the set of all signed 16-bit integers (-32768 to 32767)
+  * `int32` - the set of all signed 32-bit integers (-2147483648 to 2147483647)
+  * `int64` - the set of all signed 64-bit integers (-9223372036854775808 to 9223372036854775807)
+
+3. There are also two **alias types**:
+
+  * `byte` - which is the same as `uint8`.
+  * `rune` - which is an alias for `int32`.
+
+  Except these last 2 types, all numeric types are different so conversions are required when different numeric types are mixed in an expression or assignment.
+
+4. Finally, there are also 3 **machine dependent** integer types. `uint`, `int` and `uintptr`. They are machine dependent because their size depends on the type of architecture you are using.
+
+Generally speaking if you are working with integers you should just use the `int` type.
+
+
+## Bytes
+
+Bytes are essentially aliases for `uint8` and are often used to represent binary data or ASCII characters:
+
+```go
+var data []byte = []byte{65, 66, 67} // Represents the ASCII characters 'A', 'B', 'C'
+```
+
+If you're wondering about the difference between `rune` and `byte`, remember that a `rune` represents a Unicode code point (which can be more than one byte), while a `byte` is simply an 8-bit unsigned integer.
