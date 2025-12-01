@@ -28,7 +28,7 @@ Note that this syntax also allows to perform the assignment at the same time:
 var username string =  "Bob" // Declaration and Assignment
 ```
 
-It's also possible to omit the type, in which case the Go compiler will infer the type from the value being assigned:
+It's also possible to **omit the type**, in which case the Go compiler will infer the type from the value being assigned:
 
 ```go
 var username = "Bob" // Look Ma, no type!
@@ -40,9 +40,48 @@ And we can **declare** multiple variables at the same time:
 var name1, name2 string
 ```
 
+### The Zero Value
+
+When we declare a variable without assigning it a value, the variable is initialized with the **zero value** for its type:
+
+- `0` for numbers.
+- `''` for strings.
+- `false` for booleans.
+- `nil` for [interfaces][6] and reference types(slice, pointer, map, channel, function).
+
+The **zero-value mechanism** ensures that a variable always holds a value according to its type.
+
+<Admonition type="info" title="No Uninitialized Variables">
+  In Go there is no such thing as an uninitialized variable.
+</Admonition>
+
+### Factoring variable Declarations
+
+Sometimes we have to declare a bunch of variables, having to repeat the `var` keyword gets old very quickly. It’s much more clean if we factor the declarations under one `var` keyword:
+
+```Go
+var (
+    message string
+    num int
+    answer bool
+    price float32
+)
+```
+
+Also when we are declaring multiple variables that share the same type, we can group them in one line:
+
+```Go
+var (
+    message, question string // 👈
+    num int
+    answer bool
+    price float32
+)
+```
+
 ## Shorthand Syntax
 
-Go offers a shorthand syntax that allows us to declare and assign values in a slightly shorter fashion:
+Go offers a [shorthand syntax](https://golang.org/ref/spec#Short_variable_declarations) that allows us to declare and assign values in a slightly shorter fashion:
 
 ```go
 username := "Bob" // Declaration and Assignment
@@ -54,7 +93,7 @@ Also, the compiler is able to infer the **type** of the variable from the type o
 <Admonition>
   The `:=` operator is known as the [short variable declaration
   operator](https://go.dev/ref/spec#Short_variable_declarations). In **Python**
-  is known as the **walrus operator**.
+  is known as the **walrus operator**, and it works a bit different.
 </Admonition>
 
 The shorthand syntax `:=` can only be used **inside functions**. If you try to use it at the package level, you'll get a compilation error.
@@ -73,21 +112,22 @@ func main() {
   Do not use the `:=` operator outside functions!
 </Admonition>
 
-## Constants
-
-Variables can be reassigned new values (hence the name _variable_) using the **assignment operator** (`=`):
+Sometimes, when using the shorthand syntax, we may want to specify the type of the variable explicitly. We can do so using a **type casting expression**:
 
 ```go
-username := "Bob"
-username = "Robert" // Assign a new value
+pi := float32(3.14)
 ```
 
-Constants in the other hand, cannot be reassigned:
+## Naming Conventions
 
-```go
-const username string = "Bob"
-username = "Robert"             // ❌ Error!
-```
+We can name our variables whatever we want, respecting some basic rules:
+
+- We can use any combination of letter, digits and the `_` character.
+- We cannot use Go [keywords][2] or [predeclared identifiers][3].
+- The **first character** in our identifier can not be a number.
+- Names are **case-sensitive**.
+
+> The underscore character (`_`) by itself is a special identifier called the **blank identifier**. This identifier can be assigned any type of value, but its value is discarded so it cannot be used anymore in the code that follows.
 
 ## Multiple Assignment
 
@@ -96,6 +136,10 @@ Go allows us to assign several values at the same time:
 ```go
 username1, username2 = "Bob", "Lisa"
 ```
+
+<Admonition type="info" title="Tuple Assignments">
+  These are known as tuple assignments.
+</Admonition>
 
 This also works when we create the variables:
 
@@ -113,4 +157,12 @@ And it also works with **constants**:
 
 ```go
 const name1, name2 string = "Bob", "Lisa"
+```
+
+## The Blank Identifier
+
+Sometimes we need to ignore some values, for example when a function returns multiple values but we are interested only in some of them. In these cases we can use the [blank identifier](https://golang.org/ref/spec#Blank_identifier) (`_`) to discard the values we don't care about:
+
+```go
+value, _ := someFunction() // We ignore the second return value
 ```
