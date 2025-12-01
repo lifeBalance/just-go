@@ -59,7 +59,7 @@ The **zero-value mechanism** ensures that a variable always holds a value accord
 
 Sometimes we have to declare a bunch of variables, having to repeat the `var` keyword gets old very quickly. It’s much more clean if we factor the declarations under one `var` keyword:
 
-```Go
+```go
 var (
     message string
     num int
@@ -70,7 +70,7 @@ var (
 
 Also when we are declaring multiple variables that share the same type, we can group them in one line:
 
-```Go
+```go
 var (
     message, question string // 👈
     num int
@@ -123,11 +123,10 @@ pi := float32(3.14)
 We can name our variables whatever we want, respecting some basic rules:
 
 - We can use any combination of letter, digits and the `_` character.
-- We cannot use Go [keywords][2] or [predeclared identifiers][3].
+- We cannot use Go [keywords](https://go.dev/ref/spec#Keywords) or [predeclared identifiers](https://go.dev/ref/spec#Predeclared_identifiers).
 - The **first character** in our identifier can not be a number.
 - Names are **case-sensitive**.
-
-> The underscore character (`_`) by itself is a special identifier called the **blank identifier**. This identifier can be assigned any type of value, but its value is discarded so it cannot be used anymore in the code that follows.
+- By convention, variable names in Go use **camelCase**.
 
 ## Multiple Assignment
 
