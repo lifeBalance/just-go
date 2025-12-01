@@ -27,15 +27,13 @@ Strings defined in our programs directly (by typing the text), using either **do
 
 Interpreted string literals are the most commonly used, but raw string literals are useful for writing multiline messages, HTML, and regular expressions.
 
-## Runes
+<Admonition type="info" title="Runes">
 
-Runes represent a single Unicode character and are defined using **single quotes**:
+In other languages, we can use single quotes for strings, but in Go, single quotes are used for rune literals (which represent a **single character**). In Go, the **single quote** syntax is reserved for defining runes, which are usually used to represent individual Unicode code points.
 
-```go
-var letter rune = 'A'
-```
+<Code lang="go" code="var letter rune = 'A'" />
 
-In other languages, we can use single quotes for strings, but in Go, single quotes are used for rune literals (which represent a **single character**).
+</Admonition>
 
 ## Unicode and UTF-8
 
