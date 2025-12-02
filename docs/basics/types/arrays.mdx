@@ -1,15 +1,155 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
+import { Image } from 'astro:assets'
+import arrayIntsMemory from './images/[4]int.svg'
 
 # Arrays
 
-In Go, an array is a collection of elements of the same type, stored in contiguous memory locations. They have a **fixed size**, which means that once an array is created, its size cannot be changed.
+In Go, an [array](https://go.dev/ref/spec#Array_types) is a collection of elements of the same type, stored in contiguous memory locations. For example:
+
+```go
+var numbers [4]int
+```
+
+The line above declares an array of integers named `numbers` with four elements inside. This is the in memory layout of this data:
+
+<Image src={arrayIntsMemory} alt="array in memory" width={300} />
+
+Let's dissect the statement above:
+
+- Arrays can be declared like other variables, using the `var` keyword.
+- Array **names** must follow the same conventions than variables.
+- The **length** of the array in **square brackets**.
+- The **type** of values, in this case `int`.
+
+The statement above declares an array named `numbers` that holds 4 integer values. All the elements in this array are initialized to the zero value of the `int` type, which is `0`.
+
+<Admonition type="info" title="Array Length">
+  In Go, the length of an array is part of its type. That means that `[4]int`
+  and `[10]int` are considered different types. In practice that means that if, for example, a function
+  expects an argument typed as `[4]int`, you cannot pass an `[10]int` to it.
+</Admonition>
 
 ## Declaring and Initializing Arrays
 
-Arrays can created like other variables, using the `var` keyword. You specify the type of elements and the number of elements required by enclosing the number in square brackets.
+We can also declare and initialize an array in a single line using a composite literal:
 
 ```go
-var numbers [5]int // Declares an array of 5 integers
-var names [3]string = [3]string{"Alice", "Bob", "Charlie"} // Declares and initializes an array of 3 strings
+var names [3]string = [3]string{"Alice", "Bob", "Charlie"}
 ```
+
+### A Shorter Syntax
+
+When inside a function, we can also use the **short syntax** for creating arrays:
+
+```go
+a := [4]int{33, 4, 12, 13}
+```
+
+Sometimes arrays can get too long to fit on one line, so Go allows you to break it up like this:
+
+```go
+a := [3]string{
+  "Lorem ipsum,",
+  "Dolor sit amet,",
+  "Consectetur adipiscing elit.",
+}
+```
+
+Notice the **trailing comma** after the last element; this is **required** by Go and it allows us to easily rearrange the position of the elements without having to worry about taking away the comma after the last one. It also comes in handy to remove an element from the array by commenting out its line; in that case the value at that position is zeroed.
+
+### Automatic Length
+
+Also, we can pass an **ellipsis** for the **length** when we initialize, so the compiler will count the elements for us:
+
+```go
+a := [...]int{
+  33,
+  4,
+  12,
+  13,
+}
+```
+
+## Length of an Array
+
+We can get the length of an array using the built-in [len or cap](https://go.dev/ref/spec#Length_and_capacity) functions:
+
+```go
+a := [4]int{33, 4, 12, 13}
+
+fmt.Println(a) // 4
+```
+
+In Go, arrays have a **fixed size**, which means that once an array is created, its size cannot be changed.
+
+## Accessing arrays
+
+The elements in an array are arranged sequentially from left to right. Each element has an associated index. We can access the value on each element using its index inside the index operator (`[]`). For example:
+
+```go
+a := [...]int{22, 44, 78}
+
+fmt.Println("Before:", a) // Before: [22 44 78]
+a[0] = 100
+a[1]= 200
+a[3] = 300
+fmt.Println("After:", a) // After: [100 200 300]
+```
+
+As in many other programming languages, arrays in Go are **zero-indexed**, meaning their elements are arranged starting with 0. In other words, the first element in an array has index 0, the second has index 1 and so on.
+
+```
+Value:  | 22  | 44  | 78  | 122 |
+Index:  | 0   | 1   | 2   | 3   |
+```
+
+If we try to access any element further the last element of an array, we'll get an `out of bounds` error. For example:
+
+```go
+a := [4]int{22, 44, 78, 100}
+
+a[len(a)] = 101 // ❌ Error
+```
+
+Since the first element of an array is at index `0`, the last element has always the index `len(a) - 1`. That means that an element with index `len(a)` falls right outside the limits of the array.
+
+## Multidimensional arrays
+
+When we create an array using one index, the result is a linear data structure called **one-dimensional array**, what is known in mathematics as a **vector**. But if we use two indices, the resulting data structure is known as a **two-dimensional array**. For example:
+
+```Go
+var a = [3][3]int{
+  {11, 22, 33},
+  {44, 55, 66},
+  {77, 88, 99},
+}
+```
+
+Such an array can be used to represent a **matrix**. The following diagram may help understand how the indexes work regarding the elements distribution:
+
+![matrix](images/matrix.png)
+
+## Arrays are values
+
+Arrays are **values**. So, for example if we create an array named `a` and assign it to `b`:
+
+```go
+a := [4]int{1, 2, 3}
+b := a
+
+a[0] = 100
+fmt.Println("a =", a) // [100 2 3]
+fmt.Println("b =", b) // [1 2 3]
+```
+
+In the above example `b` gets assigned its own independent **copy of the array**, which means that changes made to elements of `a`, will not affect the elements in `b`.
+
+<Admonition>
+  It's important to remember that when we **pass an array to a function**, it
+  will receive a **copy of the array**, not a pointer to it. Any modifications
+  to the array inside the function will not affect to the array outside of it.
+</Admonition>
+
+In those situations where we need to manipulate the contents of an array, we could pass a **pointer to the array**, but that's not idiomatic Go. In the section about **slices** we'll see how they solve this problem.
+

@@ -3,27 +3,37 @@ import { Code } from 'astro-expressive-code/components'
 
 # Introduction
 
-Go is a [statically typed](https://en.wikipedia.org/wiki/Type_system#Static_type_checking) language, which means that variables can only hold the type of data we specified during the declaration. We can categorize Go's [types](https://go.dev/ref/spec#Types) in four main groups:
+Go is a [statically typed](https://en.wikipedia.org/wiki/Type_system#Static_type_checking) language, which means that variables can only hold the type of data we specified during the declaration. We can categorize Go's [types](https://go.dev/ref/spec#Types) in four main groups.
 
-* Basic types:
-  * [Strings](https://golang.org/ref/spec#String_types)
-  * [Numeric types](https://golang.org/ref/spec#Numeric_types)
-  * [Booleans](https://golang.org/ref/spec#Boolean_types)
+## Basic types
 
-* Aggregate types
-  * [Arrays](https://golang.org/ref/spec#Array_types)
-  * [Structs](https://golang.org/ref/spec#Struct_types)
+The most basic types in Go are:
 
-* Reference types
-  * [Pointers](https://golang.org/ref/spec#Pointer_types)
-  * [Slices](https://golang.org/ref/spec#Slice_types)
-  * [Maps](https://golang.org/ref/spec#Map_types)
-  * [Functions](https://golang.org/ref/spec#Function_types)
-  * [Channels](https://golang.org/ref/spec#Channel_types)
-
-* [Interfaces](https://golang.org/ref/spec#Interface_types)
-
-
-## Booleans
+* [Strings](https://golang.org/ref/spec#String_types)
+* [Numeric types](https://golang.org/ref/spec#Numeric_types)
+* [Booleans](https://golang.org/ref/spec#Boolean_types)
 
 The [boolean type](https://golang.org/ref/spec#Boolean_types) only contains two values denoted by the predeclared constants `true` and `false`. The [predeclared identifier](https://golang.org/ref/spec#Predeclared_identifiers) for the boolean type is `bool`.
+
+## Aggregate types
+
+**Aggregate types** are those types formed by aggregating or concatenating a bunch of other values of the same type. These values are stored in memory next to each other.
+
+* [Arrays](https://golang.org/ref/spec#Array_types)
+* [Structs](https://golang.org/ref/spec#Struct_types)
+
+As we'll see when we get to the dedicated section, both arrays and structs are **fixed size**, whereas their dynamic equivalents (slices and maps) can grow in size as needed.
+
+## Reference types
+
+Reference types are those types that do not store the actual value, but a reference (or pointer) to the value stored somewhere else in memory.
+
+* [Pointers](https://golang.org/ref/spec#Pointer_types)
+* [Slices](https://golang.org/ref/spec#Slice_types)
+* [Maps](https://golang.org/ref/spec#Map_types)
+* [Functions](https://golang.org/ref/spec#Function_types)
+* [Channels](https://golang.org/ref/spec#Channel_types)
+
+## Interface types
+
+An [interface](https://golang.org/ref/spec#Interface_types) is a type that specifies a set of method signatures. A variable of interface type can hold any value that implements those methods.
