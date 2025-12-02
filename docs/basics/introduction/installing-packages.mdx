@@ -1,0 +1,102 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import utilsGreet from './code/greet3/utils/utils.go?raw'
+
+# Installing Packages
+
+Now that we know how to initialize **modules**, let's initialize one named `greet3`, and copy over the code from `greet2`.
+
+<Admonition type="tip" title="CopyPaste">
+  If you just copy/paste the `greet2` folder and rename it to `greet3`, remember
+  to update `go.mod`, and all the files that use the module!
+</Admonition>
+
+You should end up with this file structure:
+
+```
+greet3/
+    ├── go.mod
+    ├── main.go
+    └── utils/
+        └── utils.go
+```
+
+Let's say we want to improve our greeting funtionality by making use of a **third-party package**.
+
+<Admonition type="tip" title="Package Directory">
+  In [https://pkg.go.dev/](https://pkg.go.dev/), we can search for third-party
+  packages.
+</Admonition>
+
+If we search for `cowsay`, we'll find a few packages; let's copy the **repository name** of the first one, and install it:
+
+```go
+go get github.com/Code-Hex/Neo-cowsay/v2
+```
+
+<Admonition type="tip" title="Package Directory">
+  Once we find the package we want, the website has a **copy button** to easily
+  get the package **repository name** 👍
+</Admonition>
+
+If you open your `go.mod` file, you'll see how the new dependency has been added:
+
+```go
+module greet3
+
+go 1.25.4
+
+require (
+	github.com/Code-Hex/Neo-cowsay/v2 v2.0.4 // indirect
+	github.com/Code-Hex/go-wordwrap v1.0.0 // indirect
+	github.com/mattn/go-runewidth v0.0.13 // indirect
+	github.com/rivo/uniseg v0.2.0 // indirect
+)
+```
+
+As you can see, we have a new `require` entry, where our dependency is listed. Also, the dependencies that `Neo-cowsay` itself has!
+
+## Importing the Package
+
+In our `utils.go` file, we have to import the new package using the same **repository name** we used for installing it:
+
+```go
+import cowsay "github.com/Code-Hex/Neo-cowsay/v2"
+```
+
+We can name our import however we want; in this case we're using `cowsay` but we may have chosen whatever name suitable to our needs.
+
+## Using the Package
+
+Once the package has been imported, we can start using it; check the new version of `GreetUser` (in `utils/utils.go`):
+
+<Code code={utilsGreet} lang="go" title="utils.go" mark={{ range: '17-24' }} />
+
+Several things going on in our function:
+
+- First we build a `msg` string using the `strings.Join` function (it takes an array of strings as argument).
+- Next we call the `cowsay.Say` function passing the `msg` we want the cow to say.
+- We have to check for **errors**.
+- If all is good, we print the message returned by the cow.
+
+## Running the Module
+
+To run our module, open a terminal, navigate to the `greet3` folder, and run:
+
+```bash
+go run .
+```
+
+You should see:
+
+```
+Enter your name: Ralphie
+ _________________ 
+< Hello Ralphie ! >
+ ----------------- 
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
