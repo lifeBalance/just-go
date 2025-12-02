@@ -1,0 +1,177 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import { Image, Picture } from 'astro:assets'
+import sliceCode from './code/slices/main.go?raw'
+import sliceCode2 from './code/slices2/main.go?raw'
+import sliceCode3 from './code/slices3/main.go?raw'
+import sliceCode4 from './code/slices4/main.go?raw'
+import sliceCode5 from './code/slices5/main.go?raw'
+import sliceCode6 from './code/slices6/main.go?raw'
+import sliceCode7 from './code/slices7/main.go?raw'
+import sliceCode8 from './code/slices8/main.go?raw'
+import sliceCode9 from './code/slices9/main.go?raw'
+import sliceHeader from './images/slice_header.png'
+import slicingSlices from './images/slicing_slices.png'
+import sliceDescriptor2 from './images/slice_descriptor_2.png'
+
+# Slices
+
+In the previous section we saw how **arrays** have a **fixed length**, so once they're created, we can't add new elements to them. Fortunately, Go also includes a resizable type known as [slice](https://go.dev/ref/spec#Slice_types). For example:
+
+<Code code={sliceCode} lang="go" />
+
+Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array. This is the output:
+
+```
+Array: [1 3 5 7 0 0 0]
+Length:  7 / Capacity: 7
+
+Slice: [5 7 0]
+Length:  3 / Capacity: 5
+```
+
+Several things to notice:
+
+- Notice how Go has zeroed the values of the array we didn’t initialized.
+- The functions `len()` and `cap()` return the same value in the case of the **array**, its **length**.
+- But in the case of the **slice**, the **length** and **capacity** are different.
+
+To understand that, we have to dig a bit deeper in what a slice really is.
+
+## Slice internals
+
+A **slice** is always a **reference** to an underlying **array**. The documentation refers to this data structure as a **descriptor**, and it’s also known as the **slice header**. The following diagram illustrates the slice of our last example:
+
+<Picture
+  src={sliceHeader}
+  alt="Slice Header"
+  pictureAttributes={{ style: 'background-color: gray;' }}
+/>
+
+A slice is a small data structure containing 3 parts:
+
+- A **pointer** (aka reference) to the element of the underlying array where the slice starts.
+- The **length** is the number of array elements that our slice is referencing. We can reassign values to the elements of the slice inside its length range, but it we try to do it outside it, we’ll get a `panic: runtime error`.
+- The **capacity** of the slice is the distance between the first element of the slice and the last element of the array. That means that the **capacity** of the **slice** is determined by the **length** of the underlying **array**.
+
+<Admonition>
+  The **capacity** is the _potential amount of elements_ that a **slice** can
+  have. In the last example the slice had `3` elements, but it may have had `5`.
+</Admonition>
+
+## Creating slices
+
+There are several ways to create a slice:
+
+- **Slicing** an array (what we did in our last example).
+- **Slicing** another slice.
+- Declaring and initializing a slice.
+
+### Slicing an array
+
+Slicing is done using **2 indices** separated by a **colon** inside the **index operator**:
+
+```
+s[n:m]
+```
+
+The above expression takes a slice fron index `n` to `m - 1` (up to `m`, but not included). The following table shows the slicing operations available in Go:
+
+| Syntax           | Description/result                                        |
+| :--------------- | :-------------------------------------------------------- |
+| `s[n:m]`         | A new slice from index `n` to index `m - 1`               |
+| `s[n:]`          | A new slice from index `n` to index `len(s) - 1`          |
+| `s[:m]`          | A new slice from index `0` to `m - 1`                     |
+| `s[:]`           | A new slice fro index `0` to `len(s) - 1`                 |
+| `s = s[:cap(s)]` | Increase the length of slice `s` to its **full capacity** |
+
+### Slicing a slice
+
+We can create a slice by slicing an existing slice; the result will be another slice that references the same array. For example, let’s use our last example and create a second slice out of the first one:
+
+<Code code={sliceCode2} lang="go" />
+
+Above we have:
+
+- Created an array with 7 integers.
+- Created slice `s1` by slicing the array.
+- Created the slice `s2` out of the slice `s1`.
+
+Both slices are referencing the same array. Notice how we have used the capacity of the `s1` in our slicing operator to create `s2` with a length that extends to its **full capacity**. Check the following diagram:
+
+<Picture
+  src={slicingSlices}
+  alt="Slicing slices"
+  pictureAttributes={{ style: 'background-color: gray;' }}
+/>
+
+The length of `s2` is at its maximum, the length of a slice can never be bigger than its capacity. Every time we re-slice, the resulting slice will have the same capacity as the original slice, since both of their pointers are directed at the same array. In other words, we can change only the length field, but always within the capacity limits.
+
+<Admonition>
+  Because slices are just **references**, re-slicing operations do not copy any
+  data from the original slice they just create new descriptors that point to
+  different areas of the **original array**.
+</Admonition>
+
+### Declaring Empty and Nil Slices
+
+We can create slices without using the **slicing operations** on arrays or other slices. But we don't need to use **slicing** for creating a slice. For example, the code belows declares a slice:
+
+<Code code={sliceCode3} lang="go" />
+
+In the code above we've created an **empty array** and an **empty slice**. In both cases they print `[]`, but if we use [reflect]() package, we can see that:
+
+- **Arrays** are typed as `[n]T`, where `n` is the length and `T` the type.
+- **Slices** are typed as `[]T`, where `T` is the type.
+
+Note that, in the last line our slice is marshalled as `null`; that's because we're dealing with a `nil` slice. In order to create an **empty slice**, we have to use a **composite literal**:
+
+<Code code={sliceCode4} lang="go" />
+
+Creating **empty slices** is extremely common in Go; it's a core idiom for handling collections that start empty but may grow (e.g., via `append`).
+
+### Initializing Slices: Composite literals and make
+
+Whenever we are dealing with a small amount of elements which we know beforehand, we could create our slice specifing the items in a composite literal:
+
+<Code code={sliceCode5} lang="go" />
+
+Or we could start with an **empty slice** and use `append` to populate it according to our program's needs (super common pattern):
+
+<Code code={sliceCode6} lang="go" />
+
+If we wanted to create a slice of a given length, and initialize the items to their **zero value**, we could use the `make` function:
+
+<Code code={sliceCode7} lang="go" />
+
+<Picture
+  src={sliceDescriptor2}
+  alt="Slice descriptor 2"
+  pictureAttributes={{ style: 'background-color: gray;' }}
+/>
+
+Notice also that the **length** and **capacity** of the slice are the same, this is because `make()` created an array big enough to accommodate the slice. If we want to create an array bigger we have to use the optional third argument.
+
+## Slices are resizable
+
+Slices are **resizable**, meaning that we can extend the size of a slice to its full capacity, but not more. We could do that by creating another slice:
+
+<Code code={sliceCode8} lang="go" />
+
+The code above uses slicing to extend a slice, which still refers to the same array. But what if we need to extend a slice beyond the capacity limit?
+
+<Code code={sliceCode9} lang="go" />
+
+The [append](https://pkg.go.dev/builtin#append) built-in function will append elements to the end of a slice:
+
+- If it has sufficient capacity, the destination is resliced to accommodate the new elements.
+- If it does not, a **new underlying array** will be allocated.
+
+## Other Useful stuff about Slices
+
+Check these interesting articles about how slices work:
+
+- Like [this one](http://blog.golang.org/go-slices-usage-and-internals) from the golang official blog
+- Or [this one](https://blog.golang.org/slices)
+- Check also [this one](http://www.goinggo.net/2013/08/understanding-slices-in-go-programming.html) about a function for inspecting the slice header
+- Also [slice tricks](https://github.com/golang/go/wiki/SliceTricks)
