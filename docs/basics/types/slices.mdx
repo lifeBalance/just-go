@@ -19,7 +19,7 @@ import sliceDescriptor2 from './images/slice_descriptor_2.png'
 
 In the previous section we saw how **arrays** have a **fixed length**, so once they're created, we can't add new elements to them. Fortunately, Go also includes a resizable type known as [slice](https://go.dev/ref/spec#Slice_types). For example:
 
-<Code code={sliceCode} lang="go" />
+<Code code={sliceCode} lang="go" title="slices1/main.go" />
 
 Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array.
 
@@ -44,7 +44,7 @@ To understand that, we have to dig a bit deeper in what a slice really is.
 
 ## Slice internals
 
-A slice always refer to an underlying array, but it's not just a **pointer**. 
+A slice always refer to an underlying array, but it's not just a **pointer**.
 The documentation refers to slices as **descriptors**. A slice is a small data structure holding three pieces of information. The following diagram illustrates the slice of our last example:
 
 <Picture
@@ -74,27 +74,28 @@ There are several ways to create a slice:
 
 ### Slicing an array
 
-Slicing is done using **2 indices** separated by a **colon** inside the **index operator**:
+Slicing is done using **2 indices** separated by a **colon** inside the **square brackets**, which is known as a [slice expression](https://go.dev/ref/spec#Slice_expressions):
 
 ```
-s[n:m]
+s[m:n]
 ```
 
-The above expression takes a slice fron index `n` to `m - 1` (up to `m`, but not included). The following table shows the slicing operations available in Go:
+The above expression takes a slice from index `n` to `m - 1` (up to `m`, but not included). The following table shows the slicing operations available in Go:
 
-| Syntax           | Description/result                                        |
-| :--------------- | :-------------------------------------------------------- |
-| `s[n:m]`         | A new slice from index `n` to index `m - 1`               |
-| `s[n:]`          | A new slice from index `n` to index `len(s) - 1`          |
-| `s[:m]`          | A new slice from index `0` to `m - 1`                     |
-| `s[:]`           | A new slice from index `0` to `len(s) - 1`                |
-| `s = s[:cap(s)]` | Increase the length of slice `s` to its **full capacity** |
+| Syntax   | Description/result                             |
+| :------- | :--------------------------------------------- |
+| `a[m:n]` | A new slice from index `m` to index `n - 1`    |
+| `a[:n]`  | A new slice from index `0` to `n - 1`          |
+| `a[m:]`  | A new slice from index `m` to maximum capacity |
+| `a[:]`   | A new slice from index `0` to maximum capacity |
+
+The last two **slice expressions** create slices that extends as far as possible in the array. This is equivalent to `a[:len(a)]` or `a[:cap(a)]`, since in arrays the **length** and the **capacity** are the same.
 
 ### Slicing a slice
 
 We can create a slice by slicing an existing slice; the result will be another slice that references the same array. For example, let’s use our last example and create a second slice out of the first one:
 
-<Code code={sliceCode2} lang="go" />
+<Code code={sliceCode2} lang="go" title="slices2/main.go" />
 
 Above we have:
 
@@ -120,52 +121,62 @@ The length of `s2` is at its maximum, the length of a slice can never be bigger 
 
 ### Declaring Empty and Nil Slices
 
-We can create slices without using the **slicing operations** on arrays or other slices. But we don't need to use **slicing** for creating a slice. For example, the code belows declares a slice:
+We can create slices without using the **slicing operations** on arrays or other slices. For example, the code belows declares a slice:
 
-<Code code={sliceCode3} lang="go" />
+<Code code={sliceCode3} lang="go" title="slices3/main.go" />
 
 In the code above we've created an **empty array** and an **empty slice**. In both cases they print `[]`, but if we use [reflect]() package, we can see that:
 
-- **Arrays** are typed as `[n]T`, where `n` is the length and `T` the type.
-- **Slices** are typed as `[]T`, where `T` is the type.
+- **Arrays** are typed as `[n]T`, where `n` is the length (in this case `0`) and `T` the type.
+- **Slices** are typed as `[]T`, where `T` is the type. Even if the slice is not `nil` or empty, the type will be `[]T`.
 
 Note that, in the last line our slice is marshalled as `null`; that's because we're dealing with a `nil` slice. In order to create an **empty slice**, we have to use a **composite literal**:
 
-<Code code={sliceCode4} lang="go" />
+<Code code={sliceCode4} lang="go" title="slices4/main.go" />
 
-Creating **empty slices** is extremely common in Go; it's a core idiom for handling collections that start empty but may grow (e.g., via `append`).
+<Admonition title="Nil vs Empty">
+The main difference between `nil` and **empty** slices, it's that `nil` slices are **not initialized**, meaning that no underlying array exists!
 
-### Initializing Slices: Composite literals and make
+To expand a **not initialized** slice you can use `append` (since it creates an underlying array) but never a **slicing operation**, otherwise you'd get a panic error.
+</Admonition>
 
-Whenever we are dealing with a small amount of elements which we know beforehand, we could create our slice specifing the items in a composite literal:
+Creating **empty slices** is extremely common in Go, it's a core idiom for handling collections that start empty but may grow (e.g., via `append`). For example:
 
-<Code code={sliceCode5} lang="go" />
+<Code code={sliceCode6} lang="go" title="slices6/main.go" />
 
-Or we could start with an **empty slice** and use `append` to populate it according to our program's needs (super common pattern):
+By the way, you can create an **empty slice** from an **empty array**:
 
-<Code code={sliceCode6} lang="go" />
+```go
+a := [...]byte{}
+s := a[:]
+```
 
-If we wanted to create a slice of a given length, and initialize the items to their **zero value**, we could use the `make` function:
+You can also create an **empty slice** using the `make` built-in function:
 
-<Code code={sliceCode7} lang="go" />
+<Code code={sliceCode7} lang="go" title="slices7/main.go" />
 
-<Picture
-  src={sliceDescriptor2}
-  alt="Slice descriptor 2"
-  pictureAttributes={{ style: 'background-color: gray;' }}
-/>
+This function allows us to create a slice specifying its length. At the same time, it creates the underlying array, that's why the **length** and **capacity** of the slice are the same, because `make()` created an array big enough to accommodate our slice size. That's why the slice items are initialized to their zero values.
 
-Notice also that the **length** and **capacity** of the slice are the same, this is because `make()` created an array big enough to accommodate the slice. If we want to create an array bigger we have to use the optional third argument.
+<Admonition>
+If we want to create a bigger underlying array, we have to use the **optional third argument**.
+</Admonition>
+
+### Initializing Slices: Composite literals
+
+Whenever we are dealing with a small amount of elements which we know beforehand, we could specify the items:
+
+<Code code={sliceCode5} lang="go" title="slices5/main.go" />
+
 
 ## Slices are resizable
 
 Slices are **resizable**, meaning that we can extend the size of a slice to its full capacity, but not more. We could do that by creating another slice:
 
-<Code code={sliceCode8} lang="go" />
+<Code code={sliceCode8} lang="go" title="slices8/main.go" />
 
 The code above uses slicing to extend a slice, which still refers to the same array. But what if we need to extend a slice beyond the capacity limit?
 
-<Code code={sliceCode9} lang="go" />
+<Code code={sliceCode9} lang="go" title="slices9/main.go" />
 
 The [append](https://pkg.go.dev/builtin#append) built-in function will append elements to the end of a slice:
 
@@ -176,7 +187,7 @@ The [append](https://pkg.go.dev/builtin#append) built-in function will append el
 
 A **slice** is always a **reference** to an underlying **array**, which means that changes in the values of the **slice** elements will change the values in the **array** and viceversa. For example:
 
-<Code code={sliceCode10} lang="go" />
+<Code code={sliceCode10} lang="go" title="slices10/main.go" />
 
 In the example above, we create a slice `s1` out of the array `a`. As you can see, changes to the elements of `s1` reflect on the elements of `a`. The same happens with `s2`; both slices refer to the same array.
 
