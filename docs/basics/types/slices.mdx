@@ -175,6 +175,12 @@ When we are dealing with a small amount of elements which are known beforehand, 
 
 <Code code={sliceCode5} lang="go" title="slices5/main.go" />
 
+Basically is like declaring an array, the only difference is the missing **length** between the **square brackets**. This syntax implicitly creates the underlying array for us big enough to hold the specified items (that's why the **length** and **capacity** of slices created this way will always be the same).
+
+<Admonition type="tip" title="Multiline Composite Literals">
+  The same as with arrays, we can break up the assignments in several lines.
+</Admonition>
+
 ## Slices are resizable
 
 Slices are **resizable**, meaning that we can extend the size of a slice according to our needs. When doing so, there are two posible scenarios:

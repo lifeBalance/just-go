@@ -1,58 +1,3 @@
-# Slices
-
-
-
-
-> 
-
-
-
-
-### Declaring and Initializing Slices
-
-Another way of creating slices is using **variable declarations**. A slice is declared just like an array, except that we **omit the length** (otherwise it would be an array):
-
-```Go
-// Declaring a slice
-var s []byte
-
-// Initializing a slice
-s = make([]byte, 5, 5)
-
-// Slicing
-s = s[2:4]
-```
-
-In this example we have created a slice, whose elements are of the type byte. This is the output:
-
-```
-$ go run code/slices/03/main.go
-The slice is: [0 0]
-The length of the slice is: 2
-The cap of the slice is: 3
-slice == nil?: false
-```
-
-From this output it looks like we have created an **empty slice**, but it’s not that. If you look at the last line, its value is `nil`, what means that the slice is not pointing to any array, it’s an **unitialized slice**. As opposed to arrays, a slice is not ready to be used until we initialize it. If we try to write a value to a nil slice, we will get a **runtime error**:
-
-```Go
-// Declaring a slice
-var s []byte
-
-// Trying to assign to an unitialized slice
-s[0] = 32
-```
-
-If we try to run the code:
-
-```
-$ go run code/slices/04/main.go
-panic: runtime error: index out of range
-...
-```
-
-Slices have to be initialized before being used, next we are gonna see how.
-
 ### Initializing slices
 
 We can initialize slices in several ways, one of them is using a built-in function called make. This function can take 3 arguments:
@@ -85,8 +30,6 @@ In this case our slice is not a `nil` reference anymore, now it’s pointing to 
 
 ![slice descriptor](images/slice_descriptor_2.png)
 
-
-
 #### Specifying a capacity
 
 If we need an array bigger than the slice, we can specify a **capacity** and pass it as the the **third argument** to `make()`. The capacity has to be equal or bigger than the length of the slice. For example:
@@ -115,19 +58,6 @@ s2: [0 0 0 0 0 0 0 0]
 The length of s2 is: 8
 The cap of s2 is: 8
 ```
-
-### Using composite literal syntax
-
-Finally, the last way of creating slices is using literal notation. This is a very convenient syntax that allows us to declare and initialize a slice altogether. For example:
-
-```Go
-// Short syntax for creating slices
-s := []int{33, 3, 5}
-```
-
-Here we are declaring and initializing a **slice** with 3 integer elements, which basically is like declaring an array, the only difference is the missing **length** between the brackets. This syntax implicitly creates the underlying array for us. Since we have to define all of its elements, the **length** and **capacity** of slices created this way will always be the same.
-
-> The same as with arrays, we can break up the assignments in several lines.
 
 ## Arrays are values, slices are references
 

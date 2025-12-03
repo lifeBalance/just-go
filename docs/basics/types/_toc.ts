@@ -4,4 +4,5 @@ export default [
   { path: 'numeric-types', label: 'Numbers, Runes and Bytes' },
   { path: 'arrays', label: 'Arrays' },
   { path: 'slices', label: 'Slices' },
+  { path: 'structs', label: 'Structs' },
 ]
