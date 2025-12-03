@@ -10,6 +10,7 @@ import sliceCode6 from './code/slices6/main.go?raw'
 import sliceCode7 from './code/slices7/main.go?raw'
 import sliceCode8 from './code/slices8/main.go?raw'
 import sliceCode9 from './code/slices9/main.go?raw'
+import sliceCode10 from './code/slices10/main.go?raw'
 import sliceHeader from './images/slice_header.png'
 import slicingSlices from './images/slicing_slices.png'
 import sliceDescriptor2 from './images/slice_descriptor_2.png'
@@ -20,17 +21,20 @@ In the previous section we saw how **arrays** have a **fixed length**, so once t
 
 <Code code={sliceCode} lang="go" />
 
-Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array. This is the output:
+Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array.
 
-```
-Array: [1 3 5 7 0 0 0]
-Length:  7 / Capacity: 7
+<Admonition title='About Slicing'>
+To create a slice we use the general syntax: `a[m:n]`, where:
 
-Slice: [5 7 0]
-Length:  3 / Capacity: 5
-```
+- `a` represents the array where taking the slice from.
+- `m` is the **start element** (inclusive), in other words the array index which our slice is referencing.
+- `n` is the **end index** (exclusive), which is determined by the length of the array (can't go further the last array element).
 
-Several things to notice:
+The **length** of the resulting slice is `n - m`.
+
+</Admonition>
+
+Several things to notice in the code above:
 
 - Notice how Go has zeroed the values of the array we didn’t initialized.
 - The functions `len()` and `cap()` return the same value in the case of the **array**, its **length**.
@@ -40,7 +44,8 @@ To understand that, we have to dig a bit deeper in what a slice really is.
 
 ## Slice internals
 
-A **slice** is always a **reference** to an underlying **array**. The documentation refers to this data structure as a **descriptor**, and it’s also known as the **slice header**. The following diagram illustrates the slice of our last example:
+A slice always refer to an underlying array, but it's not just a **pointer**. 
+The documentation refers to slices as **descriptors**. A slice is a small data structure holding three pieces of information. The following diagram illustrates the slice of our last example:
 
 <Picture
   src={sliceHeader}
@@ -48,9 +53,9 @@ A **slice** is always a **reference** to an underlying **array**. The documentat
   pictureAttributes={{ style: 'background-color: gray;' }}
 />
 
-A slice is a small data structure containing 3 parts:
+This small data structure it’s also known as the **slice header**, an contains 3 parts:
 
-- A **pointer** (aka reference) to the element of the underlying array where the slice starts.
+- A **pointer** (aka reference) to the element of the underlying array where the slice starts (the `m` in `s[m:n]`).
 - The **length** is the number of array elements that our slice is referencing. We can reassign values to the elements of the slice inside its length range, but it we try to do it outside it, we’ll get a `panic: runtime error`.
 - The **capacity** of the slice is the distance between the first element of the slice and the last element of the array. That means that the **capacity** of the **slice** is determined by the **length** of the underlying **array**.
 
@@ -82,7 +87,7 @@ The above expression takes a slice fron index `n` to `m - 1` (up to `m`, but not
 | `s[n:m]`         | A new slice from index `n` to index `m - 1`               |
 | `s[n:]`          | A new slice from index `n` to index `len(s) - 1`          |
 | `s[:m]`          | A new slice from index `0` to `m - 1`                     |
-| `s[:]`           | A new slice fro index `0` to `len(s) - 1`                 |
+| `s[:]`           | A new slice from index `0` to `len(s) - 1`                |
 | `s = s[:cap(s)]` | Increase the length of slice `s` to its **full capacity** |
 
 ### Slicing a slice
@@ -166,6 +171,14 @@ The [append](https://pkg.go.dev/builtin#append) built-in function will append el
 
 - If it has sufficient capacity, the destination is resliced to accommodate the new elements.
 - If it does not, a **new underlying array** will be allocated.
+
+## Slices are references
+
+A **slice** is always a **reference** to an underlying **array**, which means that changes in the values of the **slice** elements will change the values in the **array** and viceversa. For example:
+
+<Code code={sliceCode10} lang="go" />
+
+In the example above, we create a slice `s1` out of the array `a`. As you can see, changes to the elements of `s1` reflect on the elements of `a`. The same happens with `s2`; both slices refer to the same array.
 
 ## Other Useful stuff about Slices
 
