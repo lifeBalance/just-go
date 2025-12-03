@@ -3,12 +3,16 @@ package main
 import "fmt"
 
 func main() {
-	a := [5]int{1, 3, 5, 7, 9} // Creating an array
+	a := [5]int{1, 2, 3}
 
-	s1 := a[1:3]    // Slicing an array
-	fmt.Println(s1) // [3 5]
+	s1 := a[:3]
+	s2 := a[:3]
+	s1 = append(s1, 4, 5)
+	s2 = append(s2, 4, 5, 6)
+	s1[0] = 100
+	s2[0] = 101
 
-	s1 = append(s1, 10, 11, 12, 13, 14, 15) // Extends and adds elements
-	fmt.Println(s1)                         // [3 5 10 11 12 13 14 15]
-	fmt.Println(a)                          // [1 3 5 7 9]
+	fmt.Println(a)  // [100 2 3 4 5]
+	fmt.Println(s1) // [100 2 3 4 5]
+	fmt.Println(s2) // [101 2 3 4 5 6]
 }

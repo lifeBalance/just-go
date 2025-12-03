@@ -130,6 +130,12 @@ In the code above we've created an **empty array** and an **empty slice**. In bo
 - **Arrays** are typed as `[n]T`, where `n` is the length (in this case `0`) and `T` the type.
 - **Slices** are typed as `[]T`, where `T` is the type. Even if the slice is not `nil` or empty, the type will be `[]T`.
 
+<Admonition title="Length of a Slice not part of its Type">
+  Remember when we mentioned in the section about **arrays**, that the length of
+  an array it's part of its type? Well, in the case of **slices**, their
+  **length** it's not part of their type.
+</Admonition>
+
 Note that, in the last line our slice is marshalled as `null`; that's because we're dealing with a `nil` slice. In order to create an **empty slice**, we have to use a **composite literal**:
 
 <Code code={sliceCode4} lang="go" title="slices4/main.go" />
@@ -138,6 +144,7 @@ Note that, in the last line our slice is marshalled as `null`; that's because we
 The main difference between `nil` and **empty** slices, it's that `nil` slices are **not initialized**, meaning that no underlying array exists!
 
 To expand a **not initialized** slice you can use `append` (since it creates an underlying array) but never a **slicing operation**, otherwise you'd get a panic error.
+
 </Admonition>
 
 Creating **empty slices** is extremely common in Go, it's a core idiom for handling collections that start empty but may grow (e.g., via `append`). For example:
@@ -158,30 +165,35 @@ You can also create an **empty slice** using the `make` built-in function:
 This function allows us to create a slice specifying its length. At the same time, it creates the underlying array, that's why the **length** and **capacity** of the slice are the same, because `make()` created an array big enough to accommodate our slice size. That's why the slice items are initialized to their zero values.
 
 <Admonition>
-If we want to create a bigger underlying array, we have to use the **optional third argument**.
+  If we want to create a bigger underlying array, we have to use the **optional
+  third argument**.
 </Admonition>
 
 ### Initializing Slices: Composite literals
 
-Whenever we are dealing with a small amount of elements which we know beforehand, we could specify the items:
+When we are dealing with a small amount of elements which are known beforehand, we could specify them in a [composite literal](https://go.dev/ref/spec#Composite_literals):
 
 <Code code={sliceCode5} lang="go" title="slices5/main.go" />
 
-
 ## Slices are resizable
 
-Slices are **resizable**, meaning that we can extend the size of a slice to its full capacity, but not more. We could do that by creating another slice:
+Slices are **resizable**, meaning that we can extend the size of a slice according to our needs. When doing so, there are two posible scenarios:
+
+- Resizing the slice respecting its capacity (the resulting slice refers to the same array).
+- Extending the slice further, which means that a new underlying array must be created (in other words, the resulting slice won't be a reference to the original array).
+
+Using **slicing expressions** we can only resize a slice within its capacity, meaning that the resulting slice will refer to the original array:
 
 <Code code={sliceCode8} lang="go" title="slices8/main.go" />
 
-The code above uses slicing to extend a slice, which still refers to the same array. But what if we need to extend a slice beyond the capacity limit?
+If we need to extend a slice beyond the capacity limit we can use the [append](https://pkg.go.dev/builtin#append) built-in function. Using this function the resulting slice may or may not refer to the original array:
+
+- If it has sufficient capacity, the slice is extended, and refers to the original array.
+- If it does not, a **new underlying array** will be allocated.
 
 <Code code={sliceCode9} lang="go" title="slices9/main.go" />
 
-The [append](https://pkg.go.dev/builtin#append) built-in function will append elements to the end of a slice:
-
-- If it has sufficient capacity, the destination is resliced to accommodate the new elements.
-- If it does not, a **new underlying array** will be allocated.
+In the example above, we can see how `s1` refers to the original array, whereas `s2` does not.
 
 ## Slices are references
 

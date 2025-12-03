@@ -3,11 +3,12 @@ package main
 import "fmt"
 
 func main() {
-	a := [7]int{1, 3, 5, 7} // Creating an array
+	a := [...]int{1, 2, 3} // Original array
 
-	s1 := a[:2]        // Slicing an array
-	s2 := s1[:cap(s1)] // Extending to full capacity
+	s := a[:] // Slice at full-capacity
+	s[0], s[1], s[2] = 100, 200, 300
+	// s[3] = 400 // ❌ panic: runtime error
 
-	fmt.Println(s1) // [1 3]
-	fmt.Println(s2) // [1 3 5 7 0 0 0]
+	fmt.Println(s) // [100 200 300]
+	fmt.Println(a) // [100 200 300]
 }
