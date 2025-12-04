@@ -72,7 +72,7 @@ import (
 )
 
 func main() {
-    fmt.Println(somepackage.ExportedVar) // ✅ Accessible
+    fmt.Println(somepackage.ExportedVar)   // ✅ Accessible
     fmt.Println(somepackage.unexportedVar) // ❌ Error: unexportedVar is not accessible
 }
 ```
@@ -81,7 +81,7 @@ func main() {
 Again, be cautious when using exported package-level **variables**, as they can lead to weird bugs and tight coupling between packages.
 </Admonition>
 
-It's fine to export **constants** to expose necessary data:
+It's fine to export **constants** to expose any necessary data needed accross our application:
 
 ```go
 package config
@@ -103,7 +103,7 @@ import "fmt"
 var name string = "Global Name" // Package-level variable
 
 func main() {
-    name := "Local Name" // Shadows the package-level variable
-    fmt.Println(name)    // Outputs: Local Name
+    name := "Local Name" // 👇 Shadows the package-level variable
+    fmt.Println(name)    //  👉 Local Name
 }
 ```

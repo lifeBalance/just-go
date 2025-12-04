@@ -1,0 +1,140 @@
+import Admonition from '@components/Admonition.astro'
+import mainGo from './code/myapp/main.go?raw'
+
+# Packages
+
+Go programs are written by linking together [packages](https://go.dev/ref/spec#Packages). A package is just a **folder** containing `.go` source files that share the same `package` name. 
+
+<Admonition type='warning'  title='Folders work as Package Boundaries'>
+It's not a good idea to place several packages in the same folder. The rule is to place a package in its own folder.
+</Admonition>
+
+The purpose of using packages is to organize our code, so that we don't get names clashing with each other. Using packages, we could have two functions with the same name, but under a different package. In that sense, a package is like a namespace (`utils.DoSomething` will not clash with `lib.DoSomething`).
+
+## A Small App
+
+For example, let's create a folder named `myapp` where we'll initialize a module. Our tiny app looks like this:
+
+```
+myapp/
+    ├── go.mod
+    ├── main.go             # package main (executable)
+    ├── lib/                
+    |   └── utils.go        # package lib (library code)
+    └── utils/
+        └── utils.go        # package utils (library code)
+```
+
+This is what our our `main.go` looks like:
+
+<Code code={mainGo} lang='go' title='myapp/main.go'/>
+
+A couple things to highlight here:
+
+- Note that we import our packages using the `<module-path>/<package>` syntax, e.g. `myapp/utils`.
+- Even though we're using a couple of homonymous function calls, we don't get any error, since each function lives in a different package.
+
+<Admonition  title='Files can be named whatever'>
+Inside our package folders, we can name our source files whatever we want. For example, in this case both `lib` and `utils` folders contain a file named `utils.go`. That's fine, it's the **name** that we use in our `package` declarations what matters.
+</Admonition>
+
+In this case, `myapp` is a program intended to be **executable**, so it needs of a single `package main` declaration. Since this is a **small program**, we don't need a `main` folder to keep our `main` package. A single file `main.go` is enough in this case.
+
+## Bigger Programs
+
+In bigger programs, we may need to create a dedicated `main` folder for our `main` package (we don’t have to cram everything into `main.go`). For example:
+
+```
+biggerapp/
+    ├── go.mod
+    ├── main/                
+    |   ├── flags.go
+    |   ├── wire.go
+    |   └── main.go     ✅ main function lives here
+    ├── config.go
+    ├── lib/                
+    |   └── utils.go
+    └── utils/
+        └── utils.go
+```
+
+Other programs, may use **several executables**. For that scenario is common practice to create a `cmd` folder, where we'd define several `package main`, one per executable. For example:
+
+```
+multipleapp/
+    ├── go.mod
+    ├── cmd/                
+    |   ├── flags.go
+    |   ├── wire.go
+    |   └── main.go     ✅ main function lives here
+    ├── config.go
+    ├── lib/                
+    |   └── utils.go
+    └── utils/
+        └── utils.go
+```
+
+Each executables will use its own `package main`; reusable code uses any other name (e.g., `utils`). 
+
+## Package vs. Module
+
+- **Package**: a unit of code in a single folder (optionally split across several source files). Importable by path.
+- **Module**: a collection of packages with dependency/version info in `go.mod`.
+
+A module is the versioned umbrella that contains one or more packages and a `go.mod` file.
+
+## Imports: Local and Versioned
+
+- **Local packages**: `<module>/<pkg>` (e.g., `greet2/utils`). The `<module>` part comes from the `module` line in `go.mod`.
+- **Third‑party packages**: use the full repository path. For major versions v2+, the import path includes `/vN`.
+
+Example third‑party import:
+
+```go
+import cowsay "github.com/Code-Hex/Neo-cowsay/v2"
+```
+
+## Using a Third‑Party Package
+
+Install once, then import and call it:
+
+```bash
+go get github.com/Code-Hex/Neo-cowsay/v2
+```
+
+```go
+package main
+
+import (
+    "fmt"
+    cowsay "github.com/Code-Hex/Neo-cowsay/v2"
+)
+
+func main() {
+    say, err := cowsay.Say("Hello from Neo-cowsay",
+        cowsay.Type("default"),
+        cowsay.BallonWidth(32),
+    )
+    if err != nil { panic(err) }
+    fmt.Println(say)
+}
+```
+
+## Common Pitfalls
+
+- Mixed packages in one folder → split into subfolders.
+- Unexported helpers (lowercase) cannot be used from `main` → make them uppercase.
+- Missing `/vN` in import path for v2+ packages → add the suffix.
+
+## Running
+
+From the module folder (where `go.mod` lives):
+
+```bash
+go run .
+```
+
+<Admonition variant="tip" title="Where To Learn More">
+- Packages and imports: https://go.dev/doc/code
+- Modules reference: https://go.dev/ref/mod
+</Admonition>

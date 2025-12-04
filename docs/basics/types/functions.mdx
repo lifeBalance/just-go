@@ -1,0 +1,18 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import { Image, Picture } from 'astro:assets'
+
+# Functions
+
+In Go, [functions](https://go.dev/ref/spec#Function_types) are [first-class citizens](https://en.wikipedia.org/wiki/First-class_citizen), which means that supports all the operations generally available to other entities. For example:
+
+- They can be assigned to **variables** and **fields** and call them later.
+- We can pass them around as **arguments** and **return values** from functions.
+
+
+- Anonymous functions and closures: functions capture surrounding variables by reference.
+- Named function types: `define type Handler func(...)` and even attach methods to that named type.
+- Use in goroutines: `go func() { ... }()` runs concurrently.
+
+
+: higher-order functions work naturally.
