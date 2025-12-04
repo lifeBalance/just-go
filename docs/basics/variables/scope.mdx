@@ -1,87 +1,57 @@
 import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import mainGo from 'code/scope/main.go?raw'
+import some from 'code/scope/somepackage/some.go?raw'
+import some2 from 'code/scope/somepackage/some2.go?raw'
 
 # Variable Scope
 
-In the previous section we saw how declaring a variable using the `:=` shorthand syntax is only allowed inside functions. That implies that we can also declare variables outside functions!
-
-<Admonition type="info" title="Variable Scope">
-The **scope** of a variable refers to the region of the code where that variable is accessible. When we try to access a variable in some part of the code where it's not accessible, we say that it's **out of scope**.
-</Admonition>
+In the previous section we saw how declaring a variable using the `:=` shorthand syntax is only allowed inside functions. That implies that using the other `var` syntax, we can also declare variables outside functions!
 
 Variables in Go can have different **scope levels** depending on where they are declared:
 
 - **Block Scope**: Variables declared inside a **function** or a **block** (like an `if` statement or a `for` loop) are only accessible within that block.
 - **Package Scope**: Variables declared at the package level (outside any function) are accessible throughout the entire package.
 
-## Block Scope
-
-Here's an example of block scope:
-
-```go
-package main
-
-import "fmt"
-
-func main() {
-    if true {
-        blockVar := "I'm inside an if block"
-        fmt.Println(blockVar) // ✅ Accessible here
-    }
-    fmt.Println(blockVar) // ❌ Error: not accessible here
-}
-```
-
-## Package Scope
-
-Here's an example of package scope:
-
-```go
-package main
-
-import "fmt"
-
-var packageVar string = "I'm a package-level variable"
-
-func main() {
-    fmt.Println(packageVar) // ✅ Accessible here
-}
-```
-
-It's not a good practice to overuse package-level variables, as they can make the code harder to maintain and understand. It's generally better to keep variables scoped as narrowly as possible.
-
-### Exporting Package-Level Variables
-
-In Go, if a package-level variable starts with an **uppercase letter**, it is **exported** and can be accessed from other packages. If it starts with a lowercase letter, it is unexported and can only be accessed within the same package.
-
-```go
-package somepackage
-
-var ExportedVar string = "I'm exported"
-
-var unexportedVar string = "I'm unexported"
-```
-
-Then from another package:
-
-```go
-package main
-
-import (
-    "fmt"
-    "somepackage"
-)
-
-func main() {
-    fmt.Println(somepackage.ExportedVar)   // ✅ Accessible
-    fmt.Println(somepackage.unexportedVar) // ❌ Error: unexportedVar is not accessible
-}
-```
-
-<Admonition type="info" title="Caution with Exported Variables">
-Again, be cautious when using exported package-level **variables**, as they can lead to weird bugs and tight coupling between packages.
+<Admonition type="info" title="Variable Scope">
+The **scope** of a variable refers to the region of the code where that variable is accessible. When we try to access a variable in some part of the code where it's not accessible, we say that it's **out of scope**.
 </Admonition>
 
-It's fine to export **constants** to expose any necessary data needed accross our application:
+## An example
+
+Imagine we have the following code:
+
+```
+myapp/
+├── go.mod
+├── main.go
+└── somepkg
+    ├── some.go
+    └── some2.go
+```
+
+In `some.go` we have declared a couple of variables outside of any function, or in other words, in the **package scope**. The only difference is that `SomeVar` is exported, and `someVar` is not:
+
+<Code code={some} lang='go' title='myapp/somepkg/some.go' />
+
+Then, in `some2.go` we have declared the `DoSomething` function, which access the `someVar` variable that we declared in `some.go` (even though it's not exported). Since we're in the same `somepkg` package, we don't need to use dot notation.
+
+<Code code={some2} lang='go' title='myapp/somepkg/some2.go' />
+
+In `main.go` we import the `somepkg` and use its **exported members** (the ones which start with uppercase) using **dot notation**: 
+
+<Code code={mainGo} lang='go' title='myapp/main.go' />
+
+The main points here are:
+
+- Variables in the **package scope** are available in the same package, regardless if they're exported or not.
+- Only **exported variables** are available from other packages, as long as we import the package where they're defined.
+
+<Admonition title='Exported Members'>
+In Go, everything (variables, constants, functions, etc) we define in the **package scope** is available for importing from other packages only if their names start with an **uppercase letter**.
+</Admonition>
+
+Be cautious when defining variables in the package scope, as it can lead to bugs hard to track and tight coupling between packages. It's fine to define and export **constants**, to expose any necessary data needed accross our application:
 
 ```go
 package config
