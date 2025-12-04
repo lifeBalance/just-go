@@ -5,4 +5,5 @@ export default [
   { path: 'greet', label: 'Our Second Program' },
   { path: 'first-module', label: 'Our First Module' },
   { path: 'installing-packages', label: 'Installing Packages' },
+  { path: 'packages', label: 'Packages and Modules' },
 ]
