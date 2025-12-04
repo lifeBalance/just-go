@@ -75,10 +75,10 @@ multipleapp/
     │   │   └── main.go      # package main → builds "server"
     │   └── worker/
     │       └── main.go      # package main → builds "worker"
-    ├── internal/
+    ├── internal/            # ❌ Private API
     │   └── greet/
-    │       └── greet.go     # shared library code
-    └── pkg/                 # (optional) public packages
+    │       └── greet.go
+    └── pkg/                 # ✅ Public API (optional)
         └── utils/
             └── utils.go
 ```
