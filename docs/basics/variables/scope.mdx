@@ -1,8 +1,8 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 import mainGo from 'code/scope/main.go?raw'
-import some from 'code/scope/somepackage/some.go?raw'
-import some2 from 'code/scope/somepackage/some2.go?raw'
+import some from 'code/scope/somepkg/some.go?raw'
+import some2 from 'code/scope/somepkg/some2.go?raw'
 
 # Variable Scope
 
@@ -48,7 +48,7 @@ The main points here are:
 - Only **exported variables** are available from other packages, as long as we import the package where they're defined.
 
 <Admonition title='Exported Members'>
-In Go, everything (variables, constants, functions, etc) we define in the **package scope** is available for importing from other packages only if their names start with an **uppercase letter**.
+In Go, everything (variables, constants, functions, etc) we define in the **package scope** is available for importing from **other packages** only if their names start with an **uppercase letter**.
 </Admonition>
 
 Be cautious when defining variables in the package scope, as it can lead to bugs hard to track and tight coupling between packages. It's fine to define and export **constants**, to expose any necessary data needed accross our application:
