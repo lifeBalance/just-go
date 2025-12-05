@@ -17,27 +17,31 @@ func main() {
 	}()
 
 	fmt.Println("Press ESC to quit")
+	var line []rune
+	newLine := true // Track when to print the prompt for a new line
+
 	for {
-		var line []rune // We'll append characters to this variable
-		fmt.Print("-> ")
+		if newLine {
+			fmt.Print("-> ")
+			newLine = false
+		}
 
-		for {
-			char, key, err := keyboard.GetKey()
-			if err != nil {
-				panic(err)
-			}
+		char, key, err := keyboard.GetKey()
+		if err != nil {
+			panic(err)
+		}
 
-			if key == keyboard.KeyEsc {
-				return
-			} else if key == keyboard.KeyEnter {
-				fmt.Println()             // Move to next line
-				fmt.Println(string(line)) // Print the line
-				line = nil                // Clear the line
-				break
-			} else if char != 0 {
-				line = append(line, char) // Append the character to the line
-				fmt.Printf("%c", char)    // Echo character
-			}
+		if key == keyboard.KeyEsc {
+			return
+		} else if key == keyboard.KeyEnter {
+			fmt.Println()             // Move to next line
+			fmt.Println(string(line)) // Print the line
+			line = nil                // Clear the line
+			newLine = true            // Prepare for next prompt
+			continue
+		} else if char != 0 {
+			line = append(line, char) // Append the character to the line
+			fmt.Printf("%c", char)    // Echo character
 		}
 	}
 }

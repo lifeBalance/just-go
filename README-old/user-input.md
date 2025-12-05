@@ -102,27 +102,31 @@ func main() {
 	}()
 
 	fmt.Println("Press ESC to quit")
+	var line []rune
+	newLine := true // Track when to print the prompt for a new line
+
 	for {
-		var line []rune // We'll append characters to this variable
-		fmt.Print("-> ")
+		if newLine {
+			fmt.Print("-> ")
+			newLine = false
+		}
 
-		for {
-			char, key, err := keyboard.GetKey()
-			if err != nil {
-				panic(err)
-			}
+		char, key, err := keyboard.GetKey()
+		if err != nil {
+			panic(err)
+		}
 
-			if key == keyboard.KeyEsc {
-				return
-			} else if key == keyboard.KeyEnter {
-				fmt.Println()             // Move to next line
-				fmt.Println(string(line)) // Print the line
-				line = nil                // Clear the line
-				break
-			} else if char != 0 {
-				line = append(line, char) // Append the character to the line
-				fmt.Printf("%c", char)    // Echo character
-			}
+		if key == keyboard.KeyEsc {
+			return
+		} else if key == keyboard.KeyEnter {
+			fmt.Println()             // Move to next line
+			fmt.Println(string(line)) // Print the line
+			line = nil                // Clear the line
+			newLine = true            // Prepare for next prompt
+			continue
+		} else if char != 0 {
+			line = append(line, char) // Append the character to the line
+			fmt.Printf("%c", char)    // Echo character
 		}
 	}
 }
@@ -130,10 +134,24 @@ func main() {
 
 It works the same as the previous one, only that this time, the user has to press the **Escape** key to exit the program. Let's go over the code:
 
-- A [defer](https://go.dev/ref/spec#Defer_statements) statement is used to call a function, whenever the surrounding function returns for any reason:
+- At the very beginning we call `Open`, which initializes the library's keyboard input system. This function returns an error; if it's not `nil` we `panic`, otherwise we continue with the program.
+- A [defer](https://go.dev/ref/spec#Defer_statements) statement is used to call a function, whenever the surrounding function (in this case `main`) returns for any reason:
 
-- A `return` statement.
-- End of the function's body.
-- A [runtime panic](https://go.dev/ref/spec#Run_time_panics) happens.
+    - A `return` statement.
+    - End of the function's body.
+    - A [runtime panic](https://go.dev/ref/spec#Run_time_panics) happens.
 
-Note that right after the `defer` statement we use an **anonymous function**, which does some cleanup.
+Note that right after the `defer` statement we use an **anonymous function**, which does some cleanup of the library's input system.
+- Then we declare variables to keep track of new lines, and to store users keystrokes.
+- Finally, in a `for` loop we have the logic to gather the user input, and echoing it to stdin. The `GetKey` function returns three things:
+
+    - A `rune`, which is an **integer** used to represent Unicode characters.
+    - A `key`, which is the codepoint of the Unicode character.
+    - And potentially an **error**.
+
+## A Menu
+
+Let's create a new program using the `keyboard` library, to allow the user to choose from an options menu. The interesting part here is how we have to convert the `rune` to a `string`, then to an `int`. The reason for that is that the variable `char` contains not a character, but the codepoint of that character (`97` for `a`, `98` for `b`, and so on). So we have to:
+
+- Convert the codepoint of the rune (`49` is the codepoint of the `1`) to its text equivalent form: `string(49)` converts to `"1"`.
+- Then convert the `"1"` to the `int` `1` using the `strconv.Atoi` function.
