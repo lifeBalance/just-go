@@ -1,0 +1,168 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import { Image, Picture } from 'astro:assets'
+
+# Maps
+
+A [map](https://go.dev/blog/maps) is a built-in type that that stores key-value pairs. A map works like a dictionary, allowing use to store values mapped to a **unique key**. For example, to declare a map to store people's ages we could do:
+
+```go
+var ages map[string]int     // Declare
+
+fmt.Println(ages)           // map[]
+fmt.Println(ages == nil)    // true
+
+ages = make(map[string]int) // Initialize
+fmt.Println(ages == nil)    // false
+```
+
+The same as with slices, a map declaration is not initialized, meaning it's not pointing to any hash map yet. Using the [make]() built-in function we can fix that.
+
+<Admonition>
+  In Go maps are implemented as [hash
+  tables](https://en.wikipedia.org/wiki/Hash_table).
+</Admonition>
+
+We can use **short declaration syntax** to perform declaration and initialization in a single step:
+
+```go
+ages := make(map[string]int)
+
+fmt.Println(ages == nil) // false
+```
+
+And if you have some initial values, you can use a literal:
+
+```go
+ages := map[string]int{
+    "Alice": 30,
+    "Bob":   25,
+}
+```
+
+## Key Types
+
+Only certain types are valid as map keys:
+
+- `int`
+- `string`
+- `bool`
+- `float64`
+- `structs`
+- `pointers`
+
+The reason is that keys must be comparable (support `==` and `!=`). For this reason, we can't use:
+
+- ❌ Slices
+- ❌ Maps
+- ❌ Functions
+
+## Adding and Updating Elements
+
+Once we have an **initialized map**, we can add and update elements using its keys:
+
+```go
+ages := make(map[string]int) // Initialized map
+
+ages["Alice"] = 30  // Add
+ages["Bob"] = 25    // Add
+ages["Alice"] = 31  // Update
+```
+
+<Admonition type="error" title="Initialize your Maps before using them!">
+If you tried to add an element to a `nil` map you'd get an error:
+
+```go
+var ages map[string]int     // Declare
+ages["Bob"] = 42 // Panic
+```
+
+</Admonition>
+
+## Accessing Elements
+
+Once we have some elements in our map, we can accessing them using their keys:
+
+```go
+fmt.Println(ages["Alice"])    // 31
+
+fmt.Println(ages["Who"])      // 0
+```
+
+If key doesn't exist, we get a **zero value**, which in the case of an `int` is `0`. We can check if a key exists using:
+
+```go
+age, exists := ages["Charlie"]
+
+if exists {
+    fmt.Println("Charlie is", age)
+} else {
+    fmt.Println("Charlie not found")
+}
+```
+
+## Deleting Elements
+
+We can delete map elements using the [delete]():
+
+```go
+delete(ages, "Alice") // Removes "Alice" from map
+
+fmt.Println(ages["Alice"]) // 0
+```
+
+## Iterating Over Maps
+
+We can use a `for` loop to iterate over a map:
+
+```go
+for key, value := range ages {
+    fmt.Printf("%s is %d years old\n", key, value)
+}
+
+// Just keys
+for key := range ages {
+    fmt.Println(key)
+}
+
+// Just values
+for _, value := range ages {
+    fmt.Println(value)
+}
+```
+
+Maps have no guaranteed order. Iterating over the same map twice may produce different orders.
+
+### Maps with Integer keys
+
+If we have a map with integer keys, you may be tempted to use a loop like this to traverse it:
+
+```go
+players := map[int]string{
+   0: "Ralphie",
+   1: "Alice",
+   2: "Bob",
+}
+
+for i := 0; i < len(players); i++ {
+  fmt.Println(i, players[i])
+}
+```
+
+This is not a good idea for several reasons. Imagine you add a couple of new elements:
+
+```go
+players[-3] = "Frankie"
+players[100] = "Zack"
+
+fmt.Println(len(players)) // 5
+```
+
+Now you have 5 players, but their indices are not in consecutive order!
+
+<Admonition>
+  Maps with integer keys make sense only for **sparse data**, since we can add
+  keys in any order, even with negative values!
+</Admonition>
+
+Maps are hash tables, arrays/slices are contiguous memory blocks. Different data structures for different use cases.
