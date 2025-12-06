@@ -4,8 +4,299 @@ import { Image, Picture } from 'astro:assets'
 
 # Structs
 
-A [struct](https://go.dev/ref/spec#Struct_types) is a sequence of named elements, called **fields**, each of which has a name and a type. Field names may be:
+A [struct](https://go.dev/ref/spec#Struct_types) is a composite data type that groups together variables (fields) under a single name. They're used in different scenarios:
 
-- Specified explicitly (IdentifierList). Field names must be unique.
-- Implicitly (EmbeddedField).
+- Grouping related data together
+- Creating custom types with methods
+- Modeling real-world entities (User, Product, Order, etc.)
+- Passing multiple values as a single unit
+- Building data structures (linked lists, trees, etc.)
 
+## Declaring Structs
+
+Let's declare a `person` variable of the type `struct`:
+
+```go
+var person struct {
+		name string
+		age  int
+}
+
+fmt.Printf("%#v\n", person) // struct { name string; age int }{name:"", age:0}
+```
+
+We have to use [Printf]() with the right **format specifier** to see what the struct is about. As you may have guessed, structs are **values** in Go. The `person` declaration above creates a struct where each **field** is set to its own **zero value** (`""` for strings, `0` for ints).
+
+## Declaring and Initializing
+
+We can declare and Initialize a struct in one go, using [composite literal](https://go.dev/ref/spec#Composite_literals) syntax:
+
+```go
+var person struct {
+		name string
+		age  int
+}{
+    name: "Bob",
+    age: 42,
+}
+
+fmt.Println(person.name) // Bob
+fmt.Println(person.age) // 42
+```
+
+And we can also use a **short syntax**:
+
+```go
+person := struct {
+		name string
+		age  int
+}{
+    name: "Bob",
+    age: 42,
+}
+
+fmt.Println(person.name) // Bob
+fmt.Println(person.age) // 42
+```
+
+<Admonition title="Anonymous Struct">
+  This type of on-the-fly `struct` are known as **anonymous structs**.
+</Admonition>
+
+As you can see, we can access struct fields using **dot notation**; we can also use the same syntax for updating its fields:
+
+```go
+person := struct {
+		name string
+		age  int
+}{
+    name: "Bob",
+    age: 42,
+}
+
+person.name = "Ralphie"
+person.age = 33
+
+fmt.Println(person.name) // Ralphie
+fmt.Println(person.age)  // 33
+```
+
+Trying to access a **non-existing field** (for reading or updating) would result in an error:
+
+```go
+fmt.Println(person.surname) // ❌ type struct{name string; age int} has no field or method surname
+```
+
+## Defining Struct Types
+
+Most of the times, we'll want to define `struct` types that we can reuse throughout our code:
+
+```go
+type Person struct {
+    name string
+    age  int
+}
+```
+
+<Admonition>
+  Note how we're using uppercase `Person` here, to export the type, so we can
+  reuse it in other packages. It doesn't have to be always like this, some types
+  may not be needed in other packages.
+</Admonition>
+
+To create instances of `Person` we would do:
+
+```go
+var p1 Person
+
+fmt.Printf("%#v\n", p1) // struct { name string; age int }{name:"", age:0}
+```
+
+We can initialize the fields of an instance using **positional values** or **named values**:
+
+```go
+var p1 Person
+
+p2 := Person{"Alice", 30, "NYC"}            // Positional
+p3 := Person{name: "Bob"}                   // Named (can omit fields)
+p4 := Person{age: 40, name: "Charlie"}      // Field order doesn't matter
+```
+
+## Comparing Structs
+
+Structs are **comparable** if all their fields are comparable:
+
+```go
+type Point struct {
+    x, y int
+}
+
+p1 := Point{1, 2}
+p2 := Point{1, 2}
+p3 := Point{3, 4}
+
+fmt.Println(p1 == p2)  // ✅ true
+fmt.Println(p1 == p3)  // ❌ false
+```
+
+## Pointers to Structs
+
+If structs are **values**, how can we pass them to functions to modify them?
+
+```go
+p := Person{name: "Alice", age: 30}
+
+func increaseAge(someone &Person) {
+    someone.age++
+    fmt.Printf("Someone just turned %d!\n", (*someone).age) // Explicit dereferencing (not needed)
+    fmt.Printf("Someone just turned %d!\n", someone.age) // Go automatically dereferences
+}
+
+fmt.Printf("Alice is %d years old.\n", p.age)
+```
+
+## Embedded Structs (Composition)
+
+Go doesn't have inheritance, but you can embed structs:
+
+```go
+type Address struct {
+    street string
+    city   string
+}
+
+type Employee struct {
+    name    string
+    age     int
+    address Address
+}
+
+e := Employee{
+    name: "Alice",
+    age:  30,
+    address: Address{
+        street: "123 Main St",
+        city:   "NYC",
+    },
+}
+
+fmt.Println(e.address.street)   // "123 Main St"
+fmt.Println(e.address.city) 	// "NYC"
+```
+
+## Explicit fields vs Implicit fields
+
+There are two ways of specifying fields in structs:
+
+- Explicitly using **unique names**.
+- Implicitly using **embedded types** without an explicit name.
+
+We've been seeing explicit fields from the beginning:
+
+```go
+type Address struct {
+    street string
+    city   string
+}
+
+type Employee struct {
+    name    string
+    age     int
+    Address // 👈 Embedded field (no explicit name)
+}
+
+e := Employee{
+    name: "Alice",
+    age:  30,
+    address: Address{
+        street: "123 Main St",
+        city:   "NYC",
+    },
+}
+
+// Access embedded field by type.name
+fmt.Println(p.Address.city)  // "NYC"
+
+// OR access embedded fields directly
+fmt.Println(p.city)    // "NYC" (field promotion)
+fmt.Println(p.street)  // "123 Main St"
+```
+
+There are some rules when using embedded fields:
+
+1. Type name is the field name:
+
+```go
+type Employee struct {
+    Person  // Field name is "Person"
+    salary int
+}
+
+e := Employee{}
+e.Person.name = "Bob"   // Access via type name
+e.name = "Bob"          // Or directly
+```
+
+2. Can embed pointers:
+
+```go
+type Employee struct {
+    *Person  // Field name is "Person"
+    salary   int
+}
+```
+
+3. Field promotion - embedded fields' members are **promoted**:
+
+```go
+type Person struct {
+    name string
+}
+
+type Employee struct {
+    Person
+    id int
+}
+
+e := Employee{}
+e.name = "Alice"  // Promoted from Person
+// Same as: e.Person.name = "Alice"
+```
+
+4. Must be **unique** - can't embed the same type twice:
+
+```go
+type Bad struct {
+    Person  // ❌ ERROR: duplicate field Person
+    Person
+}
+```
+
+## Methods on Structs
+
+The same way objects in OOP have methods, in Go, structs can as well:
+
+```go
+type Rectangle struct {
+    width  float64
+    height float64
+}
+
+// Method with value receiver
+func (r Rectangle) Area() float64 {
+    return r.width * r.height
+}
+
+// Method with pointer receiver (can modify)
+func (r *Rectangle) Scale(factor float64) {
+    r.width *= factor
+    r.height *= factor
+}
+
+// Usage
+rect := Rectangle{width: 10, height: 5}
+fmt.Println(rect.Area())  // 50
+
+rect.Scale(2)
+fmt.Println(rect.Area())  // 200
+```
