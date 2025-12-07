@@ -1,11 +1,16 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 import { Image, Picture } from 'astro:assets'
+import sliceCode11 from './code/slices11/main.go?raw'
+import sliceCode12 from './code/slices12/main.go?raw'
+import sliceCode5 from './code/slices5/main.go?raw'
+import sliceCode13 from './code/slices13/main.go?raw'
+import sliceCode14 from './code/slices14/main.go?raw'
+
 import sliceCode from './code/slices/main.go?raw'
 import sliceCode2 from './code/slices2/main.go?raw'
 import sliceCode3 from './code/slices3/main.go?raw'
 import sliceCode4 from './code/slices4/main.go?raw'
-import sliceCode5 from './code/slices5/main.go?raw'
 import sliceCode6 from './code/slices6/main.go?raw'
 import sliceCode7 from './code/slices7/main.go?raw'
 import sliceCode8 from './code/slices8/main.go?raw'
@@ -17,7 +22,95 @@ import sliceDescriptor2 from './images/slice_descriptor_2.png'
 
 # Slices
 
-In the previous section we saw how **arrays** have a **fixed length**, so once they're created, we can't add new elements to them. Fortunately, Go also includes a resizable type known as [slice](https://go.dev/ref/spec#Slice_types). For example:
+In the previous section we saw how **arrays** have a **fixed length**, so once they're created, we can't add new elements to them. Fortunately, Go also includes a resizable type known as [slice](https://go.dev/ref/spec#Slice_types).
+
+## Creating Slices
+
+There are several ways of creating a slice, but let's start with the standard `var` syntax:
+
+<Code code={sliceCode11} lang="go" title="slices11/main.go" />
+
+In the code above:
+
+- We use the `var` keyword to declare a variable of type `[]string` (a slice of strings). 
+- Then we use the [append](https://pkg.go.dev/builtin#append) built-in function to add string items to the slice.
+- Finally we print the slice and its length using the [len](https://go.dev/ref/spec#Length_and_capacity) built-in function.
+
+<Admonition>
+Basically is like declaring an **array**, the only difference is the missing length (or the `...`) between the square brackets.
+</Admonition>
+
+We can also create slices using **short syntax** in combination with [composite literal](https://go.dev/ref/spec#Composite_literals):
+
+<Code code={sliceCode12} lang="go" title="slices12/main.go" />
+
+In the code above, we're starting with an **empty slice**, and adding elements according to our needs (an extremely common pattern in Go). But if we starting with a small amount of elements which are known beforehand, we could also specify them in the composite literal:
+
+<Code code={sliceCode5} lang="go" title="slices5/main.go" />
+
+<Admonition type="tip" title="Multiline Composite Literals">
+  The same as with arrays, we can break up the assignments in several lines.
+</Admonition>
+
+## Empty Slices vs Nil Slices
+
+So far we've seen how we can create slices using `var` syntax and the short syntax. Actually, there's a difference:
+
+<Code code={sliceCode13} lang="go" title="slices13/main.go" />
+
+Note that in both cases the slices print as `[]`, and their length is `0`, but there are some differences:
+
+- When we use the `var` syntax, we end up with a `nil` slice, which means that our slice is **not initialized** (we'll see what this means in a second). Also, when we marshall such a slice, the resulting value is `null`.
+- On the other hand, when we use the short syntax, we end up with an **empty slice**, which once converted to JSON, appears as `[]`.
+
+## Slices are References to Arrays
+
+A **slice** is always a **reference** to an underlying **array**, which means that changes in the values of the **slice** elements will change the values in the **array** and viceversa. For example:
+
+<Code code={sliceCode10} lang="go" title="slices10/main.go" />
+
+In the example above, we create a slice `s1` out of the array `a`. As you can see, changes to the elements of `s1` reflect on the elements of `a`. The same happens with `s2`; both slices refer to the same array.
+
+<Admonition title="Nil vs Empty">
+The main difference between `nil` and **empty** slices, it's that `nil` slices are **not initialized**, meaning that no underlying array exists!
+</Admonition>
+
+## Sorting and Traversing Slices
+
+Let's look at a couple of basic operations we may want to do with slices. Lets' start with sorting:
+
+<Code code={sliceCode14} lang="go" title="slices14/main.go" />
+
+Traversing slices is really simple with a `for` loop and the `range`:
+
+```go
+	for i, n := range names {
+		fmt.Println(i, n)
+	}
+```
+
+## Deleting From a Slice
+
+TODO: move it after slicing
+
+```go
+func DeleteByIndex(s []string, i int) []string {
+	lastIndex := len(s) - 1
+	lastElement := s[lastIndex]
+	
+	// Move last element to the position we want to delete
+	s[i] = lastElement
+	
+	// Clear the last position (avoid memory leak for string)
+	s[lastIndex] = ""
+	
+	// Shrink slice by removing last element
+	s = s[:lastIndex]
+	
+	return s
+}
+```
+---
 
 <Code code={sliceCode} lang="go" title="slices1/main.go" />
 
@@ -140,12 +233,9 @@ Note that, in the last line our slice is marshalled as `null`; that's because we
 
 <Code code={sliceCode4} lang="go" title="slices4/main.go" />
 
-<Admonition title="Nil vs Empty">
-The main difference between `nil` and **empty** slices, it's that `nil` slices are **not initialized**, meaning that no underlying array exists!
 
 To expand a **not initialized** slice you can use `append` (since it creates an underlying array) but never a **slicing operation**, otherwise you'd get a panic error.
 
-</Admonition>
 
 Creating **empty slices** is extremely common in Go, it's a core idiom for handling collections that start empty but may grow (e.g., via `append`). For example:
 
@@ -171,15 +261,10 @@ This function allows us to create a slice specifying its length. At the same tim
 
 ### Initializing Slices: Composite literals
 
-When we are dealing with a small amount of elements which are known beforehand, we could specify them in a [composite literal](https://go.dev/ref/spec#Composite_literals):
 
-<Code code={sliceCode5} lang="go" title="slices5/main.go" />
+This syntax implicitly creates the underlying array for us big enough to hold the specified items (that's why the **length** and **capacity** of slices created this way will always be the same).
 
-Basically is like declaring an array, the only difference is the missing **length** between the **square brackets**. This syntax implicitly creates the underlying array for us big enough to hold the specified items (that's why the **length** and **capacity** of slices created this way will always be the same).
 
-<Admonition type="tip" title="Multiline Composite Literals">
-  The same as with arrays, we can break up the assignments in several lines.
-</Admonition>
 
 ## Slices are resizable
 
@@ -200,14 +285,6 @@ If we need to extend a slice beyond the capacity limit we can use the [append](h
 <Code code={sliceCode9} lang="go" title="slices9/main.go" />
 
 In the example above, we can see how `s1` refers to the original array, whereas `s2` does not.
-
-## Slices are references
-
-A **slice** is always a **reference** to an underlying **array**, which means that changes in the values of the **slice** elements will change the values in the **array** and viceversa. For example:
-
-<Code code={sliceCode10} lang="go" title="slices10/main.go" />
-
-In the example above, we create a slice `s1` out of the array `a`. As you can see, changes to the elements of `s1` reflect on the elements of `a`. The same happens with `s2`; both slices refer to the same array.
 
 ## Other Useful stuff about Slices
 
