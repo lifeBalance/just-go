@@ -5,6 +5,8 @@ export default [
   { path: 'arrays', label: 'Arrays' },
   { path: 'slices', label: 'Slices' },
   { path: 'structs', label: 'Structs' },
+  { path: 'pointers', label: 'Pointers' },
   { path: 'maps', label: 'Maps' },
   { path: 'functions', label: 'Functions' },
+  { path: 'interfaces', label: 'Interfaces' },
 ]

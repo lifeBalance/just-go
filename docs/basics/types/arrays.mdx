@@ -11,7 +11,7 @@ In Go, an [array](https://go.dev/ref/spec#Array_types) is a collection of elemen
 var numbers [4]int
 ```
 
-The line above declares an array of integers named `numbers` with four elements inside. This is the in memory layout of this data:
+The statement above declares an array of integers named `numbers` with four elements inside. All the elements in this array are initialized to the zero value of the `int` type, which is `0`. This is the in memory layout of this array:
 
 <Image src={arrayIntsMemory} alt="array in memory" width={300} />
 
@@ -22,8 +22,6 @@ Let's dissect the statement above:
 - The **length** of the array in **square brackets**.
 - The **type** of values, in this case `int`.
 
-The statement above declares an array named `numbers` that holds 4 integer values. All the elements in this array are initialized to the zero value of the `int` type, which is `0`.
-
 <Admonition type="info" title="Array Length">
   In Go, the length of an array is part of its type. That means that `[4]int`
   and `[10]int` are considered different types. In practice that means that if, for example, a function
@@ -32,7 +30,7 @@ The statement above declares an array named `numbers` that holds 4 integer value
 
 ## Declaring and Initializing Arrays
 
-We can also declare and initialize an array in a single line using a composite literal:
+We can also declare and initialize an array in a single line using a [composite literal](https://go.dev/ref/spec#Composite_literals):
 
 ```go
 var names [3]string = [3]string{"Alice", "Bob", "Charlie"}
@@ -78,7 +76,7 @@ We can get the length of an array using the built-in [len or cap](https://go.dev
 ```go
 a := [4]int{33, 4, 12, 13}
 
-fmt.Println(a) // 4
+fmt.Println(len(a)) // 4
 ```
 
 In Go, arrays have a **fixed size**, which means that once an array is created, its size cannot be changed.

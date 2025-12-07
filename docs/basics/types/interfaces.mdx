@@ -4,7 +4,7 @@ import { Image, Picture } from 'astro:assets'
 
 # Interfaces
 
-An [interface](https://go.dev/ref/spec#Interface_types) is a type that specifies a set of method signatures. Any type that implements those methods automatically satisfies the interface - no explicit declaration needed. For example:
+An [interface](https://go.dev/ref/spec#Interface_types) is a type that specifies a set of method signatures. For example:
 
 ```go
 type Animal interface {
@@ -12,7 +12,7 @@ type Animal interface {
 }
 ```
 
-`Animal` is an interface that implements a method named `Speak`, which returns a string. Now, if we define a `Dog` type, and add a `Speak` method to it:
+`Animal` is an interface that implements a method named `Speak`, which returns a string. Any type that implements the methods defines by an interface, automatically satisfies the interface - no explicit declaration needed. Now, if we define a `Dog` type, and add a `Speak` method to it:
 
 ```go
 type Dog struct{}

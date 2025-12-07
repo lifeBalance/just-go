@@ -1,0 +1,117 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import { Image, Picture } from 'astro:assets'
+
+# Pointers
+
+A [pointer](https://go.dev/ref/spec#Pointer_types) is a variable that stores the memory address of another variable.
+
+## Getting the Address of a Variable
+
+In Go, we can use the [address operator](https://go.dev/ref/spec#Address_operators) to get the address in memory of any variable. For example:
+
+```go
+x := 42
+
+fmt.Println(x)   // 42 (the value)
+fmt.Println(&x)  // 0xc000014088 (memory address, will vary)
+```
+
+Preceding any variable name with the `&` operator, evaluates to the memory address of the variable. Instead of printing it, we could store that address in another variable:
+
+```go
+x := 42
+p := &x
+
+fmt.Println(x)  // 42 (the value)
+fmt.Println(p)  // 0xc000014088 (memory address, will vary)
+```
+
+If we have access to the address of a variable, we also have access to the value stored there:
+
+```go
+x := 42
+p := &x
+
+fmt.Println(x)   // 42 (the value)
+fmt.Println(p)  // 0xc000014088 (memory address, will vary)
+fmt.Println(*p)  // 0xc000014088 (memory address, will vary)
+```
+
+The `*` operator denotes the pointer's underlying value, and getting this value is known as **dereferencing** or **indirecting**.
+
+<Admonition type="error" title="Dereferencing error">
+  The `*` operator can only be used with **pointers**; using it with any other
+  variable would result in an **error**.
+</Admonition>
+
+## Declaring a Pointer
+
+In the previous example, we used **short syntax** to declare and initialize a pointer variable. Let's see how to declare a pointer:
+
+```go
+var p *int  // p is a pointer to an int
+
+fmt.Println(p) // nil
+
+x := 10
+p = &x      // p now points to x
+
+fmt.Println(*p)  // 10 (read value through pointer)
+*p = 20          // Write value through pointer
+fmt.Println(x)   // 20 (x was changed)
+```
+
+When a pointer is not initialized to the address of a variable, its value is `nil`. From the code above, you can see how we can use **dereferencing** to change the value of the variable through the pointer.
+
+## Why Pointers are Useful?
+
+There are several scenarions where pointers are a great fit:
+
+1. Imagine we have a huge data structure that we want to manipulate using a function:
+
+```go
+type BigStruct struct {
+    data [1000000]int  // Large amount of data
+}
+
+// Inefficient: copies entire struct
+func processByValue(b BigStruct) {
+    // ...
+}
+
+// Efficient: copies only pointer (8 bytes)
+func processByPointer(b *BigStruct) {
+    // ...
+}
+```
+
+If we write our logic in `processByValue`, we'll be passing around the big data structure back and forth, which is uneficcient:
+
+```go
+newData := processByValue(originalData)
+```
+
+But if we write our code using a function that, instead of a copy of the huge data structure, takes its address (a pointer) as argument, we don't need to make copies and pass them around:
+
+```go
+processByPointer(&originalData)
+```
+
+2. Pointers are useful in situations where we want to define some function arguments are optional:
+
+```go
+func greet(name *string) {
+    if name == nil {
+        fmt.Println("Hello, stranger!")
+    } else {
+        fmt.Println("Hello,", *name)
+    }
+}
+
+greet(nil)          // "Hello, stranger!"
+n := "Alice"
+greet(&n)           // "Hello, Alice"
+```
+
+Since the **zero value** of a pointer is `nil`, we can check for this value, and act accordingly.

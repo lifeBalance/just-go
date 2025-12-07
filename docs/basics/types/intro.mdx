@@ -17,16 +17,19 @@ The [boolean type](https://golang.org/ref/spec#Boolean_types) only contains two 
 
 ## Aggregate types
 
-**Aggregate types** are those types formed by aggregating or concatenating a bunch of other values of the same type. These values are stored in memory next to each other.
+**Aggregate types** are those types formed by aggregating or concatenating a bunch of other values. These values are stored in memory next to each other.
 
 * [Arrays](https://golang.org/ref/spec#Array_types)
 * [Structs](https://golang.org/ref/spec#Struct_types)
 
-As we'll see when we get to the dedicated section, both arrays and structs are **fixed size**, whereas their dynamic equivalents (slices and maps) can grow in size as needed.
+Both of these types are **value types**, meaning that when we assign or pass an array or a struct, Go copies the entire value. Changes to the copy don't affect the original. The difference between both of these types is:
+
+- **Arrays** store elements of the same type. These elements are ordered by an integer number which express their position in the array.
+- The elements in a **struct** doesn't have to be of the same type. Elements in a struct are not ordered, and they're indexed by key.
 
 ## Reference types
 
-Reference types are those types that do not store the actual value, but a reference (or pointer) to the value stored somewhere else in memory.
+Reference types are those types that do not store the actual value, but a reference (or pointer) to the value stored somewhere else in memory. When we assign or pass them, you copy the reference, not the data. Multiple variables can point to the same underlying data.
 
 * [Pointers](https://golang.org/ref/spec#Pointer_types)
 * [Slices](https://golang.org/ref/spec#Slice_types)
