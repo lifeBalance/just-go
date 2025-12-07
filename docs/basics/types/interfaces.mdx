@@ -1,0 +1,120 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import { Image, Picture } from 'astro:assets'
+
+# Interfaces
+
+An [interface](https://go.dev/ref/spec#Interface_types) is a type that specifies a set of method signatures. Any type that implements those methods automatically satisfies the interface - no explicit declaration needed. For example:
+
+```go
+type Animal interface {
+    Speak() string
+}
+```
+
+`Animal` is an interface that implements a method named `Speak`, which returns a string. Now, if we define a `Dog` type, and add a `Speak` method to it:
+
+```go
+type Dog struct{}
+
+func (d Dog) Speak() string {
+    return "Woof!"
+}
+```
+
+<Admonition title='Implicit Implementation'>
+Go uses **implicit implementation**, we don't need to explicitely declare that a type implements an interface. As long as the type implements the methods specified in the interface, it satisfies the interface.
+</Admonition>
+
+We can say that any `Dog` instance will satisfy the `Speak` interface. Let's now create a `Cat` type that also implements this interface:
+
+```go
+type Cat struct{}
+
+func (c Cat) Speak() string {
+    return "Meow!"
+}
+```
+
+Ok, so any `Cat` instance will also satisfy the `Animal` interface. But how is that useful? 
+
+## Using Interfaces
+
+We can write functions that accept the interface type, and they'll work with any type that implements it:
+
+```go
+// Both Dog and Cat implement Animal automatically
+func MakeSound(a Animal) {
+    fmt.Println(a.Speak())
+}
+```
+
+This function accepts an `Animal` interface, so we can pass either a `Dog` or a `Cat`:
+
+```go
+dog := Dog{}
+cat := Cat{}
+
+MakeSound(dog)  // "Woof!"
+MakeSound(cat)  // "Meow!"
+```
+
+Since we wrote `MakeSound` for the `Animal` interface, it can be used for any type that implement this interface. This is useful, because imagine we have 10 or 20 animal types; if all of them implement the `Animal` interface (in other words, implement the `Speak` method) we can add behaviour to **all of them** without having to define the method 20 times (once per animal). We just have to define it once, for the `Animal` interface, and they all will be able to use that new behaviour.
+
+## Interface Values
+
+We can create instances of interfaces:
+
+```go
+type Dog struct{}
+func (d Dog) Speak() string {
+    return "Woof!"
+}
+
+type Cat struct{}
+func (c Cat) Speak() string {
+    return "Meow!"
+}
+
+type Animal interface {
+    Speak() string
+}
+func MakeSound(a Animal) {
+    fmt.Println(a.Speak())
+}
+
+
+var animal Animal
+
+animal = Dog{}
+fmt.Println(animal.Speak())  // "Woof!"
+
+animal = Cat{}
+fmt.Println(animal.Speak())  // "Meow!"
+```
+
+In the example above, we defined `dog` and `cat` as instances of `Dog` and `Cat` respectively. But since both of them satisfy the `Animal` interface, we can assign the instances to a variable of type `Animal`.
+
+<Admonition>
+The variable `animal` doesn't care about the concrete type (`Dog` or `Cat`). It only cares that the type has a `Speak()` method.
+</Admonition>
+
+This is super useful, because we can create collections of different types:
+
+```go
+animals := []Animal{
+    Dog{},
+    Cat{},
+    Dog{},
+}
+
+for _, animal := range animals {
+    fmt.Println(animal.Speak())
+}
+// Output:
+// Woof!
+// Meow!
+// Woof!
+```
+
+Without interfaces, we couldn't put dogs and cats in the same slice.

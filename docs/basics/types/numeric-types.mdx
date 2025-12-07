@@ -49,3 +49,14 @@ In Go we have several integer types which we can classify in 4 groups:
 4. Finally, there are also 3 **machine dependent** integer types. `uint`, `int` and `uintptr`. They are machine dependent because their size depends on the type of architecture you are using.
 
 Generally speaking if you are working with integers you should just use the `int` type.
+
+<Admonition type="tip" title="Just use int">
+For general use, the type `int` is recommended over the other integer types. The same stands for `uint`, in case you need unsigned integers.
+</Admonition>
+
+## Floats
+
+For representing [floating point numbers](https://en.wikipedia.org/wiki/Floating-point_arithmetic#Floating-point_numbers) we have two types:
+
+- `float32` the set of all [IEEE 754](https://en.wikipedia.org/wiki/IEEE_754) 32-bit floating-point numbers.
+- `float64` the set of all **IEEE 754** 64-bit floating-point numbers.
