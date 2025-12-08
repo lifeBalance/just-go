@@ -2,17 +2,97 @@ import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 import { Image, Picture } from 'astro:assets'
 
+import functionsCode from './code/functions/main.go?raw'
+import functionsCode1 from './code/functions1/main.go?raw'
+import functionsCode2 from './code/functions2/main.go?raw'
+import functionsCode3 from './code/functions3/main.go?raw'
+import functionsCode4 from './code/functions4/main.go?raw'
+import functionsCode5 from './code/functions5/main.go?raw'
+import functionsCode6 from './code/functions6/main.go?raw'
+import functionsCode7 from './code/functions7/main.go?raw'
+import functionsCode8 from './code/functions8/main.go?raw'
+
+
 # Functions
 
-In Go, [functions](https://go.dev/ref/spec#Function_types) are [first-class citizens](https://en.wikipedia.org/wiki/First-class_citizen), which means that supports all the operations generally available to other entities. For example:
+Functions in Go work, for the most part, like in any other programming language. We use the `func` keyword before a function declaration.
+
+## Functions are References
+
+In Go, a [function](https://go.dev/ref/spec#Function_types) is a **reference type**. For example:
+
+<Code code={functionsCode1} lang="go" title="functions/main.go" />
+
+- We're using the `reflect` package to get the type and the kind of the function `greet`.
+- We're declaring a variable `greet2` with the same type as `greet`. Before initialization, `greet2` is pointing nowhere (`0x0`, `nil`), which proves that functions are **references**.
+- Finally, we prove that function names are just references, by printing their names.
+
+Both `greet` and `greet2` are references to the same place in memory.
+
+## Anonymous Functions
+
+Anonymous functions are also known as [function literals](https://go.dev/ref/spec#Function_literals). For example:
+
+<Code code={functionsCode7} lang="go" title="functions7/main.go" />
+
+## Variadic Functions
+
+In Go, we can define tunctions that can take variable number of arguments:
+
+<Code code={functionsCode6} lang="go" title="functions6/main.go" />
+
+If your function is gonna take more arguments, it's essential you add the variadic arguments at the end.
+
+## Naked Return
+
+When we name the return value of a function, we can use a [return](https://go.dev/ref/spec#Return_statements) statement without any arguments. For example:
+
+<Code code={functionsCode5} lang="go" title="functions5/main.go" />
+
+This is just a mention, in case you find this type of code in the wild. But it's common opinion that this syntax is a bit hard to read, hence not advised.
+
+## Functions as First-Class Citizens
+
+In Go, [functions](https://go.dev/ref/spec#Function_types) are [first-class citizens](https://en.wikipedia.org/wiki/First-class_citizen), which means that they support all the operations generally available to other entities. For example:
 
 - They can be assigned to **variables** and **fields** and call them later.
 - We can pass them around as **arguments** and **return values** from functions.
 
+### Assigning functions to variables
+
+Check the following example:
+
+<Code code={functionsCode} lang="go" title="functions/main.go" />
+
+We're declaring a variable named `greet`, whose type is a function that takes a string argument, and returns nothing. We can reassign this variable another function with the same signature. We can also assign functions to struct fields:
+
+<Code code={functionsCode2} lang="go" title="functions2/main.go" />
+
+### Passing functions as arguments
+
+We can define a function that take another function as an argument:
+
+<Code code={functionsCode3} lang="go" title="functions3/main.go" />
+
+### Returning functions from functions
+
+We can also return functions from other functions:
+
+<Code code={functionsCode4} lang="go" title="functions4/main.go" />
+
+## Methods
+
+A [method](https://go.dev/ref/spec#Method_expressions) is just a function associated with a type and called using dot notation. For example:
+
+<Code code={functionsCode8} lang="go" title="functions8/main.go" />
+
+To define a **method**, we have to specify the **receiver**, which it's the type that the method will be associated with; it appears between `func` and the method name.
+
+As you can see, all the struct fields are available in the method, no need to declare them as arguments.
+
+TODO:
 
 - Anonymous functions and closures: functions capture surrounding variables by reference.
 - Named function types: `define type Handler func(...)` and even attach methods to that named type.
 - Use in goroutines: `go func() { ... }()` runs concurrently.
-
-
-: higher-order functions work naturally.
+- higher-order functions work naturally.
