@@ -63,6 +63,27 @@ Note that in both cases the slices print as `[]`, and their length is `0`, but t
 - When we use the `var` syntax, we end up with a `nil` slice, which means that our slice is **not initialized** (we'll see what this means in a second). Also, when we marshall such a slice, the resulting value is `null`.
 - On the other hand, when we use the short syntax, we end up with an **empty slice**, which once converted to JSON, appears as `[]`.
 
+By the way, you can create an **empty slice** from an **empty array**:
+
+```go
+a := [...]byte{}  // Declaring empty array
+s := a[:]         // Declaring empty slice
+```
+
+To expand a **not initialized** slice you can use `append` (since it creates an underlying array if need be) but never a **slicing operation**, otherwise you'd get a panic error.
+
+## Creating Empty Slices
+
+Creating **empty slices** is extremely common in Go, it's a core idiom for handling collections that start empty but may grow (e.g., via `append`). There are several ways to create an empty slice:
+
+- Using a composite literal.
+- Using the `make` function.
+- Using a slicing expression.
+
+For example:
+
+<Code code={sliceCode6} lang="go" title="slices6/main.go" />
+
 ## Slices are References to Arrays
 
 A **slice** is always a **reference** to an underlying **array**, which means that changes in the values of the **slice** elements will change the values in the **array** and viceversa. For example:
@@ -126,7 +147,28 @@ The last two **slice expressions** create slices that extends as far as possible
 
 ## Slice internals
 
-A slice always refer to an underlying array, but it's not just a **pointer**. The documentation refers to slices as **descriptors**. A slice is a small data structure holding three pieces of information. The following diagram illustrates the slice of our last example:
+A slice always refer to an underlying array, but it's not just a **pointer**. Check the following code:
+
+<Code code={sliceCode} lang="go" title="slices1/main.go" />
+
+Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array. Several things to notice here:
+
+- Notice how Go has zeroed the values of the array we didn’t initialized.
+- The functions `len()` and `cap()` return the same value in the case of the **array**, its **length**.
+- But in the case of the **slice**, the **length** and **capacity** are different.
+
+<Admonition title='About Slicing'>
+To create a slice we use the general syntax: `a[m:n]`, where:
+
+- `a` represents the array where taking the slice from.
+- `m` is the **start element** (inclusive), in other words the array index which our slice is referencing.
+- `n` is the **end index** (exclusive), which is determined by the length of the array (can't go further the last array element).
+
+The **length** of the resulting slice is `n - m`.
+
+</Admonition>
+
+The documentation refers to slices as **descriptors**, small data structures holding three pieces of information. The following diagram illustrates the slice of our last example:
 
 <Picture
   src={sliceHeader}
@@ -240,61 +282,6 @@ If order is important, you could sort the slice before returning it, or do it in
 </Admonition>
 
 ---
-
-<Code code={sliceCode} lang="go" title="slices1/main.go" />
-
-Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array.
-
-<Admonition title='About Slicing'>
-To create a slice we use the general syntax: `a[m:n]`, where:
-
-- `a` represents the array where taking the slice from.
-- `m` is the **start element** (inclusive), in other words the array index which our slice is referencing.
-- `n` is the **end index** (exclusive), which is determined by the length of the array (can't go further the last array element).
-
-The **length** of the resulting slice is `n - m`.
-
-</Admonition>
-
-Several things to notice in the code above:
-
-- Notice how Go has zeroed the values of the array we didn’t initialized.
-- The functions `len()` and `cap()` return the same value in the case of the **array**, its **length**.
-- But in the case of the **slice**, the **length** and **capacity** are different.
-
-To understand that, we have to dig a bit deeper in what a slice really is.
-
-
-
-
-### Declaring Empty and Nil Slices
-
-We can create slices without using the **slicing operations** on arrays or other slices. For example, the code belows declares a slice:
-
-<Code code={sliceCode3} lang="go" title="slices3/main.go" />
-
-
-
-
-
-Note that, in the last line our slice is marshalled as `null`; that's because we're dealing with a `nil` slice. In order to create an **empty slice**, we have to use a **composite literal**:
-
-<Code code={sliceCode4} lang="go" title="slices4/main.go" />
-
-
-To expand a **not initialized** slice you can use `append` (since it creates an underlying array) but never a **slicing operation**, otherwise you'd get a panic error.
-
-
-Creating **empty slices** is extremely common in Go, it's a core idiom for handling collections that start empty but may grow (e.g., via `append`). For example:
-
-<Code code={sliceCode6} lang="go" title="slices6/main.go" />
-
-By the way, you can create an **empty slice** from an **empty array**:
-
-```go
-a := [...]byte{}
-s := a[:]
-```
 
 
 ## Slices are resizable
