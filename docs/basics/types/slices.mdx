@@ -37,14 +37,14 @@ In the code above:
 - Finally we print the slice and its length using the [len](https://go.dev/ref/spec#Length_and_capacity) built-in function.
 
 <Admonition>
-Basically is like declaring an **array**, the only difference is the missing length (or the `...`) between the square brackets.
+Declaring a **slice** is basically like declaring an **array**, the only difference is the missing length (or the automatic length operator, `...`) between the square brackets.
 </Admonition>
 
 We can also create slices using **short syntax** in combination with [composite literal](https://go.dev/ref/spec#Composite_literals):
 
 <Code code={sliceCode12} lang="go" title="slices12/main.go" />
 
-In the code above, we're starting with an **empty slice**, and adding elements according to our needs (an extremely common pattern in Go). But if we starting with a small amount of elements which are known beforehand, we could also specify them in the composite literal:
+In the code above, we're starting with an **empty slice**, and adding elements according to our needs (an extremely common pattern in Go). In those cases where we start with a small amount of elements which are known beforehand, we could also specify them in the composite literal:
 
 <Code code={sliceCode5} lang="go" title="slices5/main.go" />
 
@@ -54,7 +54,7 @@ In the code above, we're starting with an **empty slice**, and adding elements a
 
 ## Empty Slices vs Nil Slices
 
-So far we've seen how we can create slices using `var` syntax and the short syntax. Actually, there's a difference:
+So far we've seen how we can create slices using `var` syntax and the short syntax. Let's write some code to compare both approaches:
 
 <Code code={sliceCode13} lang="go" title="slices13/main.go" />
 
@@ -75,70 +75,58 @@ In the example above, we create a slice `s1` out of the array `a`. As you can se
 The main difference between `nil` and **empty** slices, it's that `nil` slices are **not initialized**, meaning that no underlying array exists!
 </Admonition>
 
-## Sorting and Traversing Slices
+When creating slices using the `make` built-in function, the relationship with the underlying array may be not obvious. For example:
 
-Let's look at a couple of basic operations we may want to do with slices. Lets' start with sorting:
+<Code code={sliceCode7} lang="go" title="slices7/main.go" />
 
-<Code code={sliceCode14} lang="go" title="slices14/main.go" />
+This function allows us to create a slice specifying its **length**. At the same time, it creates the underlying array, that's why the **length** and **capacity** of the slice are the same, because `make()` created an array big enough to accommodate our slice size. That's why the slice items are initialized to their zero values.
 
-Traversing slices is really simple with a `for` loop and the `range`:
-
-```go
-	for i, n := range names {
-		fmt.Println(i, n)
-	}
-```
-
-## Deleting From a Slice
-
-TODO: move it after slicing
-
-```go
-func DeleteByIndex(s []string, i int) []string {
-	lastIndex := len(s) - 1
-	lastElement := s[lastIndex]
-	
-	// Move last element to the position we want to delete
-	s[i] = lastElement
-	
-	// Clear the last position (avoid memory leak for string)
-	s[lastIndex] = ""
-	
-	// Shrink slice by removing last element
-	s = s[:lastIndex]
-	
-	return s
-}
-```
----
-
-<Code code={sliceCode} lang="go" title="slices1/main.go" />
-
-Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array.
-
-<Admonition title='About Slicing'>
-To create a slice we use the general syntax: `a[m:n]`, where:
-
-- `a` represents the array where taking the slice from.
-- `m` is the **start element** (inclusive), in other words the array index which our slice is referencing.
-- `n` is the **end index** (exclusive), which is determined by the length of the array (can't go further the last array element).
-
-The **length** of the resulting slice is `n - m`.
-
+<Admonition>
+  If we want to create a bigger underlying array, we have to use the **optional
+  third argument**.
 </Admonition>
 
-Several things to notice in the code above:
+The same happens when we create slices using **short syntax**; this syntax implicitly creates the underlying array for us big enough to hold the specified items (that's why the **length** and **capacity** of slices created this way will always be the same).
 
-- Notice how Go has zeroed the values of the array we didn’t initialized.
-- The functions `len()` and `cap()` return the same value in the case of the **array**, its **length**.
-- But in the case of the **slice**, the **length** and **capacity** are different.
 
-To understand that, we have to dig a bit deeper in what a slice really is.
+## Slicing Expressions
+
+In the previous example we use a strange syntax to create a slice out of an array:
+
+```go
+s1 := a[:]
+```
+
+The line above creates a slice using what it's known as a [slice expression](https://go.dev/ref/spec#Slice_expressions). The general form of a slice expression is as follows:
+
+```
+a[m:n]
+```
+
+In the line above:
+
+- `a` stands for the array (or the slice) we want to take the slice from.
+- The `m` to the left of the `:` represents the initial index we want to include in our slice.
+- The `n` to the right of the `:` represents the right boundary we want to slice.
+
+<Admonition title='Slice Expressions'>
+Slicing is done using **2 indices** separated by a **colon** inside **square brackets**: `s[m:n]`.
+</Admonition>
+
+In other words, the above expression takes a slice from index `m` to `n - 1` (up to `n`, but not included). The following table shows the slicing operations available in Go:
+
+| Syntax   | Description/result                             |
+| :------- | :--------------------------------------------- |
+| `a[m:n]` | A new slice from index `m` to index `n - 1`    |
+| `a[:n]`  | A new slice from index `0` to `n - 1`          |
+| `a[m:]`  | A new slice from index `m` to maximum capacity |
+| `a[:]`   | A new slice from index `0` to maximum capacity |
+
+The last two **slice expressions** create slices that extends as far as possible to the right in the target (array or slice).
 
 ## Slice internals
 
-A slice always refer to an underlying array, but it's not just a **pointer**.
-The documentation refers to slices as **descriptors**. A slice is a small data structure holding three pieces of information. The following diagram illustrates the slice of our last example:
+A slice always refer to an underlying array, but it's not just a **pointer**. The documentation refers to slices as **descriptors**. A slice is a small data structure holding three pieces of information. The following diagram illustrates the slice of our last example:
 
 <Picture
   src={sliceHeader}
@@ -157,34 +145,7 @@ This small data structure it’s also known as the **slice header**, an contains
   have. In the last example the slice had `3` elements, but it may have had `5`.
 </Admonition>
 
-## Creating slices
-
-There are several ways to create a slice:
-
-- **Slicing** an array (what we did in our last example).
-- **Slicing** another slice.
-- Declaring and initializing a slice.
-
-### Slicing an array
-
-Slicing is done using **2 indices** separated by a **colon** inside the **square brackets**, which is known as a [slice expression](https://go.dev/ref/spec#Slice_expressions):
-
-```
-s[m:n]
-```
-
-The above expression takes a slice from index `n` to `m - 1` (up to `m`, but not included). The following table shows the slicing operations available in Go:
-
-| Syntax   | Description/result                             |
-| :------- | :--------------------------------------------- |
-| `a[m:n]` | A new slice from index `m` to index `n - 1`    |
-| `a[:n]`  | A new slice from index `0` to `n - 1`          |
-| `a[m:]`  | A new slice from index `m` to maximum capacity |
-| `a[:]`   | A new slice from index `0` to maximum capacity |
-
-The last two **slice expressions** create slices that extends as far as possible in the array. This is equivalent to `a[:len(a)]` or `a[:cap(a)]`, since in arrays the **length** and the **capacity** are the same.
-
-### Slicing a slice
+## Slicing other Slices
 
 We can create a slice by slicing an existing slice; the result will be another slice that references the same array. For example, let’s use our last example and create a second slice out of the first one:
 
@@ -212,13 +173,13 @@ The length of `s2` is at its maximum, the length of a slice can never be bigger 
   different areas of the **original array**.
 </Admonition>
 
-### Declaring Empty and Nil Slices
+## Array Type vs Slice Type
 
-We can create slices without using the **slicing operations** on arrays or other slices. For example, the code belows declares a slice:
+Arrays and slices are quite similar, the main difference being that arrays are **value types**, and slices are **reference types**. Let's use the [reflect](https://pkg.go.dev/reflect) package to examine the types:
 
 <Code code={sliceCode3} lang="go" title="slices3/main.go" />
 
-In the code above we've created an **empty array** and an **empty slice**. In both cases they print `[]`, but if we use [reflect]() package, we can see that:
+In the code above we've created an **empty array** and an **empty slice**. In both cases they print `[]`, but thanks to the `reflect` package, we can see that:
 
 - **Arrays** are typed as `[n]T`, where `n` is the length (in this case `0`) and `T` the type.
 - **Slices** are typed as `[]T`, where `T` is the type. Even if the slice is not `nil` or empty, the type will be `[]T`.
@@ -228,6 +189,93 @@ In the code above we've created an **empty array** and an **empty slice**. In bo
   an array it's part of its type? Well, in the case of **slices**, their
   **length** it's not part of their type.
 </Admonition>
+
+---
+
+## Sorting and Traversing Slices
+
+Let's look at a couple of basic operations we may want to do with slices. Lets' start with sorting:
+
+<Code code={sliceCode14} lang="go" title="slices14/main.go" />
+
+In this case we're dealing with strings, hence the use of the `StringsAreSorted` method, but feel free to check out the [sort](https://pkg.go.dev/sort) package (part of the standard library) to see the available methods for sorting other types. 
+
+Traversing slices is really simple with a `for` loop and the `range`:
+
+```go
+	for i, n := range names {
+		fmt.Println(i, n)
+	}
+```
+
+## Deleting From a Slice
+
+Now that we know how slicing operations work, let's use them in a function to delete a slice item by index. The function receives two arguments:
+
+- The slice.
+- The index of the item we want to delete.
+
+Then it uses a simple algorithm named **swap and pop**, which consists on swapping the element to delete with the last element, then pop the slice (i.e. delete the last element). This is a **fast** algorithm, wich `O(1)` complexity, since it doesn't shift the elements in the slice to preserve order. The only con is exactly that, it doesn't preserve order, that's why it's also known as **unordered delete**:
+
+```go
+func DeleteByIndex(s []string, i int) []string {
+	lastIndex := len(s) - 1
+	lastElement := s[lastIndex]
+	
+	// Move last element to the position we want to delete
+	s[i] = lastElement
+	
+	// Clear the last position (avoid memory leak for string)
+	s[lastIndex] = ""
+	
+	// Shrink slice by removing last element
+	s = s[:lastIndex]
+	
+	return s
+}
+```
+
+<Admonition type="tip">
+If order is important, you could sort the slice before returning it, or do it in the caller, once the new slice is returned (obviously).
+</Admonition>
+
+---
+
+<Code code={sliceCode} lang="go" title="slices1/main.go" />
+
+Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array.
+
+<Admonition title='About Slicing'>
+To create a slice we use the general syntax: `a[m:n]`, where:
+
+- `a` represents the array where taking the slice from.
+- `m` is the **start element** (inclusive), in other words the array index which our slice is referencing.
+- `n` is the **end index** (exclusive), which is determined by the length of the array (can't go further the last array element).
+
+The **length** of the resulting slice is `n - m`.
+
+</Admonition>
+
+Several things to notice in the code above:
+
+- Notice how Go has zeroed the values of the array we didn’t initialized.
+- The functions `len()` and `cap()` return the same value in the case of the **array**, its **length**.
+- But in the case of the **slice**, the **length** and **capacity** are different.
+
+To understand that, we have to dig a bit deeper in what a slice really is.
+
+
+
+
+### Declaring Empty and Nil Slices
+
+We can create slices without using the **slicing operations** on arrays or other slices. For example, the code belows declares a slice:
+
+<Code code={sliceCode3} lang="go" title="slices3/main.go" />
+
+
+
+
 
 Note that, in the last line our slice is marshalled as `null`; that's because we're dealing with a `nil` slice. In order to create an **empty slice**, we have to use a **composite literal**:
 
@@ -248,23 +296,6 @@ a := [...]byte{}
 s := a[:]
 ```
 
-You can also create an **empty slice** using the `make` built-in function:
-
-<Code code={sliceCode7} lang="go" title="slices7/main.go" />
-
-This function allows us to create a slice specifying its length. At the same time, it creates the underlying array, that's why the **length** and **capacity** of the slice are the same, because `make()` created an array big enough to accommodate our slice size. That's why the slice items are initialized to their zero values.
-
-<Admonition>
-  If we want to create a bigger underlying array, we have to use the **optional
-  third argument**.
-</Admonition>
-
-### Initializing Slices: Composite literals
-
-
-This syntax implicitly creates the underlying array for us big enough to hold the specified items (that's why the **length** and **capacity** of slices created this way will always be the same).
-
-
 
 ## Slices are resizable
 
@@ -277,10 +308,10 @@ Using **slicing expressions** we can only resize a slice within its capacity, me
 
 <Code code={sliceCode8} lang="go" title="slices8/main.go" />
 
-If we need to extend a slice beyond the capacity limit we can use the [append](https://pkg.go.dev/builtin#append) built-in function. Using this function the resulting slice may or may not refer to the original array:
+But when we extend a slice using the [append](https://pkg.go.dev/builtin#append) built-in function, the resulting slice may or may not refer to the original array:
 
-- If it has sufficient capacity, the slice is extended, and refers to the original array.
-- If it does not, a **new underlying array** will be allocated.
+- If it has sufficient **capacity**, after the extension, the slice will still refer to the original array.
+- But if we append elements above the slice capacity, a **new underlying array** will be allocated.
 
 <Code code={sliceCode9} lang="go" title="slices9/main.go" />
 

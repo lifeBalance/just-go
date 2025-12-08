@@ -1,22 +1,22 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 import { Image, Picture } from 'astro:assets'
+import mapsCode from './code/maps/main.go?raw'
+import mapsCode2 from './code/maps2/main.go?raw'
+import mapsCode3 from './code/maps3/main.go?raw'
+
 
 # Maps
 
-A [map](https://go.dev/blog/maps) is a built-in type that that stores key-value pairs. A map works like a dictionary, allowing use to store values mapped to a **unique key**. For example, to declare a map to store people's ages we could do:
+A [map](https://go.dev/blog/maps) is a built-in type that that stores key-value pairs. A map works like a dictionary, allowing use to store values mapped to a **unique key**. 
 
-```go
-var ages map[string]int     // Declare
+## Creating Maps
 
-fmt.Println(ages)           // map[]
-fmt.Println(ages == nil)    // true
+There are several ways of creating a map, but let's start with the standard `var` syntax. For example, to declare a map to store people's ages we could do:
 
-ages = make(map[string]int) // Initialize
-fmt.Println(ages == nil)    // false
-```
+<Code code={mapsCode} lang="go" title="maps/main.go" />
 
-The same as with slices, a map declaration is not initialized, meaning it's not pointing to any hash map yet. Using the [make]() built-in function we can fix that.
+The same as with slices, a map **declaration** is not initialized, meaning it's not pointing to any any point in memory yet. Using the [make](https://go.dev/ref/spec#Making_slices_maps_and_channels) built-in function we can fix that.
 
 <Admonition>
   In Go maps are implemented as [hash
@@ -69,12 +69,14 @@ ages["Bob"] = 25    // Add
 ages["Alice"] = 31  // Update
 ```
 
+If we use a **new key**, the element will be created, otherwise it'd be updated.
+
 <Admonition type="error" title="Initialize your Maps before using them!">
-If you tried to add an element to a `nil` map you'd get an error:
+Make sure your maps are initialize before adding/updating elements. If you tried to add an element to a `nil` map you'd get an error:
 
 ```go
-var ages map[string]int     // Declare
-ages["Bob"] = 42 // Panic
+var ages map[string]int   // Declare
+ages["Bob"] = 42          // Panic
 ```
 
 </Admonition>
@@ -103,13 +105,21 @@ if exists {
 
 ## Deleting Elements
 
-We can delete map elements using the [delete]():
+We can delete map elements using the [delete](https://go.dev/ref/spec#Deletion_of_map_elements) built-in function:
 
 ```go
 delete(ages, "Alice") // Removes "Alice" from map
 
 fmt.Println(ages["Alice"]) // 0
 ```
+
+## Test for Membership
+
+To test if a map contains a given pair, we use the **comma ok idiom**, which is a two-value assignment:
+
+<Code code={mapsCode3} lang="go" title="maps3/main.go" />
+
+
 
 ## Iterating Over Maps
 
@@ -166,3 +176,10 @@ Now you have 5 players, but their indices are not in consecutive order!
 </Admonition>
 
 Maps are hash tables, arrays/slices are contiguous memory blocks. Different data structures for different use cases.
+
+## Maps are Reference Types
+
+When writing functions to process maps, we don't have to return the maps, or use pointers. Maps are already references, so whenever we pass one to a function that modifies a map, the original map is modified:
+
+<Code code={mapsCode2} lang="go" title="maps2/main.go" />
+
