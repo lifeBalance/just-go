@@ -1,0 +1,142 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import { Image, Picture } from 'astro:assets'
+
+import goroutineCode1 from './code/channels/goroutine1/main.go?raw'
+import goroutineCode2 from './code/channels/goroutine2/main.go?raw'
+import goroutineCode3 from './code/channels/goroutine3/main.go?raw'
+import goroutineCode4 from './code/channels/goroutine4/main.go?raw'
+import goroutineCode5 from './code/channels/goroutine5/main.go?raw'
+import goroutineCode6 from './code/channels/goroutine6/main.go?raw'
+
+
+# Channels
+
+A [channel](https://go.dev/ref/spec#Channel_types) a mechanism to allow concurrently running functions to communicate with each other by sending and receiving values of a specified element type.
+
+## Concurrency in Go: Goroutines
+
+In computer science, [concurrency](https://en.wikipedia.org/wiki/Concurrency_(computer_science)) refers to the the ability of a system run multiple tasks at the same time. Go supports running several functions concurrently using [go](https://go.dev/ref/spec#Go_statements) statements:
+
+<Code code={goroutineCode1} lang="go" title="goroutineCode1/main.go" />
+
+The `printNumbers` is just an ordinary function which defines a loop that prints from `1` to `3`, sleeping `500` ms between each iteration. If you run this program, you should get the following output:
+
+```
+sequential: 1
+sequential: 2
+sequential: 3
+goroutine-1: 1
+goroutine-2: 1
+goroutine-1: 2
+goroutine-2: 2
+goroutine-1: 3
+goroutine-2: 3
+Done!
+```
+
+You'll see that the lines that start with `sequential` run one after another, but the ones that start with `goroutine` run concurrently, i.e. at the same time.
+
+<Admonition title='Goroutines'>
+Goroutines are extremely lightweight (we can run thousands) and allow us to run multiple tasks at the same time, making our programs faster and more efficient.
+</Admonition>
+
+The value of an uninitialized channel is `nil`. 
+
+## The Go Runtime
+
+Go is a **compiled language**, so when we run `go build`, this command compiles source code into a native machine-code **executable**. This executable includes a **runtime system** that's embedded directly into the final binary during linking. This runtime is not a separate process or library you install—it's compiled in, adding ~2-5 MB to the binary size depending on features. This runtime provides:
+
+- Built-in Functions.
+- Garbage Collection.
+- Goroutine Scheduling.
+- Etc.
+
+## The Main Goroutine
+
+Consider the following program:
+
+<Code code={goroutineCode2} lang="go" title="goroutineCode2/main.go" />
+
+If you run it expecting to get some output, you'd be dissapointed. Let's use it to understand how goroutines work. Whenever we run a Go program, the following happens:
+
+1. The **Go runtime** creates a goroutine for the `main` function and begins executing it. At this point, no other goroutines exist.
+2. The runtime adds the new goroutine to an internal run queue, and proceeds with the next instructions (Goroutines are not blocking). But since there's no more instructions to run, the program exists, and the `go printSomething` goroutine doesn't even have the chance to run!
+
+There you have it, as soon `main()` returns or reaches end of the program, the runtime discards any queued goroutines without executing them. A cheap way of solving this issue would be to insert a delay in `main()` to give the Go scheduler time to run the goroutine.
+
+<Code code={goroutineCode3} lang="go" title="goroutineCode3/main.go" />
+
+Just a delay of `10ms` is enough to get some output.
+
+## A Better Way: Waiting Without Guessing
+
+Sleeps are fine for demos, but in real code, we need something predictable. Enter `sync.WaitGroup` from Go's standard library—it's a simple counter that tracks when goroutines finish. You "add" the number of goroutines you expect, each calls "done" when complete, and `main()` waits until the count hits zero.
+
+Update the code like this:
+
+<Code code={goroutineCode4} lang="go" title="goroutineCode4/main.go" />
+
+Here's the breakdown:
+
+- `var wg sync.WaitGroup`: Creates a WaitGroup (import `"sync"`).
+- `wg.Add(1)`: Tells it to expect one goroutine.
+- Inside the goroutine: `defer wg.Done()` ensures the count decrements exactly once, even if something goes wrong (e.g., a panic).
+- `wg.Wait()`: Blocks `main()` until the count is zero—no guessing delays.
+
+Output: "something" prints reliably, every time. No leaks, no races. WaitGroups scale easily—`Add(5)` for five goroutines, and each calls `Done()`.
+
+<Admonition title='When to Use WaitGroup'>
+It's perfect for "start N tasks, wait for all to finish" patterns, like processing files in parallel. For passing data between goroutines, we'll cover channels next—they build on this foundation.
+</Admonition>
+
+Run it yourself: `go run main.go`. Tweak it—add two goroutines with `Add(2)` and two `go` calls. You'll see both print, then the program ends cleanly.
+
+## Waiting with Channels: A Simpler Alternative?
+
+Channels aren't just for passing data—they're also a clean way to signal **completion** between goroutines. Instead of a counter like `WaitGroup`, you can create a **channel** that the goroutine "closes" or sends a value on when done. The main goroutine waits by receiving from (or selecting on) that channel. This pattern is zero-allocation for simple cases and feels more "Go-idiomatic" since channels are core to the language.
+
+Let's swap out `sync.WaitGroup` from the earlier example. We'll use a plain channel (no buffer) for the signal:
+
+<Code code={goroutineCode5} lang="go" title="goroutineCode5/main.go" />
+
+If you run this code, the output should be:
+
+```
+something
+```
+
+Let's explain what's going on in the code:
+
+- In the line `done1 := make(chan struct{})`, we're declaring and initializing a channel named `done1` using the `make` built-in function. Remember that channels communicate with each other by sending and receiving values of a specified element type. In this case we're using `chan struct{}` as the type, because an **empty struct** is tiny, and we don't need to pass any data in our example, just a signal (like "okay, I'm done").
+
+- The line `go func() { printSomething("something"); close(done1) }()`, starts a goroutine with an **anonymous function** that does two things:     
+    - Prints the message.
+    - Then close the channel. If you forget `close(done1)`, the `main` function will wait forever (hangs). That's why we always need to send the `close` signal in the goroutine.
+
+<Admonition>
+**Channels** can also send and receive real data, not just signals.
+</Admonition>
+
+- Finally, the line `<-done1` using the [receive arrow](https://go.dev/ref/spec#Channel_types) operator is used to peek into the channel for a signal. The previous line, calls `close` on the channel once the anonymous function finishes execution. This line receives that signal, and lets `main()` to continue its execution.
+
+To quickly summarize:
+
+- Main makes the channel and starts the goroutine.
+- Goroutine prints "something" and closes the channel.
+- Main waits at `<-done1`, sees the close, and exits happy.
+
+## Sending and Receiving Data
+
+In our previous example we've seen how a goroutine sends a **signal** to a channel, and how to receive that signal. Let's write some code to see how we can send **data** from a goroutine to a channel.
+
+<Code code={goroutineCode6} lang="go" title="goroutineCode6/main.go" />
+
+In this code:
+
+- We're creating the `keyPressChan` channel, which will use a `rune` for communication.
+- Then we launch the `listenForKeyPress` function in a goroutine, and we send the channel to this function.
+- Then, in `main` we initialize the `keyboard` package, and start an undefinite loop, that will run until the user enters `q` or `Q`. On each iteration, it'll sends a **message** to the `keyPressChan`, passing along the character the user entered.
+- The `listenForKeyPress` function sets up a `for` loop that runs until the `ch` channel argument receives a `false` boolean saying that the channel is closed. The `key, ok := <-ch` line is a **channel receive** which grabs from the channel both the **value** (a `rune`) and the **status of the channel** (a `bool`). We need a `for` loop here, because we launch our goroutine in `main` once, before the loop for getting the keys.
+
+It's a classic producer-consumer: `main` produces keys, listener consumes them all.

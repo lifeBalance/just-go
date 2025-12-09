@@ -9,4 +9,5 @@ export default [
   { path: 'maps', label: 'Maps' },
   { path: 'functions', label: 'Functions' },
   { path: 'interfaces', label: 'Interfaces' },
+  { path: 'channels', label: 'Channels' },
 ]
