@@ -22,8 +22,10 @@ func (d Dog) Speak() string {
 }
 ```
 
-<Admonition title='Implicit Implementation'>
-Go uses **implicit implementation**, we don't need to explicitely declare that a type implements an interface. As long as the type implements the methods specified in the interface, it satisfies the interface.
+<Admonition title="Implicit Implementation">
+  Go uses **implicit implementation**, we don't need to explicitely declare that
+  a type implements an interface. As long as the type implements the methods
+  specified in the interface, it satisfies the interface.
 </Admonition>
 
 We can say that any `Dog` instance will satisfy the `Speak` interface. Let's now create a `Cat` type that also implements this interface:
@@ -36,7 +38,7 @@ func (c Cat) Speak() string {
 }
 ```
 
-Ok, so any `Cat` instance will also satisfy the `Animal` interface. But how is that useful? 
+Ok, so any `Cat` instance will also satisfy the `Animal` interface. But how is that useful?
 
 ## Using Interfaces
 
@@ -96,7 +98,8 @@ fmt.Println(animal.Speak())  // "Meow!"
 In the example above, we defined `dog` and `cat` as instances of `Dog` and `Cat` respectively. But since both of them satisfy the `Animal` interface, we can assign the instances to a variable of type `Animal`.
 
 <Admonition>
-The variable `animal` doesn't care about the concrete type (`Dog` or `Cat`). It only cares that the type has a `Speak()` method.
+  The variable `animal` doesn't care about the concrete type (`Dog` or `Cat`).
+  It only cares that the type has a `Speak()` method.
 </Admonition>
 
 This is super useful, because we can create collections of different types:
@@ -118,3 +121,93 @@ for _, animal := range animals {
 ```
 
 Without interfaces, we couldn't put dogs and cats in the same slice.
+
+## The Problem that Interfaces Solve
+
+To really appreciate the value of interfaces, let's try to implement some methods without them:
+
+```go
+type Dog struct {
+    Sound string
+}
+
+type Cat struct {
+    Sound string
+}
+
+// Without interfaces, we need separate functions for each type
+func MakeDogSound(d Dog) {
+    fmt.Println(d.Sound)
+}
+
+func MakeCatSound(c Cat) {
+    fmt.Println(c.Sound)
+}
+
+func main() {
+    dog := Dog{Sound: "Woof!"}
+    cat := Cat{Sound: "Meow!"}
+
+    MakeDogSound(dog)  // "Woof!"
+    MakeCatSound(cat)  // "Meow!"
+
+    // We can't create a collection of mixed types
+    // This won't compile:
+    // animals := []??? {dog, cat}  // What type goes here?
+}
+```
+
+Notice the problems:
+
+1. **Code duplication**: We need `MakeDogSound` and `MakeCatSound` - two functions that do the exact same thing (print the `Sound` field)
+2. **No collections**: We can't create a slice containing both dogs and cats
+3. **Poor scalability**: If we add 10 more animal types, we need 10 more methods
+
+Now imagine we want to add a new behavior, like making all animals sleep:
+
+```go
+// Without interfaces - need a function for each type
+func MakeDogSleep(d Dog) {
+    fmt.Println("Dog is sleeping: Zzz...")
+}
+
+func MakeCatSleep(c Cat) {
+    fmt.Println("Cat is sleeping: Zzz...")
+}
+
+// Add 10 animals? Write 10 more functions!
+```
+
+With interfaces, we solve all these problems:
+
+```go
+type Animal interface {
+    Speak() string
+}
+
+// One function works for ALL types that satisfy Animal
+func MakeSound(a Animal) {
+    fmt.Println(a.Speak())
+}
+
+func MakeSleep(a Animal) {
+    fmt.Println("Sleeping: Zzz...")
+}
+
+func main() {
+    dog := Dog{Sound: "Woof!"}
+    cat := Cat{Sound: "Meow!"}
+
+    // Collections of mixed types work perfectly
+    animals := []Animal{dog, cat, dog}
+
+    for _, animal := range animals {
+        MakeSound(animal)
+        MakeSleep(animal)
+    }
+
+    // Add 100 new animal types? No new functions needed!
+}
+```
+
+**The key insight**: Interfaces let us write code that works with behaviors (methods) rather than concrete types. This makes our code more flexible, reusable, and easier to extend.
