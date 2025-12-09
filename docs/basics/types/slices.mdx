@@ -1,21 +1,21 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 import { Image, Picture } from 'astro:assets'
-import sliceCode11 from './code/slices11/main.go?raw'
-import sliceCode12 from './code/slices12/main.go?raw'
-import sliceCode5 from './code/slices5/main.go?raw'
-import sliceCode13 from './code/slices13/main.go?raw'
-import sliceCode14 from './code/slices14/main.go?raw'
+import sliceCode11 from './code/slices/slices11/main.go?raw'
+import sliceCode12 from './code/slices/slices12/main.go?raw'
+import sliceCode5 from './code/slices/slices5/main.go?raw'
+import sliceCode13 from './code/slices/slices13/main.go?raw'
+import sliceCode14 from './code/slices/slices14/main.go?raw'
 
-import sliceCode from './code/slices/main.go?raw'
-import sliceCode2 from './code/slices2/main.go?raw'
-import sliceCode3 from './code/slices3/main.go?raw'
-import sliceCode4 from './code/slices4/main.go?raw'
-import sliceCode6 from './code/slices6/main.go?raw'
-import sliceCode7 from './code/slices7/main.go?raw'
-import sliceCode8 from './code/slices8/main.go?raw'
-import sliceCode9 from './code/slices9/main.go?raw'
-import sliceCode10 from './code/slices10/main.go?raw'
+import sliceCode1 from './code/slices/slices1/main.go?raw'
+import sliceCode2 from './code/slices/slices2/main.go?raw'
+import sliceCode3 from './code/slices/slices3/main.go?raw'
+import sliceCode4 from './code/slices/slices4/main.go?raw'
+import sliceCode6 from './code/slices/slices6/main.go?raw'
+import sliceCode7 from './code/slices/slices7/main.go?raw'
+import sliceCode8 from './code/slices/slices8/main.go?raw'
+import sliceCode9 from './code/slices/slices9/main.go?raw'
+import sliceCode10 from './code/slices/slices10/main.go?raw'
 import sliceHeader from './images/slice_header.png'
 import slicingSlices from './images/slicing_slices.png'
 import sliceDescriptor2 from './images/slice_descriptor_2.png'
@@ -44,7 +44,7 @@ We can also create slices using **short syntax** in combination with [composite 
 
 <Code code={sliceCode12} lang="go" title="slices12/main.go" />
 
-In the code above, we're starting with an **empty slice**, and adding elements according to our needs (an extremely common pattern in Go). In those cases where we start with a small amount of elements which are known beforehand, we could also specify them in the composite literal:
+In the code above, we're starting with an **empty slice**, and add some elements using the `append` built-in function. In those cases where we start with a small amount of elements which are known beforehand, we could also specify them in the composite literal:
 
 <Code code={sliceCode5} lang="go" title="slices5/main.go" />
 
@@ -74,7 +74,7 @@ To expand a **not initialized** slice you can use `append` (since it creates an 
 
 ## Creating Empty Slices
 
-Creating **empty slices** is extremely common in Go, it's a core idiom for handling collections that start empty but may grow (e.g., via `append`). There are several ways to create an empty slice:
+Creating **empty slices** is extremely common in Go, it's a core idiom for handling collections that start empty but may grow according to our program needs. There are several ways to create an empty slice:
 
 - Using a composite literal.
 - Using the `make` function.
@@ -149,7 +149,7 @@ The last two **slice expressions** create slices that extends as far as possible
 
 A slice always refer to an underlying array, but it's not just a **pointer**. Check the following code:
 
-<Code code={sliceCode} lang="go" title="slices1/main.go" />
+<Code code={sliceCode1} lang="go" title="slices1/main.go" />
 
 Here we have created an **array** of 7 integers but only have initialized 4 of them. Then we have created a **slice** out of that array. Several things to notice here:
 
@@ -232,8 +232,6 @@ In the code above we've created an **empty array** and an **empty slice**. In bo
   **length** it's not part of their type.
 </Admonition>
 
----
-
 ## Sorting and Traversing Slices
 
 Let's look at a couple of basic operations we may want to do with slices. Lets' start with sorting:
@@ -281,10 +279,7 @@ func DeleteByIndex(s []string, i int) []string {
 If order is important, you could sort the slice before returning it, or do it in the caller, once the new slice is returned (obviously).
 </Admonition>
 
----
-
-
-## Slices are resizable
+## Resizing slices: When references break
 
 Slices are **resizable**, meaning that we can extend the size of a slice according to our needs. When doing so, there are two posible scenarios:
 
