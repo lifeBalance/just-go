@@ -159,9 +159,9 @@ quotient := a / b   // 3
 remainder := a % b  // 1
 ```
 
-### Boolean expressions
+### Comparison expressions
 
-These are expressions that evaluate to a boolean values:
+These are expressions that evaluate to a boolean values using comparison operators:
 
 ```go
 x := 10
@@ -175,7 +175,7 @@ fmt.Println(x <= y)  // true
 fmt.Println(x >= y)  // false
 ```
 
-We have the same operators we may find in other languages:
+Go has the same comparison operators you may find in other languages:
 
 - `==` equal to
 - `!=` not equal to
