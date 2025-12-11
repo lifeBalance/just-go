@@ -3,4 +3,139 @@ import { Code } from 'astro-expressive-code/components'
 
 # If Statements
 
-[If statements](https://go.dev/ref/spec#If_statements)
+As in most programming languages, the [if statements](https://go.dev/ref/spec#If_statements) lets you execute code conditionally based on whether an expression evaluates to true or false. For example:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    age := 20
+
+    if age >= 18 {
+        fmt.Println("You are an adult")
+    }
+}
+```
+
+The code inside the braces {} only runs if the condition is true.
+
+<Admonition title="Curly braces are needed, parentheses are not">
+  In Go, the **condition** in an if statement does not require parentheses. Just write the expression directly after the `if` keyword.
+
+    However, the code block that runs if the condition is true **must** be enclosed in curly braces `{}`.
+
+</Admonition>
+
+## If-Else Statements
+
+Using an `else` clause, we can execute one block if the condition is `true`, another if it's `false`:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    temperature := 25
+
+    if temperature > 30 {
+        fmt.Println("It's hot!")
+    } else {
+        fmt.Println("It's not that hot")
+    }
+}
+```
+
+## Else if chain
+
+To check multiple conditions in sequence, we can use `else if`:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    score := 85
+
+    if score >= 90 {
+        fmt.Println("Grade: A")
+    } else if score >= 80 {
+        fmt.Println("Grade: B")
+    } else if score >= 70 {
+        fmt.Println("Grade: C")
+    } else if score >= 60 {
+        fmt.Println("Grade: D")
+    } else {
+        fmt.Println("Grade: F")
+    }
+}
+```
+
+Go evaluates conditions from top to bottom and executes the first block whose condition is `true`, then skips the rest.
+
+## If with Initialization Statement
+
+Go allows you to **declare and initialize a variable** in the `if` statement itself. The variable is only visible within the `if-else` block:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    if age := 20; age >= 18 {
+        fmt.Println("Adult, age:", age)
+    } else {
+        fmt.Println("Minor, age:", age)
+    }
+
+    // ❌ age is NOT accessible here
+    // fmt.Println(age) // This would cause a compile error
+}
+```
+
+This is particularly useful with functions that return multiple values:
+
+```go
+package main
+
+import "fmt"
+
+func getUser() (string, bool) {
+    return "Alice", true
+}
+
+func main() {
+    if name, found := getUser(); found {
+        fmt.Println("User found:", name)
+    } else {
+        fmt.Println("User not found")
+    }
+    
+    // ❌ name and found are not accessible here
+}
+```
+
+It's a common pattern used in maps:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    users := map[string]int{
+        "Alice": 25,
+        "Bob":   30,
+    }
+    
+    if age, exists := users["Alice"]; exists {
+        fmt.Println("Alice's age:", age)
+    } else {
+        fmt.Println("Alice not found")
+    }
+}
+```
