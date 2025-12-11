@@ -1,0 +1,34 @@
+# Multiple composition
+
+Unlike Java's single inheritance, Go lets you embed multiple types:
+
+```go
+type Walker struct{}
+func (w Walker) Walk() {
+    fmt.Println("Walking...")
+}
+
+type Swimmer struct{}
+func (s Swimmer) Swim() {
+    fmt.Println("Swimming...")
+}
+
+type Flyer struct{}
+func (f Flyer) Fly() {
+    fmt.Println("Flying...")
+}
+
+// Duck can embed all three!
+type Duck struct {
+    Walker
+    Swimmer
+    Flyer
+}
+
+func main() {
+    duck := Duck{}
+    duck.Walk()  // from Walker
+    duck.Swim()  // from Swimmer
+    duck.Fly()   // from Flyer
+}
+```

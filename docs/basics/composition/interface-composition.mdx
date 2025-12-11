@@ -1,0 +1,44 @@
+import Admonition from '@components/Admonition.astro'
+
+
+# Interface Composition
+
+This is where Go really shines. You compose behavior through interfaces:
+
+```go
+type Reader interface {
+    Read() string
+}
+
+type Writer interface {
+    Write(data string)
+}
+
+// ReadWriter composes two interfaces
+type ReadWriter interface {
+    Reader
+    Writer
+}
+
+type File struct{}
+
+func (f File) Read() string {
+    return "file contents"
+}
+
+func (f File) Write(data string) {
+    fmt.Println("Writing:", data)
+}
+
+func process(rw ReadWriter) {
+    data := rw.Read()
+    rw.Write(data)
+}
+
+func main() {
+    file := File{}
+    process(file)  // File satisfies ReadWriter
+}
+```
+
+The `process` function accepts anything that satisfies `ReadWriter`, and since our `File` type implements both methods, we can pass it to this function. As you can see, using the `ReadWriter` interface we're making our `process` function more flexible; it can take as an argument any type that implements both `Read()` and `Write()`.

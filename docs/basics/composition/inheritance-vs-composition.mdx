@@ -1,0 +1,72 @@
+## Inheritance vs Composition
+
+In object-oriented languages like Java, you use inheritance to share behavior between classes. For example:
+
+```java
+class Animal {
+    public void eat() {
+        System.out.println("Eating...");
+    }
+}
+
+class Dog extends Animal {
+    public void bark() {
+        System.out.println("Woof!");
+    }
+}
+
+Dog dog = new Dog();
+
+dog.eat();   // from Animal
+dog.bark();  // from Dog
+```
+
+As you can see, since our `Dog` class inherits the class `Animal`, it also has access to its methods.  Go doesn't have inheritance, instead, it uses **composition** which consists in building complex types by combining simpler ones.
+
+> It's the principle of "has-a" relationships instead of "is-a" relationships found in inheritance.
+
+## Embedding Types
+
+In Go, you can embed one struct type into another. This allows the outer struct to access the fields and methods of the embedded struct directly.
+So the example above in Go would look like this:
+
+```go
+type Animal struct {
+    Name string
+}
+
+func (a Animal) Eat() {
+    fmt.Println(a.Name, "is eating...")
+}
+
+type Dog struct {
+    Animal  // 👈 embedded struct (no field name)
+    Breed string
+}
+
+func (d Dog) Bark() {
+    fmt.Println("Woof!")
+}
+
+func main() {
+    dog := Dog{
+        Animal: Animal{Name: "Buddy"},
+        Breed:  "Golden Retriever",
+    }
+    
+    dog.Eat()   // "Buddy is eating..."
+    dog.Bark()  // "Woof!"
+    
+    fmt.Println(dog.Animal.Name)  // "Buddy"
+    fmt.Println(dog.Name)         // "Buddy" (promoted field)
+}
+```
+
+Note how we are composing our `Dog` type embedding the `Animal` type. That way we have access to its **fields** and **methods**.
+
+<Admonition title='Promoted Fields and Methods'>
+Note that when we embed a type, in this case `Animal`, we can access its fields and methods directly, without having to use double **dot notation**. Accessing them explicitely is **optional**.
+</Admonition>
+
+**Java** says: "A Dog is an Animal" (**inheritance**)
+**Go** says: "A Dog has Animal behavior" (**composition**)

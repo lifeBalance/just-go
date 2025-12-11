@@ -1,0 +1,46 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import structEmbedding1 from './code/struct-embedding1/main.go?raw'
+import structEmbedding2 from './code/struct-embedding2/main.go?raw'
+import structEmbedding3 from './code/struct-embedding3/main.go?raw'
+
+# Struct Embedding (Structural Composition)
+
+The most common form of composition in Go is **struct embedding**, where one struct type is embedded within another. This creates a **has-a** relationship where the outer struct contains the embedded type. For example:
+
+<Code code={structEmbedding1} lang="go" collapse={'1-4, 23-52'} />
+
+In this example we're using embedding to compose a `User` type that contains contact details and an address:
+
+- The type `Address` is embedded within the `ContactDetails` type.
+- The type `ContactDetails` type is embedded within the `User` type.
+
+Let's create an instance of `User`:
+
+<Code code={structEmbedding1} lang="go" collapse={'1-24, 40-53'} />
+
+Note that when initializing the `User` instance, we have to **explicitly** initialize the embedded `ContactDetails` and `Address` structs.
+
+## Field Promotion
+
+When you embed a struct, the fields of the embedded struct are **promoted** to the outer struct. This means you can access them directly on the outer struct without needing to reference the embedded struct explicitly. Continuing with our previous example:
+
+<Code code={structEmbedding1} lang="go" collapse={'1-23'} />
+
+Note that we can access all the fields of `ContactDetails` and `Address` directly on the `User` instance, thanks to field promotion. Field promotion works recursively, so fields from nested embedded structs are also promoted. Also, we can still use **dot notation** to access fields through the embedding chain if we want to be explicit.
+
+## Methods in Embedded Structs
+
+When you embed a struct, you don't just get its fields - you also get **its methods**. Let's add some simple methods to our base structs to see how this works:
+
+<Code code={structEmbedding2} lang="go" collapse={'1-4, 40-67'} />
+
+We can also call these methods directly on the `User` instance, thanks method promotion.
+
+## Overriding methods
+
+You can "override" embedded methods by defining your own:
+
+<Code code={structEmbedding3} lang="go" />
+
+And the cool part, is that using explicit **dot notation**, we still have access to the overriden method.

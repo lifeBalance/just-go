@@ -3,172 +3,19 @@ import Admonition from '@components/Admonition.astro'
 
 # Composition
 
-In object-oriented languages like Java, you use inheritance to share behavior between classes. For example:
+The two most defining features of Go are **concurrency** and **composition**. Composition is a programming technique where complex types are built by combining simpler types, rather than inheriting from them. 
 
-```java
-class Animal {
-    public void eat() {
-        System.out.println("Eating...");
-    }
-}
-
-class Dog extends Animal {
-    public void bark() {
-        System.out.println("Woof!");
-    }
-}
-
-Dog dog = new Dog();
-
-dog.eat();   // from Animal
-dog.bark();  // from Dog
-```
-
-As you can see, since our `Dog` class inherits the class `Animal`, it also has access to its methods.  Go doesn't have inheritance, instead, it uses **composition** which consists in building complex types by combining simpler ones. So the example above in Go would look like this:
-
-```go
-type Animal struct {
-    Name string
-}
-
-func (a Animal) Eat() {
-    fmt.Println(a.Name, "is eating...")
-}
-
-type Dog struct {
-    Animal  // 👈 embedded struct (no field name)
-    Breed string
-}
-
-func (d Dog) Bark() {
-    fmt.Println("Woof!")
-}
-
-func main() {
-    dog := Dog{
-        Animal: Animal{Name: "Buddy"},
-        Breed:  "Golden Retriever",
-    }
-    
-    dog.Eat()   // "Buddy is eating..."
-    dog.Bark()  // "Woof!"
-    
-    fmt.Println(dog.Animal.Name)  // "Buddy"
-    fmt.Println(dog.Name)         // "Buddy" (promoted field)
-}
-```
-
-Note how we are composing our `Dog` type embedding the `Animal` type. That way we have access to its **fields** and **methods**.
-
-<Admonition title='Promoted Fields and Methods'>
-Note that when we embed a type, in this case `Animal`, we can access its fields and methods directly, without having to use double **dot notation**. Accessing them explicitely is **optional**.
+<Admonition type="info" title="Composition vs Inheritance">
+  Composition is often contrasted with **inheritance**, which is a common feature in object-oriented programming languages such as Java.
 </Admonition>
 
-**Java** says: "A Dog is an Animal" (**inheritance**)
-**Go** says: "A Dog has Animal behavior" (**composition**)
+In Go, composition is the primary mechanism for **code reuse** and type relationships since the language doesn't have classical inheritance.
 
-## Multiple composition
+## Types of Composition
 
-Unlike Java's single inheritance, Go lets you embed multiple types:
+There are two main ways to achieve composition in Go:
 
-```go
-type Walker struct{}
-func (w Walker) Walk() {
-    fmt.Println("Walking...")
-}
+1. **Embedding Types**: You can embed one struct type into another, allowing the outer struct to access the fields and methods of the embedded struct directly.
+2. **Interfaces**: Go uses interfaces to define behavior that can be shared across different types, allowing for flexible and decoupled code.
 
-type Swimmer struct{}
-func (s Swimmer) Swim() {
-    fmt.Println("Swimming...")
-}
 
-type Flyer struct{}
-func (f Flyer) Fly() {
-    fmt.Println("Flying...")
-}
-
-// Duck can embed all three!
-type Duck struct {
-    Walker
-    Swimmer
-    Flyer
-}
-
-func main() {
-    duck := Duck{}
-    duck.Walk()  // from Walker
-    duck.Swim()  // from Swimmer
-    duck.Fly()   // from Flyer
-}
-```
-
-## Overriding methods
-
-You can "override" embedded methods by defining your own:
-
-```go
-type Animal struct{}
-
-func (a Animal) Speak() {
-    fmt.Println("Some generic sound")
-}
-
-type Dog struct {
-    Animal
-}
-
-// Dog's own Speak method takes precedence
-func (d Dog) Speak() {
-    fmt.Println("Woof!")
-}
-
-func main() {
-    dog := Dog{}
-    dog.Speak()         // Woof!
-    dog.Animal.Speak()  // Some generic sound
-}
-```
-
-And the cool part, is that using explicit **dot notation**, we still have access to the overriden method.
-
-## Composition with interfaces
-
-This is where Go really shines. You compose behavior through interfaces:
-
-```go
-type Reader interface {
-    Read() string
-}
-
-type Writer interface {
-    Write(data string)
-}
-
-// ReadWriter composes two interfaces
-type ReadWriter interface {
-    Reader
-    Writer
-}
-
-type File struct{}
-
-func (f File) Read() string {
-    return "file contents"
-}
-
-func (f File) Write(data string) {
-    fmt.Println("Writing:", data)
-}
-
-func process(rw ReadWriter) {
-    data := rw.Read()
-    rw.Write(data)
-}
-
-func main() {
-    file := File{}
-    process(file)  // File satisfies ReadWriter
-}
-```
-
-The `process` function accepts anything that satisfies `ReadWriter`, and since our `File` type implements both methods, we can pass it to this function. As you can see, using the `ReadWriter` interface we're making our `process` function more flexible; it can take as an argument any type that implements both `Read()` and `Write()`.
