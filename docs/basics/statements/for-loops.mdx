@@ -1,5 +1,7 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
+import mainGo from './code/for/infinite-goroutine/main.go?raw'
+import loggerGo from './code/for/infinite-goroutine/logger/logger.go?raw'
 
 # For Loops
 
@@ -7,7 +9,7 @@ Go has only one looping construct: the [for loop](https://go.dev/ref/spec#For_st
 
 ## Basic for loop (three-component)
 
-The classic C-style loop with initialization, condition, and post statement:
+Go supports the classic C-style loop with initialization, condition, and post statements, all in one line, like this:
 
 ```go
 package main
@@ -22,7 +24,7 @@ func main() {
 }
 ```
 
-Components:
+Note that, after the `for` keyword, we don't use parentheses around the following statements (like other languages do). In this version of the loop, we use one statement and a couple of expressions after the `for` keyword:
 
 - `i := 0` is used for initializing the variable used in the condition (runs once before the loop starts)
 - `i < 5` is the condition (checked before each iteration)
@@ -33,6 +35,20 @@ Components:
   Its scope is limited to the loop itself; it cannot be accessed outside the
   loop.
 </Admonition>
+
+This loop can be written in a more idiomatic way using a `range` statement, which we'll cover later. But for now:
+
+```go
+package main
+import "fmt"
+
+func main() {
+    for i := range 5 {
+        fmt.Println(i)
+    }
+    // Output: 0 1 2 3 4
+}
+```
 
 ## While-style loop
 
@@ -54,11 +70,19 @@ func main() {
 }
 ```
 
-This loops keeps iterating until count is less than `5`; once `count` reaches `5`, the condition becomes `false` and the loop stops.
+This loops keeps iterating until count is less than `5`; once `count` reaches `5`, the condition becomes `false` and the loop stops. That loop behaves like a traditional `while` loop found in other languages. For exmaple, in **Python** you would write:
 
-## Infinite loop
+```python
+count = 0
 
-Omit the condition entirely for an infinite loop:
+while count < 5:
+    print(count)
+    count += 1
+```
+
+## Infinite loop - Use in Goroutines
+
+If we omit any statements between the `for` keyword and the opening curly brace (`{`), we get an **infinite loop**:
 
 ```go
 package main
@@ -80,7 +104,19 @@ func main() {
 }
 ```
 
-This loop will run forever unless we explicitly break out of it using the `break` statement. Infinite loops are useful for servers or long-running processes that need to keep running until stopped. Also for loops that need to run based on user input.
+This loop will run forever unless we explicitly break out of it using the `break` statement. Infinite loops are useful for servers or long-running processes that need to keep running until stopped. Also for loops that need to run based on user input, for example:
+
+<Code code={mainGo} lang="go" filename="infinite-goroutine/main.go" />
+
+This is one of the common use cases for infinite loops: continuously listening for messages on a channel and processing them as they arrive.
+
+<Code
+  code={loggerGo}
+  lang="go"
+  filename="infinite-goroutine/logger/logger.go"
+/>
+
+We use an infinite loop here to keep the goroutine running, waiting for messages to log.
 
 ## Range loop
 
@@ -239,7 +275,7 @@ When `i` is `2`, the `continue` statement skips the rest of the loop body and pr
 
 ## Nested loops
 
-You can nest loops inside each other:
+You can nest loops inside each other, which is useful for working with multi-dimensional data structures:
 
 ```go
 package main
@@ -253,7 +289,7 @@ func main() {
         {5, 6, 7, 8},
         {9, 10, 11, 12},
     }
-    
+
     // Print the matrix
     fmt.Println("Matrix:")
     for row := 0; row < len(matrix); row++ {
@@ -266,9 +302,43 @@ func main() {
 
 // Output:
 // Matrix:
-//   1   2   3   4 
-//   5   6   7   8 
+//   1   2   3   4
+//   5   6   7   8
 //   9  10  11  12
+```
+
+Nothing wrong with the example above, but we can use `range` to make it more idiomatic:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    matrix := [][]int{
+        {1, 2, 3, 4},
+        {5, 6, 7, 8},
+        {9, 10, 11, 12},
+    }
+
+    for i, row := range matrix {
+        for j, value := range row {
+            fmt.Printf("%3d ", value)
+        }
+        fmt.Println()
+    }
+}
+```
+
+And if you don't need the indexes, you can ignore them with `_`:
+
+```go
+for _, row := range matrix {
+    for _, value := range row {
+        fmt.Printf("%3d ", value)
+    }
+    fmt.Println()
+}
 ```
 
 ### Breaking out of nested loops with labels
@@ -293,6 +363,8 @@ outer:
     fmt.Println("Done")
 }
 ```
+
+In this example, when `i` is `1` and `j` is `1`, the `break outer` statement exits both loops immediately. Without the label, `break` would only exit the inner loop, but with the label, we can specify which loop to break out of.
 
 ## Goroutines with for loops
 
