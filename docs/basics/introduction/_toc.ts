@@ -6,4 +6,5 @@ export default [
   { path: 'first-module', label: 'Our First Module' },
   { path: 'installing-packages', label: 'Installing Packages' },
   { path: 'packages', label: 'Packages and Modules' },
+  { path: 'learning-resources', label: 'Learning Resources' },
 ]
