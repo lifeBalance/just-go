@@ -3,4 +3,304 @@ import { Code } from 'astro-expressive-code/components'
 
 # Switch Statements
 
-[Switch statements](https://go.dev/ref/spec#Switch_statements)
+[Switch statements](https://go.dev/ref/spec#Switch_statements) are way of writing multiple if-else conditions more cleanly. They compare a value against several possible cases and execute the code block corresponding to the first matching case. Here's an example:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    day := 3
+
+    switch day {
+    case 1:
+        fmt.Println("Monday")
+    case 2:
+        fmt.Println("Tuesday")
+    case 3:
+        fmt.Println("Wednesday")
+    case 4:
+        fmt.Println("Thursday")
+    case 5:
+        fmt.Println("Friday")
+    default:
+        fmt.Println("Weekend")
+    }
+    // Output: Wednesday
+}
+```
+
+In the example above, the variable `day` is compared against the cases `1`, `2`, `3`, etc. Since `day` is `3`, it matches the third case and prints "Wednesday". The `default` case is executed if none of the other cases match.
+
+<Admonition title='Give me a break!' type='info'>
+  If you have experience programming in other languages, you may have noticed that we didn't add a `break` statement after each case. n Go, each case in a switch statement automatically breaks at the end of its block (we explain it a bit later).
+</Admonition>
+
+## Multiple values in one case
+
+You can check multiple values in a single case:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    day := "Saturday"
+
+    switch day {
+    case "Monday", "Tuesday", "Wednesday", "Thursday", "Friday":
+        fmt.Println("Weekday")
+    case "Saturday", "Sunday":
+        fmt.Println("Weekend")
+    default:
+        fmt.Println("Invalid day")
+    }
+    // Output: Weekend
+}
+```
+
+In this example, the first case checks for all **weekdays**, and the second case checks for **weekends**.
+
+## No automatic fallthrough
+
+Unlike some other languages, Go's switch statements do not automatically fall through to the next case. For example, **JavaScript** falls through by default:
+
+```js
+let x = 1
+
+switch (x) {
+  case 1:
+    console.log('One') // ❌ Falls through to case 2 unless you add 'break'
+  case 2:
+    console.log('Two')
+}
+// Output: One
+//         Two  (unexpected!) 👈 😬
+```
+
+In JavaScript and other languages we need the `break` statement to prevent fallthrough:
+
+```js
+let x = 1
+
+switch (x) {
+  case 1:
+    console.log('One')
+    break // ✅ Prevents fallthrough
+  case 2:
+    console.log('Two')
+}
+// Output: One
+```
+
+In Go, however, once a matching case is found and executed, the following cases end automatically. For example:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    x := 1
+
+    switch x {
+    case 1:
+        fmt.Println("One") // Automatically breaks here - won't continue to case 2
+    case 2:
+        fmt.Println("Two")
+    }
+    // Output: One
+}
+```
+
+<Admonition title='No Fallthrough is the default' type='info'>
+  Since most of the times we don't want fallthrough behavior, Go made the design decision to have **no automatic fallthrough** by default. This helps prevent bugs that can arise from unintended fallthroughs.
+</Admonition>
+
+If you want to explicitly fall through to the next case, you can use the `fallthrough` keyword:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    x := 1
+
+    switch x {
+    case 1:
+        fmt.Println("One")
+        fallthrough  // Explicitly fall through
+    case 2:
+        fmt.Println("Two")
+        fallthrough
+    case 3:
+        fmt.Println("Three")
+    }
+    // Output:
+    // One
+    // Two
+    // Three
+}
+```
+
+## Break statement
+
+You can use `break` to exit a switch early (though it's rarely needed since cases don't fall through):
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    x := 1
+
+    switch x {
+    case 1:
+        fmt.Println("Starting case 1")
+        if true {
+            break  // Exit the switch
+        }
+        fmt.Println("This won't print")
+    case 2:
+        fmt.Println("Case 2")
+    }
+    // Output: Starting case 1
+}
+```
+
+## Switch without an expression
+
+You can omit the expression next to the `switch` keyword, and use conditions in each case (like `if-else`):
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    score := 85
+
+    switch { // ✅ No expression here
+    case score >= 90:
+        fmt.Println("Grade: A")
+    case score >= 80:
+        fmt.Println("Grade: B")
+    case score >= 70:
+        fmt.Println("Grade: C")
+    case score >= 60:
+        fmt.Println("Grade: D")
+    default:
+        fmt.Println("Grade: F")
+    }
+    // Output: Grade: B
+}
+```
+
+This is equivalent to:
+
+```go
+if score >= 90 {
+    fmt.Println("Grade: A")
+} else if score >= 80 {
+    fmt.Println("Grade: B")
+} else if score >= 70 {
+    fmt.Println("Grade: C")
+// ...
+}
+```
+
+## Switch with initialization
+
+Like `if`, you can initialize a variable in the switch statement:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    switch hour := 14; {
+    case hour < 12:
+        fmt.Println("Good morning")
+    case hour < 18:
+        fmt.Println("Good afternoon")
+    default:
+        fmt.Println("Good evening")
+    }
+    // Output: Good afternoon
+
+    // hour is not accessible here
+}
+```
+
+In this example, the variable `hour` is initialized to `14` and is only accessible within the switch statement.
+
+<Admonition>
+  Of course, the example above is a bit silly, since we're hardcoding the hour
+  value. But you could use a function to get the current hour from the system
+  clock instead.
+</Admonition>
+
+We can also use an **expression** (a function call in this case) with initialization:
+
+```go
+package main
+
+import "fmt"
+
+func getDay() int {
+    return 3
+}
+
+func main() {
+    switch day := getDay(); day {
+    case 1:
+        fmt.Println("Monday")
+    case 2:
+        fmt.Println("Tuesday")
+    case 3:
+        fmt.Println("Wednesday")
+    default:
+        fmt.Println("Other day")
+    }
+    // Output: Wednesday
+}
+```
+
+In this case, `day` is initialized by calling the `getDay` function, and then it's compared against the cases.
+
+## Type switch
+
+Switch can be used to check the type of an interface value:
+
+```go
+package main
+
+import "fmt"
+
+func describe(i interface{}) {
+    switch v := i.(type) {
+    case int:
+        fmt.Printf("Integer: %d\n", v)
+    case string:
+        fmt.Printf("String: %s\n", v)
+    case bool:
+        fmt.Printf("Boolean: %t\n", v)
+    default:
+        fmt.Printf("Unknown type: %T\n", v)
+    }
+}
+
+func main() {
+    describe(42)        // Integer: 42
+    describe("hello")   // String: hello
+    describe(true)      // Boolean: true
+    describe(3.14)      // Unknown type: float64
+}
+```
+
+In this example, the `describe` function takes an `interface{}` type and uses a type switch to determine the actual type of the value passed in. It then prints a message based on the type.

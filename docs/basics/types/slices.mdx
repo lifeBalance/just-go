@@ -112,13 +112,13 @@ The same happens when we create slices using **short syntax**; this syntax impli
 
 ## Slicing Expressions
 
-In the previous example we use a strange syntax to create a slice out of an array:
+In the previous example we used a strange syntax to create a slice out of an array:
 
 ```go
 s1 := a[:]
 ```
 
-The line above creates a slice using what it's known as a [slice expression](https://go.dev/ref/spec#Slice_expressions). The general form of a slice expression is as follows:
+This is known as a [slice expression](https://go.dev/ref/spec#Slice_expressions), which in its general form, it's as follows:
 
 ```
 a[m:n]

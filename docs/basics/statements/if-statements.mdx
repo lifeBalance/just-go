@@ -3,7 +3,7 @@ import { Code } from 'astro-expressive-code/components'
 
 # If Statements
 
-As in most programming languages, the [if statements](https://go.dev/ref/spec#If_statements) lets you execute code conditionally based on whether an expression evaluates to true or false. For example:
+As in most programming languages, an [if statement](https://go.dev/ref/spec#If_statements) lets you execute code conditionally, based on whether an expression evaluates to `true` or `false`. For example:
 
 ```go
 package main
@@ -19,12 +19,12 @@ func main() {
 }
 ```
 
-The code inside the braces {} only runs if the condition is true.
+The code inside the braces `{}` (known as the **block**) only runs if the condition is `true`.
 
 <Admonition title="Curly braces are needed, parentheses are not">
-  In Go, the **condition** in an if statement does not require parentheses. Just write the expression directly after the `if` keyword.
+In Go, the **condition** in an if statement does not require parentheses. Just write the expression directly after the `if` keyword.
 
-    However, the code block that runs if the condition is true **must** be enclosed in curly braces `{}`.
+However, the code block that runs if the condition is true **must** be enclosed in curly braces `{}`.
 
 </Admonition>
 
@@ -96,6 +96,7 @@ func main() {
     // fmt.Println(age) // This would cause a compile error
 }
 ```
+
 Of course, the example above doesn't make much sense, since we're choosing the value of `age` right there in the `if` statement. But imagine a more practical scenario where we get a value from a **function call**. This is particularly useful with functions that return multiple values:
 
 ```go
@@ -113,7 +114,7 @@ func main() {
     } else {
         fmt.Println("User not found")
     }
-    
+
     // ❌ name and found are not accessible here
 }
 ```
@@ -130,7 +131,7 @@ func main() {
         "Alice": 25,
         "Bob":   30,
     }
-    
+
     if age, exists := users["Alice"]; exists {
         fmt.Println("Alice's age:", age)
     } else {
@@ -141,6 +142,8 @@ func main() {
 
 In the code above, we use a membership check on the `users` map. The variable `age` holds the value associated with the key `"Alice"`, and `exists` is a boolean indicating whether that key was found in the map.
 
-<Admonition type='tip' title="Generalized Pattern">
-If you're new to Go, you may find this pattern a bit hard to read at first. But once you start working with Go codebases, you'll see its use is generalized, and will get used to it.
+<Admonition type="tip" title="Generalized Pattern">
+  If you're new to Go, you may find this pattern a bit hard to read at first.
+  But once you start working with Go codebases, you'll see its use is
+  generalized, and will get used to it.
 </Admonition>
