@@ -32,14 +32,23 @@ result := 2 + 3 * 4    // 14 (not 20)
 
 ## Unary operators
 
-Increment and decrement are statements (not expressions). Use them on integer variables only; they cannot appear inside larger expressions.
+Increment and decrement are **statements** (not expressions). Use them on integer variables only; they cannot appear inside larger expressions.
 
 ```go
 i := 0
 i++           // 1
 i--           // 0
 // fmt.Println(i++) // compile error: ++ used as value
+
+
+// ++/-- are statements, not expressions:
+// x := x++ // compile error: ++ used as value
+// x = x--  // compile error: -- used as value
 ```
+
+<Admonition type="warning" title="No prefix forms">
+In Go, there are no prefix versions of the increment (`++`) and decrement (`--`) operators. They can only be used as postfix operators. So using `++i` or `--i` would generate a **compile error**.
+</Admonition>
 
 ## Compound assignment
 
