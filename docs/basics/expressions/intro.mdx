@@ -6,51 +6,6 @@ An [expression](https://go.dev/ref/spec#Expressions) is any piece of code that p
 
 ---
 
-## Types of expressions
-
-Depending on the operators used in our expressions, they can be classified in several groups.
-
-### Literal expressions
-
-The simplest expressions are literal values, no operators:
-
-```go
-42          // integer literal
-3.14        // float literal
-"hello"     // string literal
-true        // boolean literal
-'a'         // rune literal
-```
-
-These can barely be considered expressions.
-
-### Variable Expressions
-
-Variables by themselves are very simple expressions, that evaluate to their stored value:
-
-```go
-x := 10
-y := x + 5  // x is an expression that evaluates to 10
-fmt.Println(y)  // 15
-```
-
-The second line contains the expression `x + 5` which evaluates to `15`. But the `x` is that expression is also an expression that evaluates to `10`. Basically, the compiler, before evaluating `x + 5`, it must evaluate `x`.
-
-### Arithmetic expressions
-
-Expressions using [operators](https://go.dev/ref/spec#Operators):
-
-```go
-a := 10
-b := 3
-
-sum := a + b        // 13
-difference := a - b // 7
-product := a * b    // 30
-quotient := a / b   // 3
-remainder := a % b  // 1
-```
-
 ### Comparison expressions
 
 These evaluate to booleans using [operators](https://go.dev/ref/spec#Operators):
@@ -210,28 +165,7 @@ length := len("hello")
 
 ### Short-circuit evaluation
 
-Logical operators && and || use short-circuit evaluation:
-
-```go
-// If first condition is false, second is never evaluated
-if false && riskyFunction() {
-    // riskyFunction() is never called
-}
-
-// If first condition is true, second is never evaluated
-if true || riskyFunction() {
-    // riskyFunction() is never called
-}
-```
-
-This is useful for avoiding errors:
-
-```go
-// Safe: checks length before accessing index
-if len(slice) > 0 && slice[0] == 42 {
-    fmt.Println("First element is 42")
-}
-```
+Logical operators short-circuit; see the Boolean Expressions page.
 
 ### Expression complexity
 

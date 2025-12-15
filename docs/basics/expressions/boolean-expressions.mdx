@@ -8,6 +8,8 @@ Logical expressions use `&&`, `||`, and `!` to combine boolean operands. See [Op
 - `||` is logical OR. If the left is true, the right side is not evaluated.
 - `!` negates a boolean value.
 
+## Short‑circuit evaluation
+
 Short‑circuiting enables safe “guard” patterns:
 
 ```go
@@ -19,6 +21,28 @@ if s != nil && len(s) > 0 {
 // Early success: right side won’t run if left is true
 if cached || compute() {
   // ...
+}
+```
+
+Two quick demonstrations of short‑circuiting in action:
+
+```go
+// If the left side is false, the right side is never evaluated
+if false && riskyFunction() {
+    // riskyFunction() is never called
+}
+
+// If the left side is true, the right side is never evaluated
+if true || riskyFunction() {
+    // riskyFunction() is never called
+}
+```
+
+And another common guard to avoid panics with indexing:
+
+```go
+if len(slice) > 0 && slice[0] == 42 {
+    fmt.Println("First element is 42")
 }
 ```
 
