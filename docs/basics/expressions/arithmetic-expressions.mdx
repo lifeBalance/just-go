@@ -8,6 +8,16 @@ Arithmetic combines numeric operands with `+`, `-`, `*`, `/`, and `%`. The rules
 - `/` divides. For integers, the result truncates toward zero.
 - `%` is remainder. It works only with integers.
 
+Operator quick reference:
+
+| Operator | Meaning       | Notes                               |
+| -------- | ------------- | ----------------------------------- |
+| `+`      | addition      |                                     |
+| `-`      | subtraction   |                                     |
+| `*`      | multiplication|                                     |
+| `/`      | division      | Integers truncate toward zero       |
+| `%`      | remainder     | Integers only                       |
+
 ```go
 a := 7 / 2        // 3  (integer division truncates)
 b := float64(7)/2 // 3.5 (a float operand makes it floating‑point)
@@ -31,7 +41,7 @@ m = 42      // untyped constant fits into int64
 
 Overflow is defined for unsigned integers (wraparound modulo 2^N). Signed overflow is also well‑defined by Go’s two’s‑complement behavior, but you shouldn’t rely on wrap as an API — just know it won’t panic.
 
-Operator precedence follows math: multiplication/division bind tighter than addition/subtraction. You can always use parentheses to make intent obvious:
+Operator precedence follows math (PEMDAS): multiplication/division bind tighter than addition/subtraction. Go has no exponent operator; use `math.Pow`. You can always use parentheses to make intent obvious:
 
 ```go
 an := 2 + 3*4      // 14
