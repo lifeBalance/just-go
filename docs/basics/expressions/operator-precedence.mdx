@@ -2,9 +2,7 @@ import Admonition from '@components/Admonition.astro'
 
 # Operator precedence
 
-When you mix operators, precedence determines what binds tighter. Go’s rules match standard math. See [Operators](https://go.dev/ref/spec#Operators).
-
-From higher to lower (within each group, left‑to‑right):
+When you mix [operators](https://go.dev/ref/spec#Operators), precedence determines what operations are performed first. From higher to lower (within each group, left‑to‑right):
 
 - Multiplicative: `* / % << >> & &^`
 - Additive: `+ - | ^`
@@ -21,7 +19,7 @@ r2 := (2 + 3) * 4// 20  (parentheses change it)
 ok := a < b && b < c  // comparison binds before &&
 ```
 
-Parentheses win every time. If in doubt, add them for clarity.
+**Parentheses** win every time. If in doubt, add them for clarity.
 
 <Admonition variant="tip" title="Evaluation vs. precedence">
 Precedence controls grouping; it does not change evaluation order. Operands and call arguments are still evaluated left‑to‑right, and `&&`/`||` still short‑circuit.
