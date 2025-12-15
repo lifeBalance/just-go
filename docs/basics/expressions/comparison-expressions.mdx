@@ -1,0 +1,35 @@
+import Admonition from '@components/Admonition.astro'
+
+# Comparison expressions
+
+Comparison expressions use `==`, `!=`, `<`, `<=`, `>`, `>=` and always evaluate to a boolean. The two operands must be comparable, and—after any conversions—of the same type. See the spec’s [Comparison operators](https://go.dev/ref/spec#Comparison_operators).
+
+```go
+x, y := 10, 20
+fmt.Println(x == y) // false
+fmt.Println(x < y)  // true
+```
+
+Not everything can be compared with everything else. Go defines “comparability” precisely:
+
+- Comparable: numbers, strings, booleans, pointers, channels, interfaces; arrays if their elements are comparable; structs if all their fields are comparable.
+- Not comparable: slices, maps, and functions (except that each can be compared to `nil`).
+
+```go
+var s []int
+fmt.Println(s == nil)     // true (allowed)
+// fmt.Println([]int{} == []int{}) // compile error: slices not comparable
+```
+
+When interfaces are compared, the dynamic type and value must match for `==` to be true. For strings and numbers, comparisons are lexicographic and numeric as you’d expect.
+
+A common pitfall is mixing types unintentionally. Go doesn’t auto‑convert numeric types in comparisons; convert explicitly if needed:
+
+```go
+var n int32 = 42
+fmt.Println(int64(n) == 42) // true (untyped constant adapts)
+```
+
+<Admonition variant="tip" title="Maps and slices">
+You can’t compare two maps or two slices directly for equality. To check content equality, compare lengths and iterate elements (or use packages that do deep comparisons in tests).
+</Admonition>

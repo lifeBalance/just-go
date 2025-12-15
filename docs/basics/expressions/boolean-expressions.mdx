@@ -1,0 +1,35 @@
+import Admonition from '@components/Admonition.astro'
+
+# Boolean (logical) expressions
+
+Logical expressions use `&&`, `||`, and `!` to combine boolean operands. See [Operators](https://go.dev/ref/spec#Operators).
+
+- `&&` is logical AND. It evaluates the left operand first; if it’s false, the right side is not evaluated (short‑circuit).
+- `||` is logical OR. If the left is true, the right side is not evaluated.
+- `!` negates a boolean value.
+
+Short‑circuiting enables safe “guard” patterns:
+
+```go
+// Safe: second test only runs when needed
+if s != nil && len(s) > 0 {
+  fmt.Println("first:", s[0])
+}
+
+// Early success: right side won’t run if left is true
+if cached || compute() {
+  // ...
+}
+```
+
+You can build readable expressions by naming intermediate results:
+
+```go
+isAdult := age >= 18
+hasIncome := income > 30_000
+eligible := isAdult && (hasIncome || hasGoodCredit)
+```
+
+<Admonition variant="tip" title="Evaluation order">
+Operands are evaluated left‑to‑right. With `&&` and `||`, the right operand may not be evaluated at all. This is often used to avoid panics when accessing slices or maps.
+</Admonition>

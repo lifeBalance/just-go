@@ -1,0 +1,26 @@
+import Admonition from '@components/Admonition.astro'
+
+# Bitwise and shifts
+
+Go provides bitwise operators for integer types: `&` (AND), `|` (OR), `^` (XOR), `&^` (AND NOT / bit clear), and shifts `<<` and `>>`. See [Operators](https://go.dev/ref/spec#Operators).
+
+```go
+var x uint8 = 0b1100
+var y uint8 = 0b1010
+
+fmt.Printf("%04b\n", x & y)   // 1000 (AND)
+fmt.Printf("%04b\n", x | y)   // 1110 (OR)
+fmt.Printf("%04b\n", x ^ y)   // 0110 (XOR)
+
+mask := uint8(0b0101)
+fmt.Printf("%04b\n", x &^ mask) // 1000 (clear bits in mask)
+
+fmt.Printf("%08b\n", x << 1)  // 00011000
+fmt.Printf("%08b\n", x >> 2)  // 00000011
+```
+
+Shifts are by unsigned counts. The result type is the left operand’s type. Be mindful of sign when shifting signed integers; unsigned types make intent clearer.
+
+<Admonition variant="tip" title="Bit clear (&^)">
+`a &^ b` clears any bits in `a` that are set in `b`. It’s handy for unsetting flags.
+</Admonition>

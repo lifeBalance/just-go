@@ -38,7 +38,7 @@ The second line contains the expression `x + 5` which evaluates to `15`. But the
 
 ### Arithmetic expressions
 
-Expressions using arithmetic operators:
+Expressions using [operators](https://go.dev/ref/spec#Operators):
 
 ```go
 a := 10
@@ -53,7 +53,7 @@ remainder := a % b  // 1
 
 ### Comparison expressions
 
-These are expressions that evaluate to a boolean values using comparison operators:
+These evaluate to booleans using [operators](https://go.dev/ref/spec#Operators):
 
 ```go
 x := 10
@@ -80,7 +80,7 @@ It's important to remember that both operands in a comparison expression must ha
 
 ### Compound Boolean Expressions
 
-We can combine boolean expressions with the help of **boolean operators**:
+We can combine boolean expressions with [logical operators](https://go.dev/ref/spec#Operators):
 
 ```go
 age := 25
@@ -98,7 +98,7 @@ Again, Go offers the same boolean operators you can find in other languages:
 
 ### Function call expressions
 
-Function calls are expressions if they return a value:
+[Calls](https://go.dev/ref/spec#Calls) are expressions if they return a value:
 
 ```go
 import "strings"
@@ -112,7 +112,7 @@ value, err := someFunction()
 
 ### Method call expressions
 
-Similar to function calls, but on a receiver:
+Similar to calls, via [selectors](https://go.dev/ref/spec#Selectors) on a receiver:
 
 ```go
 s := "hello"
@@ -124,7 +124,7 @@ first := numbers[0]  // 1 (index expression)
 
 ### Type conversion expressions
 
-Converting one type to another:
+[Conversions](https://go.dev/ref/spec#Conversions) convert a value to another type:
 
 ```go
 x := 42
@@ -138,7 +138,7 @@ str := strconv.Itoa(x)  // "42"
 
 ### Composite literal expressions
 
-Creating structs, arrays, slices, and maps:
+[Composite literals](https://go.dev/ref/spec#Composite_literals) create structs, arrays, slices, and maps:
 
 ```go
 // Struct literal
@@ -162,7 +162,7 @@ scores := map[string]int{
 
 ### Operator precedence
 
-Go follows standard mathematical operator precedence. From highest to lowest:
+Go’s [operators](https://go.dev/ref/spec#Operators) follow standard mathematical precedence. From highest to lowest:
 
 ```go
 result := 2 + 3 * 4    // 14 (not 20)
@@ -182,7 +182,7 @@ Precedence levels (highest to lowest):
 
 ### Expressions vs statements
 
-It's important to distinguish between expressions and statements. Expressions produce values:
+It's important to distinguish between [expressions](https://go.dev/ref/spec#Expressions) and [statements](https://go.dev/ref/spec#Statements). Expressions produce values:
 
 ```go
 5 + 3           // expression, evaluates to 8
