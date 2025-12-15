@@ -1,10 +1,77 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
+import basicSelect from './code/select/basic/main.go?raw'
+import timeoutSelect from './code/select/timeout/main.go?raw'
 
 # Select Statements
 
-The [select statement](https://go.dev/ref/spec#Select_statements)  chooses which of a set of possible send or receive operations will proceed. It looks similar to a "switch" statement but with the cases all referring to communication operations.. For example:
+The [select statement](https://go.dev/ref/spec#Select_statements) is like a `switch` statement but for channels. It waits on multiple channel operations and executes the case that's ready first. For example:
+
+<Code code={basicSelect} lang="go" />
+
+In the code above:
+
+- We create two channels: `ch1` and `ch2`.
+- Then we launch two tasks in goroutines that simulate doing some work, that takes different amounts of time to complete (1 second and 2 seconds respectively).
+- Whenever a task is done, it sends a message to the channel it received as argument.
+- The `select` statment waits (it **blocks** execution) until it receives a **message** from one of the channels (which happens when the corresponding task, running in the goroutine, is ready), then executes that case.
+
+## Common pattern: timeout
+
+A common use case for `select` is to implement timeouts when waiting for channel operations. For example:
+
+<Code code={basicSelectGo} lang="go" />
+
+How it works:
+
+1. We launch `slowTask` in a goroutine.starts and will send a result after 2. In our `select` statement we have two cases:
+
+    - One that waits for a result from `ch`.
+    - The other one, which uses `time.After`, creates a channel **on the fly** that sends a value after 1 second.
+
+The `select` statement waits for whichever channel is ready first.
+
+- If ch receives data first → print the result
+- If the timeout channel receives first (after 1 second) → print "Timeout!"
+
+
+In this example, since `slowTask` takes `2` seconds but the timeout we set up is only `1` second, the timeout case executes.
+
+## Why this is useful?
+
+Imagine calling an external API that might be slow or unresponsive. Instead of waiting forever, you set a deadline:
 
 ```go
+func main() {
+	result := make(chan string)
 
+	go fetchFromAPI(result)
+
+	select {
+	case data := <-result:
+		fmt.Println("API response:", data)
+	case <-time.After(3 * time.Second):
+		fmt.Println("API didn't respond in time, giving up")
+	}
+}
+
+func fetchFromAPI(ch chan string) {
+	// Simulating slow API call
+	time.Sleep(5 * time.Second)
+	ch <- "API data"
+}
 ```
+
+The timeout pattern prevents your program from hanging indefinitely waiting for a channel that might never send data.
+
+## Summary
+
+- **Only works with channels** - you can't use regular values.
+- By default, `select` statements **block** until a case is ready.
+- If **multiple cases are ready**, picks one randomly.
+- Can be used for both sending and receiving on channels.
+
+<Admonition type="info">
+For more advanced patterns with `select` (quit signals, fan-in, etc.), see the [Concurrency section](../concurrency/intro).
+</Admonition>
+

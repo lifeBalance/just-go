@@ -1,0 +1,204 @@
+# Select patterns
+
+In our previous [select statements](./select-statements) section, we saw the basic usage of `select` with channels. Here, we'll explore some common patterns and advanced usage of `select` in Go.
+
+## Empty select (blocks forever)
+
+An empty select with no cases blocks forever:
+
+```go
+package main
+
+func main() {
+    select {}
+    // This goroutine will block forever
+    // Useful to keep a program running
+}
+```
+
+This is sometimes used in programs that only run goroutines and need to stay alive.
+
+## Non-blocking Select
+
+Add a `default` case to make the select non-blocking:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    ch := make(chan string)
+
+    select {
+    case msg := <-ch:
+        fmt.Println("Received:", msg)
+    default:
+        fmt.Println("No message received") // ✅ No message received (channel has no data)
+    }
+}
+```
+
+In the code above, without `default`, the `select` would **block** forever waiting for data. With `default`, it executes immediately if no channel is ready.
+
+## Worker Timeout
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func worker(id int, jobs <-chan int, results chan<- int) {
+    for job := range jobs {
+        fmt.Printf("Worker %d processing job %d\n", id, job)
+        time.Sleep(time.Second)
+        results <- job * 2
+    }
+}
+
+func main() {
+    jobs := make(chan int, 5)
+    results := make(chan int, 5)
+    
+    // Start worker
+    go worker(1, jobs, results)
+    
+    // Send jobs
+    for j := 1; j <= 3; j++ {
+        jobs <- j
+    }
+    close(jobs)
+    
+    // Collect results with timeout
+    for i := 0; i < 3; i++ {
+        select {
+        case result := <-results:
+            fmt.Println("Result:", result)
+        case <-time.After(2 * time.Second):
+            fmt.Println("Job timed out")
+        }
+    }
+}
+```
+
+## Quit channel pattern
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    quit := make(chan bool)
+    
+    go func() {
+        for {
+            select {
+            case <-quit:
+                fmt.Println("Received quit signal")
+                return
+            default:
+                fmt.Println("Working...")
+                time.Sleep(500 * time.Millisecond)
+            }
+        }
+    }()
+    
+    time.Sleep(2 * time.Second)
+    quit <- true
+    time.Sleep(100 * time.Millisecond)
+}
+```
+
+## Fan-in pattern (multiple inputs, one output)
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func fanIn(ch1, ch2 <-chan string) <-chan string {
+    out := make(chan string)
+    
+    go func() {
+        for {
+            select {
+            case msg := <-ch1:
+                out <- msg
+            case msg := <-ch2:
+                out <- msg
+            }
+        }
+    }()
+    
+    return out
+}
+
+func main() {
+    ch1 := make(chan string)
+    ch2 := make(chan string)
+    
+    go func() {
+        for i := 0; ; i++ {
+            ch1 <- fmt.Sprintf("Channel 1: %d", i)
+            time.Sleep(time.Second)
+        }
+    }()
+    
+    go func() {
+        for i := 0; ; i++ {
+            ch2 <- fmt.Sprintf("Channel 2: %d", i)
+            time.Sleep(2 * time.Second)
+        }
+    }()
+    
+    combined := fanIn(ch1, ch2)
+    
+    for i := 0; i < 5; i++ {
+        fmt.Println(<-combined)
+    }
+}
+```
+
+## Done channel pattern
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func doWork(done <-chan bool) {
+    for {
+        select {
+        case <-done:
+            fmt.Println("Work cancelled")
+            return
+        default:
+            fmt.Println("Working...")
+            time.Sleep(500 * time.Millisecond)
+        }
+    }
+}
+
+func main() {
+    done := make(chan bool)
+    
+    go doWork(done)
+    
+    time.Sleep(2 * time.Second)
+    close(done)  // Signal done by closing the channel
+    time.Sleep(100 * time.Millisecond)
+}
+```
