@@ -2,68 +2,138 @@ import Admonition from '@components/Admonition.astro'
 
 # Primary expressions
 
-[Primary expressions](https://go.dev/ref/spec#Primary_expressions) are the operands for unary and binary expressions. There are several types of primary expressions in Go:
+[Primary expressions](https://go.dev/ref/spec#Primary_expressions) are the atoms of evaluation — the things that already “are” **values** (or become values immediately) before any **operators** get involved. In practice, that includes:
 
-- [Selectors](https://go.dev/ref/spec#Selectors)
-- Index expressions
-- Slice expressions
-- Type assertions
-- Calls
+- Selectors.
+- Indexing and slicing.
+- Conversions.
+- Type assertions.
+- Calls.
+- Function literals, and the method forms Go adds on top.
 
 ## Selectors
 
-When we access the field or method of a **struct**, the result evaluates to some value, hence is a primary expression:
+Accessing the **field** or **method** of a struct yields a value, so [selectors](https://go.dev/ref/spec#Selectors) are primary expressions:
 
 ```go
 bob := struct{
     name string
-    age int
+    age  int
 }{
     name: "Robert",
-    age: 42,
+    age:  42,
 }
 
-fmt.Println(bob.name)
+fmt.Println(bob.name) // selector evaluates to the stored value
 ```
 
-In the code above, `bob.name` is a selector which evaluates to whatever value is stored there. Once that's evaluated, `fmt.Println` will print it.
+## Index expressions
 
-## Index Expressions
-
-[Index expressions](https://go.dev/ref/spec#Index_expressions) allow us to access elements within arrays, slices, strings, or maps.
+[Index expressions](https://go.dev/ref/spec#Index_expressions) dive into arrays, slices, strings, and maps:
 
 ```go
-array[0]           // array/slice element
-myMap["key"]       // map value
-str[2]             // byte in string at index 2
+arr[0]         // array/slice element
+m["key"]      // map value
+b := s[2]      // byte at index 2 in string s
 ```
 
-## Slicing expressions
-
-[Slicing expressions](https://go.dev/ref/spec#Slice_expressions) are used to create slices from arrays, slices, or strings:
+For maps, the two‑value form reports presence:
 
 ```go
-array[1:4]         // elements from index 1 to 3
-slice[:3]          // first 3 elements
-slice[2:]          // from index 2 to end
-slice[:]           // full slice
+v, ok := m["k"] // ok is false if "k" not present
 ```
 
-## Type Assertions
+Strings index to bytes; convert to `[]rune` if you need Unicode code points.
 
-[Type Assertions](https://go.dev/ref/spec#Type_assertions) are the expressions we use to retrieve the dynamic value of an interface.
+## Slice expressions
+
+[Slice expressions](https://go.dev/ref/spec#Slice_expressions) carve out a view of existing data:
 
 ```go
-value := interfaceVar.(ConcreteType)
-value, ok := interfaceVar.(ConcreteType)  // safe version
+s[1:4]   // elements with indices 1,2,3
+s[:3]    // first three
+s[2:]    // from index 2 to end
+s[:]     // full slice
 ```
 
-## Function and Method calls
-
-Whenever a function or method returns a value, it's considered a expression:
+The three‑index form controls capacity:
 
 ```go
-len("hello")           // evaluates to 5
-strings.ToUpper("hi")  // evaluates to "HI"
-math.Max(5, 10)        // evaluates to 10
+sub := s[i:j:k] // len(sub) == j-i, cap(sub) == k-i
 ```
+
+(Details live in the Arrays and Slices chapters.)
+
+## Conversions
+
+[Conversions](https://go.dev/ref/spec#Conversions) produce a value of a different, but compatible, type:
+
+```go
+f := float64(42)            // numeric conversion
+bs := []byte("go")          // string → bytes
+s := string([]rune{'你','好'}) // runes → string
+```
+
+Untyped constants (like `42`) can become many numeric types; assignment or an explicit conversion fixes the type.
+
+## Type assertions
+
+[Type assertions](https://go.dev/ref/spec#Type_assertions) retrieve a concrete value from an interface:
+
+```go
+v := any(3.14)
+f := v.(float64)            // panics if not a float64
+f, ok := v.(float64)        // safe version
+```
+
+## Calls
+
+[Calls](https://go.dev/ref/spec#Calls) are primary expressions too. Arguments are evaluated left‑to‑right, then the call runs.
+
+```go
+n := len("hello")          // 5
+s := strings.ToUpper("hi") // "HI"
+max := math.Max(5, 10)      // 10
+```
+
+Variadics and `...` expansion are part of everyday calls:
+
+```go
+fmt.Println(1, 2, 3)      // variadic receiver
+xs := []int{1, 2, 3}
+fmt.Println(xs...)        // expands slice elements
+```
+
+Go often returns multiple values; use the ones you need and discard the rest with `_`:
+
+```go
+n, _ := io.Copy(dst, src) // ignore error here (only when you truly can)
+```
+
+## Function literals, method values, and method expressions
+
+[Function literals](https://go.dev/ref/spec#Function_literals) are values. They can close over surrounding variables:
+
+```go
+square := func(x int) int { return x * x }
+fmt.Println(square(3)) // 9
+```
+
+Methods come in two handy forms beyond ordinary calls:
+
+- A [method value](https://go.dev/ref/spec#Method_values) binds the receiver now and lets you call it later.
+
+```go
+var buf bytes.Buffer
+write := buf.WriteString   // receiver is captured
+_ , _ = write("hello")
+```
+
+- A [method expression](https://go.dev/ref/spec#Method_expressions) doesn’t bind; it produces a function that takes the receiver as its first argument.
+
+```go
+write2 := (*bytes.Buffer).WriteString
+_, _ = write2(&buf, " world")
+```
+
+Both forms are just values you can store, pass, and call — which is the whole point of primary expressions.
