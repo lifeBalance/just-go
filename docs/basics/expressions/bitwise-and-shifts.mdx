@@ -4,35 +4,85 @@ import Admonition from '@components/Admonition.astro'
 
 [Bitwise operators](https://go.dev/ref/spec#Integer_operators) and [shift operators](https://go.dev/ref/spec#Shift_operators) operate on integer types. The following table contains a summary of operators:
 
-| Operator | Meaning      | Example                         |
-| -------- | ------------ | ------------------------------- |
-| `&`      | bitwise AND  | `0b1100 & 0b1010 = 0b1000`      |
-| `\|`      | bitwise OR   | `0b1100 \| 0b1010 = 0b1110`    |
-| `^`      | bitwise XOR  | `0b1100 ^ 0b1010 = 0b0110`      |
-| `&^`     | bit clear    | `0b1100 &^ 0b0101 = 0b1000`     |
-| `<<`     | left shift   | `0b00001100 << 2 = 0b00110000`  |
-| `>>`     | right shift  | `0b00001100 >> 2 = 0b00000011`  |
+| Operator | Meaning     | Example                        |
+| -------- | ----------- | ------------------------------ |
+| `&`      | bitwise AND | `0b1100 & 0b1010 = 0b1000`     |
+| `\|`     | bitwise OR  | `0b1100 \| 0b1010 = 0b1110`    |
+| `^`      | bitwise XOR | `0b1100 ^ 0b1010 = 0b0110`     |
+| `&^`     | bit clear   | `0b1100 &^ 0b0101 = 0b1000`    |
+| `<<`     | left shift  | `0b00001100 << 2 = 0b00110000` |
+| `>>`     | right shift | `0b00001100 >> 2 = 0b00000011` |
 
 Note: shift counts are unsigned; the result type is the left operand. Prefer unsigned integers for shifting to avoid sign-related surprises.
 
+<Admonition variant="info" title="Binary Integer literals">
+  Binary integer literals: numbers like `0b1100` are binary integer literals. Go
+  also supports `0o` (octal) and `0x` (hex), and allows underscores for
+  readability (e.g., `0b1111_0000`). See the spec’s [Integer
+  literals](https://go.dev/ref/spec#Integer_literals).
+</Admonition>
+
+## Bitwise AND
+
+THE `&` operator performs a bitwise AND operation. Each bit in the result is set to `1` only if both corresponding bits in the operands are `1`.
 
 ```go
-var x uint8 = 0b1100
-var y uint8 = 0b1010
+x := uint8(0b1100)          // 1100
+y := uint8(0b1010)          // 1010
+fmt.Printf("%04b\n", x&y)   // 1000 👈 Check the 2nd and 3rd bits
+```
 
-fmt.Printf("%04b\n", x & y)   // 1000 (AND)
-fmt.Printf("%04b\n", x | y)   // 1110 (OR)
-fmt.Printf("%04b\n", x ^ y)   // 0110 (XOR)
+## Bitwise OR
 
-mask := uint8(0b0101)
-fmt.Printf("%04b\n", x &^ mask) // 1000 (clear bits in mask)
+THE `|` operator performs a bitwise OR. Each bit in the result is set to `1` if either corresponding bit in the operands is `1`.
 
-fmt.Printf("%08b\n", x << 1)  // 00011000
-fmt.Printf("%08b\n", x >> 2)  // 00000011
+```go
+x := uint8(0b1100)        // 1100
+y := uint8(0b1010)        // 1010
+fmt.Printf("%04b\n", x|y) // 1110
+```
+
+## Bitwise XOR
+
+THE `^` operator performs a bitwise XOR. Each bit in the result is set to `1` if the corresponding bits differ.
+
+```go
+x := uint8(0b1100)        // 1100
+y := uint8(0b1010)        // 1010
+fmt.Printf("%04b\n", x^y) // 0110
+```
+
+## Bit clear (AND NOT)
+
+THE `&^` operator clears bits in the left operand that are set in the right operand.
+
+```go
+x := uint8(0b1100)            // 1100
+mask := uint8(0b0101)         // 0101
+fmt.Printf("%04b\n", x&^mask) // 1000
+```
+
+## Left shift
+
+Shifts move bits left or right; left shifts multiply by powers of two.
+
+```go
+x := uint8(0b00001100)          // 00001100
+fmt.Printf("%08b\n", x<<2)      // 00110000
+```
+
+## Right shift
+
+Right shifts divide by powers of two for unsigned values (arithmetic vs logical shift matters for signed types). Prefer unsigned when shifting.
+
+```go
+x := uint8(0b00001100)          // 00001100
+fmt.Printf("%08b\n", x>>2)      // 00000011
 ```
 
 Shifts are by unsigned counts. The result type is the left operand’s type. Be mindful of sign when shifting signed integers; unsigned types make intent clearer.
 
 <Admonition variant="tip" title="Bit clear (&^)">
-`a &^ b` clears any bits in `a` that are set in `b`. It’s handy for unsetting flags.
+  `a &^ b` clears any bits in `a` that are set in `b`. It’s handy for unsetting
+  flags.
 </Admonition>
