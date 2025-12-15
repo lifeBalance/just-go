@@ -1,0 +1,69 @@
+import Admonition from '@components/Admonition.astro'
+
+# Primary expressions
+
+[Primary expressions](https://go.dev/ref/spec#Primary_expressions) are the operands for unary and binary expressions. There are several types of primary expressions in Go:
+
+- [Selectors](https://go.dev/ref/spec#Selectors)
+- Index expressions
+- Slice expressions
+- Type assertions
+- Calls
+
+## Selectors
+
+When we access the field or method of a **struct**, the result evaluates to some value, hence is a primary expression:
+
+```go
+bob := struct{
+    name string
+    age int
+}{
+    name: "Robert",
+    age: 42,
+}
+
+fmt.Println(bob.name)
+```
+
+In the code above, `bob.name` is a selector which evaluates to whatever value is stored there. Once that's evaluated, `fmt.Println` will print it.
+
+## Index Expressions
+
+[Index expressions](https://go.dev/ref/spec#Index_expressions) allow us to access elements within arrays, slices, strings, or maps.
+
+```go
+array[0]           // array/slice element
+myMap["key"]       // map value
+str[2]             // byte in string at index 2
+```
+
+## Slicing expressions
+
+[Slicing expressions](https://go.dev/ref/spec#Slice_expressions) are used to create slices from arrays, slices, or strings:
+
+```go
+array[1:4]         // elements from index 1 to 3
+slice[:3]          // first 3 elements
+slice[2:]          // from index 2 to end
+slice[:]           // full slice
+```
+
+## Type Assertions
+
+[Type Assertions](https://go.dev/ref/spec#Type_assertions) are the expressions we use to retrieve the dynamic value of an interface.
+
+```go
+value := interfaceVar.(ConcreteType)
+value, ok := interfaceVar.(ConcreteType)  // safe version
+```
+
+## Function and Method calls
+
+Whenever a function or method returns a value, it's considered a expression:
+
+```go
+len("hello")           // evaluates to 5
+strings.ToUpper("hi")  // evaluates to "HI"
+math.Max(5, 10)        // evaluates to 10
+```

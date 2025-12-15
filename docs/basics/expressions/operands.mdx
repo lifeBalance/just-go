@@ -1,0 +1,40 @@
+import Admonition from '@components/Admonition.astro'
+
+# Operands
+
+Operands are are the basic building blocks used in expressions. They can be classified into several categories:
+
+- **Literal values**, such as `5` or the string `"hello"`
+- **Identifiers** such as variables or constant names.
+- Parenthesized expressions, such as `(x + 5)`
+
+The simplest expressions are **literal values**, no operators:
+
+```go
+42          // integer literal
+3.14        // float literal
+"hello"     // string literal
+true        // boolean literal
+'a'         // rune literal
+```
+
+Variables (or constants) by themselves are very simple expressions, that evaluate to their stored value. For example:
+
+```go
+x           // variable name
+PI          // constant name
+```
+
+We can also combine literals and identifiers in parentheses:
+
+```go
+(x + 5)     // combination of identifier and literal value
+```
+
+Operands can not appear by themselves in a program, they must show up in some [statement](https://go.dev/ref/spec#Statements), like an assignment, a condition, etc.
+
+```go
+x := 10         // A literal in an assignment
+y := x + 5      // A literal and a variable in an arithmetic expression
+fmt.Println(y)  // An identifier as an argument to a function
+```
