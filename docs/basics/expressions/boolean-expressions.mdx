@@ -2,11 +2,20 @@ import Admonition from '@components/Admonition.astro'
 
 # Boolean (logical) expressions
 
-Logical expressions use `&&`, `||`, and `!` to combine boolean operands. See [Operators](https://go.dev/ref/spec#Operators).
+[Boolean (logical) expressions](https://go.dev/ref/spec#Logical_operators) use the following operators to combine or negate boolean values:
 
 - `&&` is logical AND. It evaluates the left operand first; if it’s false, the right side is not evaluated (short‑circuit).
 - `||` is logical OR. If the left is true, the right side is not evaluated.
 - `!` negates a boolean value.
+
+Operator quick reference:
+
+Operator | Meaning      | Example          
+-------- | ------------ | -----------------
+`&&`     | logical AND  | `true && false`  
+`||`     | logical OR   | `false || true`  
+`!`      | logical NOT  | `!false`         
+
 
 ## Short‑circuit evaluation
 

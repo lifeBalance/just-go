@@ -2,7 +2,21 @@ import Admonition from '@components/Admonition.astro'
 
 # Comparison expressions
 
-Comparison expressions use `==`, `!=`, `<`, `<=`, `>`, `>=` and always evaluate to a boolean. The two operands must be comparable, and—after any conversions—of the same type. See the spec’s [Comparison operators](https://go.dev/ref/spec#Comparison_operators).
+[Comparison expressions](https://go.dev/ref/spec#Comparison_operators) use `==`, `!=`, `<`, `<=`, `>`, `>=` and always evaluate to a boolean. The two operands must be comparable, and—after any conversions—of the same type.
+
+Operator quick reference:
+
+| Operator | Meaning          | Example      |
+| -------- | ---------------- | ------------ |
+| `==`     | equal            | `3 == 2 + 1` |
+| `!=`     | not equal        | `3 != 2`     |
+| `<`      | less than        | `3 < 10`     |
+| `<=`     | less or equal    | `3 <= 3`     |
+| `>`      | greater than     | `10 > 3`     |
+| `>=`     | greater or equal | `3 >= 2`     |
+
+Note: operands must be the same type, and that type must be comparable. If you need to compare different numeric types, convert explicitly first.
+
 
 ```go
 x, y := 10, 20
@@ -22,6 +36,21 @@ fmt.Println(s == nil)     // true (allowed)
 ```
 
 When interfaces are compared, the dynamic type and value must match for `==` to be true. For strings and numbers, comparisons are lexicographic and numeric as you’d expect.
+
+## Lexicographic string comparison
+
+String comparisons (`<`, `<=`, `>`, `>=`, `==`, `!=`) are byte-wise and lexicographic over UTF-8. They are not locale-aware and do not do case folding.
+
+```go
+fmt.Println("apple" < "banana") // true
+fmt.Println("Go" < "go")         // true (uppercase letters have smaller byte values)
+fmt.Println("é" < "f")           // false ("é" is multi-byte; 0xC3 > 0x66)
+
+// Equality is also byte-wise; different normalizations are not equal.
+fmt.Println("é" == "e\u0301")    // false (composed vs. decomposed)
+```
+
+For locale-aware or case-insensitive comparisons, normalize and/or use packages like `golang.org/x/text/collate`, or use `strings.EqualFold` for case-insensitive equality.
 
 A common pitfall is mixing types unintentionally. Go doesn’t auto‑convert numeric types in comparisons; convert explicitly if needed:
 
