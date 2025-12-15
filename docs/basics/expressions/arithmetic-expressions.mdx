@@ -29,3 +29,27 @@ For example:
 result := 2 + 3 * 4    // 14 (not 20)
 // Multiplication happens first: 3 * 4 = 12, then 2 + 12 = 14
 ```
+
+## Unary operators
+
+Increment and decrement are statements (not expressions). Use them on integer variables only; they cannot appear inside larger expressions.
+
+```go
+i := 0
+i++           // 1
+i--           // 0
+// fmt.Println(i++) // compile error: ++ used as value
+```
+
+## Compound assignment
+
+Shorthand operators update a variable in place; `x += y` is the same as `x = x + y` (left side evaluated once).
+
+| Operator | Meaning             | Example   |
+| -------- | ------------------- | --------- |
+| `+=`     | add and assign      | `n += 3`  |
+| `-=`     | subtract and assign | `n -= 1`  |
+| `*=`     | multiply and assign | `n *= 2`  |
+| `/=`     | divide and assign   | `n /= 2`  |
+| `%=`     | remainder and assign| `n %= 10` |
+
