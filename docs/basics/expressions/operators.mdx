@@ -2,37 +2,18 @@ import Admonition from '@components/Admonition.astro'
 
 # Operators
 
-[Operators](https://go.dev/ref/spec#Operators) combine primary expressions into larger expressions. You supply the operands; the operator does the work.
+[Operators](https://go.dev/ref/spec#Operators) are used to combine primary expressions into larger expressions. The resulting expression evaluates to some value.
 
-In Go, operands are evaluated left‑to‑right, and then the operator is applied. Logical `&&` and `||` short‑circuit (the right side may not run). Everything else evaluates both sides first.
-
-This chapter is just the doorway. The specific families live in their own short sections:
+Operators in Go fall into several categories:
 
 - Arithmetic (`+ − * / %`)
 - Comparison (`== != < <= > >=`)
 - Boolean (`&& || !`)
 - Bitwise and shifts (`& | ^ &^ << >>`)
 
-<Admonition variant="tip" title="Operands come first">
-If an expression already “is” a value — a selector, a call, a conversion, an index/slice, a function literal — it’s a primary expression. Operators work on those.
-</Admonition>
+Depending on the amount of operands they work with, operators can be classified as:
 
-A tiny taste, to set the tone:
+- **Unary operators**: work with a single operand (e.g., `-x`, `!flag`, `^mask`).
+- **Binary operators**: work with two operands (e.g., `a + b`, `x < y`, `p && q`).
 
-```go
-// Arithmetic
-sum := 2 + 3*4       // 14
-avg := float64(7)/2  // 3.5
-
-// Comparison
-ok := len(s) == 0
-
-// Boolean (short‑circuit)
-if s != nil && len(s) > 0 { /* safe */ }
-
-// Bitwise & shifts
-mask := 0b0101
-x := 0b1111 &^ mask   // clear bits from mask → 0b1010
-```
-
-We’ll look at each family next, and finish with a small precedence page so you can predict what binds tighter when you mix them.
+We’ll look at each family in the next sections.
