@@ -2,62 +2,30 @@ import Admonition from '@components/Admonition.astro'
 
 # Arithmetic expressions
 
-Arithmetic combines numeric operands with `+`, `-`, `*`, `/`, and `%`. The rules are simple and predictable; the few sharp edges are worth calling out.
+[Arithmetic expressions](https://go.dev/ref/spec#Arithmetic_expressions) perform calculations on numeric operands. Golang supports both integer and floating-point arithmetic. The following table contains the basic arithmetic operators:
 
-- `+` adds, `-` subtracts, `*` multiplies.
-- `/` divides. For integers, the result truncates toward zero.
-- `%` is remainder. It works only with integers.
+| Operator | Meaning        | Example     |
+| -------- | -------------- | ----------- |
+| `+`      | addition       | `2 + 2 = 4` |
+| `-`      | subtraction    | `3 - 2 = 1` |
+| `*`      | multiplication | `2 * 2 = 4` |
+| `/`      | division       | `4 / 2 = 2` |
+| `%`      | remainder      | `5 % 2 = 1` |
 
-Operator quick reference:
+There's no **exponentiation operator**; use `math.Pow` for that.
 
-| Operator | Meaning       | Notes                               |
-| -------- | ------------- | ----------------------------------- |
-| `+`      | addition      |                                     |
-| `-`      | subtraction   |                                     |
-| `*`      | multiplication|                                     |
-| `/`      | division      | Integers truncate toward zero       |
-| `%`      | remainder     | Integers only                       |
+## Operator Precedence
 
-```go
-a := 7 / 2        // 3  (integer division truncates)
-b := float64(7)/2 // 3.5 (a float operand makes it floating‑point)
+[Operator precedence](https://go.dev/ref/spec#Operator_precedence) determines the order in which operations are performed. In Go, the operator precedence follows the PEMDAS rule:
 
-r := 7 % 3        // 1   (remainder)
-```
+1. **P**arentheses
+2. **E**xponents (via `math.Pow`, not an operator)
+3. **M**ultiplication, Division, Remainder
+4. **A**ddition, **S**ubtraction
 
-Go doesn’t do implicit numeric widening. If types differ, convert explicitly:
+For example:
 
 ```go
-var n int32 = 100
-x := 2 * int64(n)   // convert before mixing
+result := 2 + 3 * 4    // 14 (not 20)
+// Multiplication happens first: 3 * 4 = 12, then 2 + 12 = 14
 ```
-
-Untyped constants (like `42` or `3.14`) can adapt to a needed numeric type until you assign or convert them. That’s why this works without a cast:
-
-```go
-var m int64
-m = 42      // untyped constant fits into int64
-```
-
-Overflow is defined for unsigned integers (wraparound modulo 2^N). Signed overflow is also well‑defined by Go’s two’s‑complement behavior, but you shouldn’t rely on wrap as an API — just know it won’t panic.
-
-Operator precedence follows math (PEMDAS): multiplication/division bind tighter than addition/subtraction. Go has no exponent operator; use `math.Pow`. You can always use parentheses to make intent obvious:
-
-```go
-an := 2 + 3*4      // 14
-bn := (2 + 3) * 4  // 20
-```
-
-For exact integer division with remainder, keep both values:
-
-```go
-q, r := 7/3, 7%3 // q=2, r=1
-```
-
-<Admonition variant="tip" title="Only integers for %">
-`%` requires integer operands. If you need a floating remainder, work with `math.Mod`.
-</Admonition>
-
-<Admonition variant="tip" title="Spec links">
-See [Operators](https://go.dev/ref/spec#Operators) and numeric [Types](https://go.dev/ref/spec#Types) for full rules.
-</Admonition>
