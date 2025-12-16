@@ -39,7 +39,7 @@
     {/snippet}
 
     {#snippet right()}
-      <a href={`${basePrefix}colors`} class="text-sm no-underline text-sd-muted hover:text-sd-accent">Colors</a>
+      <a href={`${homeHref}colors`} class="text-sm no-underline text-sd-muted hover:text-sd-accent">Colors</a>
       <ThemeToggle />
     {/snippet}
   </TopBar>
