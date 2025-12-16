@@ -1,69 +1,91 @@
 import Admonition from '@components/Admonition.astro'
 
-# Boolean (logical) expressions
+# Logical expressions
 
-[Boolean (logical) expressions](https://go.dev/ref/spec#Logical_operators) use the following operators to combine or negate boolean values:
+[Logical expressions](https://go.dev/ref/spec#Logical_operators) are used to perform [boolean algebra](https://en.wikipedia.org/wiki/Boolean_algebra) by operating on expressions that evaluate to boolean values (`true` and `false`). Go offers the same operators we can find in many other languages:
 
-- `&&` is logical AND. It evaluates the left operand first; if it’s false, the right side is not evaluated (short‑circuit).
-- `||` is logical OR. If the left is true, the right side is not evaluated.
+- `&&` is logical AND.
+- `||` is logical OR.
 - `!` negates a boolean value.
 
-Operator quick reference:
+<Admonition variant="warning" title="Boolean values">
+They only work with boolean values (`true` and `false`).
+</Admonition>
 
-Operator | Meaning      | Example          
--------- | ------------ | -----------------
-`&&`     | logical AND  | `true && false`  
-`\|\|`     | logical OR   | false \|\| true  
-`!`      | logical NOT  | `!false`         
+## AND operator `&&`
 
+As a remainder, here is the truth table for the `&&` operator:
 
+| A      | B      | A && B |
+| ------ | ------ | ------ |
+| false  | false  | false  |
+| false  | true   | false  |
+| true   | false  | false  |
+| true   | true   | true   |
+
+## OR operator `||`
+
+And the truth table for the `||` operator:
+
+| A      | B      | A \|\| B |
+| ------ | ------ | -------- |
+| false  | false  | false    |
+| false  | true   | true     |
+| true   | false  | true     |
+| true   | true   | true     |
+s
+## NOT operator `!`
+
+The `!` operator negates a boolean value. Here is its truth table:
+
+| A      | !A     |
+| ------ | ------ |
+| false  | true   |
+| true   | false  |
+
+## Precedence
+
+When combining logical expressions with other kinds of expressions, remember that `&&` has higher precedence than `||`. For example:
+
+```go
+age := 25
+income := 50000
+
+eligible := age > 18 || income > 40000 && age < 65
+```
+
+In the example above, a person is considered `eligible` if:
+
+- They are older than 18.
+- Or if they have an income greater than 40,000 **and** are younger than 65.
+
+Using parentheses can help clarify the intended logic:
+
+```go
+eligible := age > 18 || (income > 40000 && age < 65)
+```
+
+The `&&` operator is evaluated first due to its higher precedence.
 
 ## Short‑circuit evaluation
 
-Short‑circuiting enables safe “guard” patterns:
+The order of evaluation is **left to right**, which is important for `&&` and `||` because of short‑circuiting. Short‑circuiting enables safe “guard” patterns:
 
 ```go
 // Safe: second test only runs when needed
 if s != nil && len(s) > 0 {
   fmt.Println("first:", s[0])
 }
+```
 
+The code above is safe because if `s` is `nil`, the second condition (`len(s) > 0`) is never evaluated, preventing a potential panic. Another pattern for short‑circuiting is **caching**:
+
+```go
 // Early success: right side won’t run if left is true
 if cached || compute() {
   // ...
 }
 ```
 
-Two quick demonstrations of short‑circuiting in action:
+The `compute()` function is only called if `cached` is `false`, which can save time and resources.
 
-```go
-// If the left side is false, the right side is never evaluated
-if false && riskyFunction() {
-    // riskyFunction() is never called
-}
-
-// If the left side is true, the right side is never evaluated
-if true || riskyFunction() {
-    // riskyFunction() is never called
-}
-```
-
-And another common guard to avoid panics with indexing:
-
-```go
-if len(slice) > 0 && slice[0] == 42 {
-    fmt.Println("First element is 42")
-}
-```
-
-You can build readable expressions by naming intermediate results:
-
-```go
-isAdult := age >= 18
-hasIncome := income > 30_000
-eligible := isAdult && (hasIncome || hasGoodCredit)
-```
-
-<Admonition variant="tip" title="Evaluation order">
-Operands are evaluated left‑to‑right. With `&&` and `||`, the right operand may not be evaluated at all. This is often used to avoid panics when accessing slices or maps.
-</Admonition>
