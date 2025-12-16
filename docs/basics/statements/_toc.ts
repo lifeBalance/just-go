@@ -1,5 +1,6 @@
 export default [
   { path: 'intro', label: 'Introduction' },
+  { path: 'assignments', label: 'Assignments' },
   { path: 'if-statements', label: 'If Statements' },
   { path: 'switch-statements', label: 'Switch Statements' },
   { path: 'for-loops', label: 'For Loop' },

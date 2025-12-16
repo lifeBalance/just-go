@@ -1,0 +1,110 @@
+import Admonition from '@components/Admonition.astro'
+
+# Assignments
+
+In Go, [assignments](https://go.dev/ref/spec#Assignment_statements) are **statements** not expressions — they do not produce a value. This design avoids hidden side effects inside larger expressions. For example:
+
+```go
+var n int
+n = 42          // assignment statement, no value
+```
+
+The `=` operator assigns the value on the right to the variable on the left. The type of the variable being assigned to determines what types of values can be assigned. You may need to use **explicit conversions** when assigning between different types:
+
+```go
+x := 42        // x is int
+var f float64
+f = float64(x) // convert int to float64 before assignment
+```
+
+## Tuple (multiple) assignment
+
+In Go there are no chained assignment like `a = b = c` (invalid):
+
+```go
+a = b = c // ☠️ invalid in Go
+```
+
+Put each assignment is a separate statement.
+
+```go
+a = b // 👍
+b = c // 👍
+```
+
+<Admonition variant="tip" title="Chained assignment vs Tuple assignment">
+  Do not confuse chained assignment (not allowed) with tuple assignment (allowed).
+</Admonition>
+
+But you can assign multiple variables at once using **tuple assignment**. For example:
+
+```go
+a, b := 1 + 4, 2 * 3   // a=5, b=6
+```
+
+<Admonition variant="tip" title="Evaluation order">
+  In assignments, the entire right side is evaluated before any left side is
+  written. This makes swaps and parallel updates predictable.
+</Admonition>
+
+This is especially useful for **swapping values** or updating multiple variables in parallel:
+
+```go
+b, a = a, b // swap safely; RHS evaluated before any LHS write
+```
+
+### The Ok idiom
+
+A common use of tuple assignment is the **ok idiom**, where a second boolean value indicates success:
+
+```go
+v, ok := m[key]   // map lookup: ok is true if key present
+```
+
+The code above looks up `key` in map `m`, assigning the value to `v` and a boolean to `ok` that is true if the key exists in the map. The same pattern is used in other places, like type assertions and **channel receives**:
+
+```go
+x, ok := <-ch     // channel receive: ok is false if channel is closed
+```
+
+## Short variable declarations
+
+[Short variable declarations](https://go.dev/ref/spec#Short_variable_declarations) both declare and assign: `:=`.
+
+```go
+name := "gopher"     // declare + assign
+age := 10
+
+// Re‑use allowed if at least one new name appears on the left:
+age, city := 11, "SF" // age reassigned, city declared
+```
+
+Rules:
+
+- Only permitted inside **functions** (not at package level)
+- At least one new variable on the left side
+- Types are inferred from the right side
+
+## No assignment as expression
+
+Assignments have no value; you can’t use them in conditions or other expressions.
+
+```go
+// if x = 3 { ... }   // invalid in Go
+// y := (x = 3)       // invalid; assignment has no value
+```
+
+## Compound assignment (shorthand)
+
+Shorthand forms combine an operation with assignment; they do not change precedence rules.
+
+```go
+n := 5
+n += 3  // 8  (same as: n = n + 3)
+n -= 1  // 7
+n *= 2  // 14
+n /= 3  // 4   (integer division if n is int)
+n %= 3  // 1
+```
+
+See also: [Arithmetic expressions](../expressions/arithmetic-expressions) for operator details.
