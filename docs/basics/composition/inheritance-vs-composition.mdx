@@ -1,3 +1,5 @@
+import Admonition from '@components/Admonition.astro'
+
 ## Inheritance vs Composition
 
 In object-oriented languages like Java, you use inheritance to share behavior between classes. For example:
@@ -21,7 +23,7 @@ dog.eat();   // from Animal
 dog.bark();  // from Dog
 ```
 
-As you can see, since our `Dog` class inherits the class `Animal`, it also has access to its methods.  Go doesn't have inheritance, instead, it uses **composition** which consists in building complex types by combining simpler ones.
+As you can see, since our `Dog` class inherits the class `Animal`, it also has access to its methods. Go doesn't have inheritance, instead, it uses **composition** which consists in building complex types by combining simpler ones.
 
 > It's the principle of "has-a" relationships instead of "is-a" relationships found in inheritance.
 
@@ -53,10 +55,10 @@ func main() {
         Animal: Animal{Name: "Buddy"},
         Breed:  "Golden Retriever",
     }
-    
+
     dog.Eat()   // "Buddy is eating..."
     dog.Bark()  // "Woof!"
-    
+
     fmt.Println(dog.Animal.Name)  // "Buddy"
     fmt.Println(dog.Name)         // "Buddy" (promoted field)
 }
@@ -64,8 +66,10 @@ func main() {
 
 Note how we are composing our `Dog` type embedding the `Animal` type. That way we have access to its **fields** and **methods**.
 
-<Admonition title='Promoted Fields and Methods'>
-Note that when we embed a type, in this case `Animal`, we can access its fields and methods directly, without having to use double **dot notation**. Accessing them explicitely is **optional**.
+<Admonition title="Promoted Fields and Methods">
+  Note that when we embed a type, in this case `Animal`, we can access its
+  fields and methods directly, without having to use double **dot notation**.
+  Accessing them explicitely is **optional**.
 </Admonition>
 
 **Java** says: "A Dog is an Animal" (**inheritance**)
