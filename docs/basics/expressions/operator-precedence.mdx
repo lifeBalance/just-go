@@ -21,7 +21,7 @@ When you mix [operators](https://go.dev/ref/spec#Operators) of different kind, t
 Within each precedence level, operators associate left‑to‑right. Parentheses always take precedence, and unary operators apply before binary operators.
 </Admonition>
 
-Mixing **arithmetic** and **bitwise** operators is common in systems work, parsing, compression, graphics, hashing/cryptography, and performance‑critical code. It’s much less common in everyday business logic.
+Knowing these **precedence rules** only matters when you **mix** bitwise and arithmetic without parentheses. Mixing **arithmetic** and **bitwise** operators is common in systems work, parsing, compression, graphics, hashing/cryptography, and performance‑critical code. It’s much less common in everyday business logic.
 
 ## Bitwise Shifts are like Multiplication/Division
 
@@ -59,16 +59,41 @@ Similarly, bitwise AND appears in the same group as multiplication, while bitwis
 
 ## Bitwise AND and AND NOT is like Multiplication/Remainder
 
-Bitwise AND (`&`) groups with the multiplicative operators; bitwise OR (`|`) and XOR (`^`) group with the additive operators. This matters when you mix bitwise and arithmetic without parentheses.
+Bitwise **AND** (`&`) and **AND NOT** (`&^`) group with arithmetic multiplication and remainder because they behave similarly in expressions.
 
-Formulas:
+- `6 & 3` is `2` (like `6 * 3`)
+- `6 &^ 3` is `4` (like `6 % 3`)
+
+### Bitwise AND
+
+The `&` operator sets a bit when both input bits are 1.
+
+```go
+u := 6 & 3  // 2
 ```
-// Per bit (bits in {0,1}):
-x & y == x * y
 
-// Useful identities:
-a | b == (a ^ b) + (a & b)
-a + b == (a ^ b) + 2*(a & b)
+Visualizing with binary integers:
+
+```go
+x := uint8(0b0110)          // 0 1 1 0 👉 6
+y := uint8(0b0011)          // 0 0 1 1 👉 3
+fmt.Printf("%04b\n", x&y)   // 0 0 1 0 👉 2
+```
+
+### Bit clear (AND NOT)
+
+The `&^` operator clears bits in the left operand that are set in the right.
+
+```go
+v := 6 &^ 3 // 4
+```
+
+Binary visualization:
+
+```go
+p := uint8(0b0110)           // 0 1 1 0 👉 6
+q := uint8(0b0011)           // 0 0 1 1 👉 3
+fmt.Printf("%04b\n", p&^q)   // 0 1 0 0 👉 4
 ```
 
 ## Bitwise OR and XOR is like Addition/Subtraction
