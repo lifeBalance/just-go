@@ -4,6 +4,7 @@ export default [
   { path: 'types/', label: 'Types' },
   { path: 'expressions/', label: 'Expressions' },
   { path: 'statements/', label: 'Statements' },
+  { path: 'errors/', label: 'Errors' },
   { path: 'composition/', label: 'Composition' },
   { path: 'concurrency/', label: 'Concurrency' },
 ]

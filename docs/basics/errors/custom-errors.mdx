@@ -1,0 +1,38 @@
+import Admonition from '@components/Admonition.astro'
+
+# Custom Errors
+
+Define your own error types to carry structured context. Any type that implements `Error() string` satisfies `error`.
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+type ParseError struct {
+    Line int
+    Col  int
+    Msg  string
+}
+
+func (e ParseError) Error() string {
+    return fmt.Sprintf("parse error at %d:%d: %s", e.Line, e.Col, e.Msg)
+}
+
+func parse(s string) error {
+    // Fake failure example
+    return ParseError{Line: 3, Col: 15, Msg: "unexpected token"}
+}
+
+func main() {
+    if err := parse("..."); err != nil {
+        fmt.Println(err)
+    }
+}
+```
+
+<Admonition variant="tip" title="errors.As for typed errors">
+Use `errors.As(err, &target)` to extract a specific custom error and inspect its fields.
+</Admonition>

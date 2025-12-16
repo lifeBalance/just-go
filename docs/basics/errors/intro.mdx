@@ -1,0 +1,50 @@
+import Admonition from '@components/Admonition.astro'
+
+# Errors
+
+In Go, [error](https://go.dev/ref/spec#Errors) is a built‑in interface type used to report failures.
+
+```go
+type error interface {
+    Error() string
+}
+```
+
+## Basics of error handling
+
+Let's see how errors work in practice:
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+func divideTwoNumbers(a, b float64) (float64, error) {
+    if b == 0 {
+        return "", errors.New("cannot divide by zero")
+    }
+    return a / b, nil
+}
+
+func main() {
+    msg, err := divideTwoNumbers(4, 0)
+    if err != nil {
+        fmt.Println("error:", err)  // ⚠️ error: cannot divide by zero
+        return                      // 👈 early return on error
+    }
+    fmt.Println(msg)
+}
+```
+
+One of Go’s traits is explicit error handling via multiple returns: you “destructure” the result into a value and an `error`, then check `err`. Some folks from exception‑driven languages find this repetitive; in Go it keeps **control flow** obvious and testable.
+
+- Returning `nil` as error signify **success**; otherwise, a non `nil` value indicates **failure**.
+- Errors are **values**, you can pass, wrap, compare, or inspect them.
+- Prefer simple, actionable **error messages**.
+
+<Admonition variant="tip" title="Multiple return values">
+Returning `(T, error)` makes error handling explicit and keeps the happy path straightforward. Callers should check `err` before using the other results.
+</Admonition>
