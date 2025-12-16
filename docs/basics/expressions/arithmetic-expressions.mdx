@@ -30,35 +30,85 @@ result := 2 + 3 * 4    // 14 (not 20)
 // Multiplication happens first: 3 * 4 = 12, then 2 + 12 = 14
 ```
 
-## Unary operators
+To change the order of operations, use parentheses:
 
-Increment and decrement are **statements** (not expressions). Use them on integer variables only; they cannot appear inside larger expressions.
+```go
+result := (2 + 3) * 4  // 20
+// Parentheses first: 2 + 3 = 5, then 5 * 4 = 20
+```
+
+## Unary Operators are Statements
+
+[Increment and decrement](https://go.dev/ref/spec#IncDec_statements) are actually **statements** (not expressions). For example:
 
 ```go
 i := 0
-i++           // 1
-i--           // 0
-// fmt.Println(i++) // compile error: ++ used as value
 
+i++
+fmt.Println(i) // 1
 
-// ++/-- are statements, not expressions:
-// x := x++ // compile error: ++ used as value
-// x = x--  // compile error: -- used as value
+i--
+fmt.Println(i) // 0
+```
+
+They cannot appear inside larger expressions:
+
+```go
+fmt.Println(i++) // ❌ compile error: ++ used as value
+
+x := x++ // ❌ compile error: ++ used as value
+
+x = x--  // ❌ compile error: -- used as value
+```
+
+Use them on **integer variables** only:
+
+```go
+f := 3.14
+f++ // ❌ compile error: ++ operator not defined for float64
 ```
 
 <Admonition type="warning" title="No prefix forms">
-In Go, there are no prefix versions of the increment (`++`) and decrement (`--`) operators. They can only be used as postfix operators. So using `++i` or `--i` would generate a **compile error**.
+  In Go, there are no prefix versions of the increment (`++`) and decrement
+  (`--`) operators. They can only be used as postfix operators. So using `++i`
+  or `--i` would generate a **compile error**.
 </Admonition>
 
 ## Compound assignment
 
 Shorthand operators update a variable in place; `x += y` is the same as `x = x + y` (left side evaluated once).
 
-| Operator | Meaning             | Example   |
-| -------- | ------------------- | --------- |
-| `+=`     | add and assign      | `n += 3`  |
-| `-=`     | subtract and assign | `n -= 1`  |
-| `*=`     | multiply and assign | `n *= 2`  |
-| `/=`     | divide and assign   | `n /= 2`  |
-| `%=`     | remainder and assign| `n %= 10` |
+| Operator | Meaning              | Example   |
+| -------- | -------------------- | --------- |
+| `+=`     | add and assign       | `n += 3`  |
+| `-=`     | subtract and assign  | `n -= 1`  |
+| `*=`     | multiply and assign  | `n *= 2`  |
+| `/=`     | divide and assign    | `n /= 2`  |
+| `%=`     | remainder and assign | `n %= 10` |
 
+## Integer division
+
+For integer types, `/` truncates toward zero. Mixed signs truncate the quotient toward zero as well.
+
+```go
+fmt.Println(7/2)    // 3
+fmt.Println(-7/2)   // -3
+fmt.Println(7/-2)   // -3
+fmt.Println(-7/-2)  // 3
+```
+
+To get a fractional result, use floating‑point operands (convert explicitly if needed):
+
+```go
+fmt.Println(7.0/2)           // 3.5
+fmt.Println(float64(7)/2)    // 3.5
+```
+
+**Division by zero** panics at run time.
+
+The remainder operator `%` pairs with integer division: `a == (a/b)*b + (a%b)`. The remainder has the same sign as the dividend (`a`).
+
+```go
+a, b := -7, 2
+fmt.Println(a/b, a%b)        // -3 -1   (-7 == (-3)*2 + (-1))
+```
