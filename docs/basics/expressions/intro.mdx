@@ -2,140 +2,21 @@ import Admonition from '@components/Admonition.astro'
 
 # Expressions
 
-An [expression](https://go.dev/ref/spec#Expressions) is any piece of code that produces a value  by applying operators and functions to operands.
+An [expression](https://go.dev/ref/spec#Expressions) is any piece of code that produces a value  by applying operators and functions to operands. In the next section we'll dive deeper into **operands** and **primary expressions**, but for now, let's explore the different types of **operators** you can find in Go:
 
----
+- [Arithmetic operators](https://go.dev/ref/spec#Arithmetic_operators) for performing mathematical calculations.
+- [Comparison operators](https://go.dev/ref/spec#Comparison_operators) for comparing values.
+- [Logical operators](https://go.dev/ref/spec#Logical_operators) for combining boolean expressions.
+- [Integer operators](https://go.dev/ref/spec#Integer_operators) for bitwise manipulation and shifts.
 
-### Comparison expressions
+Also, depending on the amount of operands they work with, **operators** can be classified as:
 
-These evaluate to booleans using [operators](https://go.dev/ref/spec#Operators):
+- **Unary operators**: work with a single operand (e.g., `-x`, `!flag`, `^mask`).
+- **Binary operators**: work with two operands (e.g., `a + b`, `x < y`, `p && q`).
 
-```go
-x := 10
-y := 20
+We’ll look at each family in the next sections.
 
-fmt.Println(x == y)  // false
-fmt.Println(x != y)  // true
-fmt.Println(x < y)   // true
-fmt.Println(x > y)   // false
-fmt.Println(x <= y)  // true
-fmt.Println(x >= y)  // false
-```
-
-Go has the same comparison operators you may find in other languages:
-
-- `==` equal to
-- `!=` not equal to
-- `<` less than
-- `<=` less or equal than
-- `>` greater than
-- `>=` greater or equal than
-
-It's important to remember that both operands in a comparison expression must have the same type, otherwise we can't compare them.
-
-### Compound Boolean Expressions
-
-We can combine boolean expressions with [logical operators](https://go.dev/ref/spec#Operators):
-
-```go
-age := 25
-hasLicense := true
-
-canDrive := age >= 18 && hasLicense  // true (both conditions met)
-isTeenOrAdult := age < 13 || age >= 18  // true (at least one condition met)
-notReady := !hasLicense  // false (negation)
-```
-
-Again, Go offers the same boolean operators you can find in other languages:
-
-- `&&` the **and** operator, which evaluates to `true` when both operands are `true`.
-- `||` the **or** operator, which evaluates to `true` as long as any of its operands are `true`.
-
-### Function call expressions
-
-[Calls](https://go.dev/ref/spec#Calls) are expressions if they return a value:
-
-```go
-import "strings"
-
-result := strings.ToUpper("hello")  // "HELLO"
-length := len("hello")              // 5
-
-// Multiple return values
-value, err := someFunction()
-```
-
-### Method call expressions
-
-Similar to calls, via [selectors](https://go.dev/ref/spec#Selectors) on a receiver:
-
-```go
-s := "hello"
-upper := s.ToUpper()  // method call expression - won't work, this is just an example
-
-numbers := []int{1, 2, 3}
-first := numbers[0]  // 1 (index expression)
-```
-
-### Type conversion expressions
-
-[Conversions](https://go.dev/ref/spec#Conversions) convert a value to another type:
-
-```go
-x := 42
-f := float64(x)  // 42.0
-s := string(x)   // converts to rune, not "42"
-
-// For string conversion of numbers, use strconv
-import "strconv"
-str := strconv.Itoa(x)  // "42"
-```
-
-### Composite literal expressions
-
-[Composite literals](https://go.dev/ref/spec#Composite_literals) create structs, arrays, slices, and maps:
-
-```go
-// Struct literal
-person := struct {
-    name string
-    age  int
-}{
-    name: "Alice",
-    age:  30,
-}
-
-// Slice literal
-numbers := []int{1, 2, 3, 4, 5}
-
-// Map literal
-scores := map[string]int{
-    "Alice": 95,
-    "Bob":   87,
-}
-```
-
-### Operator precedence
-
-Go’s [operators](https://go.dev/ref/spec#Operators) follow standard mathematical precedence. From highest to lowest:
-
-```go
-result := 2 + 3 * 4    // 14 (not 20)
-// Multiplication happens first: 3 * 4 = 12, then 2 + 12 = 14
-
-result := (2 + 3) * 4  // 20
-// Parentheses force addition first: 2 + 3 = 5, then 5 * 4 = 20
-```
-
-Precedence levels (highest to lowest):
-
-1. `*`, `/`, `%` (multiplication, division, modulo)
-2. `+`, `-` (addition, subtraction)
-3. `==`, `!=`, `<`, `<=`, `>`, `>=` (comparison)
-4. `&&` (logical AND)
-5. `||` (logical OR)
-
-### Expressions vs statements
+## Expressions vs statements
 
 It's important to distinguish between [expressions](https://go.dev/ref/spec#Expressions) and [statements](https://go.dev/ref/spec#Statements). Expressions produce values:
 
@@ -162,10 +43,6 @@ fmt.Println("hello")
 // Function call as an expression (using return value)
 length := len("hello")
 ```
-
-### Short-circuit evaluation
-
-Logical operators short-circuit; see the Boolean Expressions page.
 
 ### Expression complexity
 
