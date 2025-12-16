@@ -2,20 +2,28 @@
 import MainLayout from '@layouts/MainLayout.astro'
 import Card from '@components/Card.astro'
 import Hero from '@components/Hero.astro'
+import { docsConfig } from '@lib/docs/config'
+
+const basePath = docsConfig.basePath
 ---
+
 <MainLayout>
   <section class="site-container p-6">
     <div class="flex justify-center items-center mt-10 mb-20">
       <Hero rotate="-2deg" />
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-      <Card href="/basics" astroPrefetch={false}>
+      <Card href={`${basePath}/basics`} astroPrefetch={false}>
         <h2 class="text-xl font-semibold">Basics</h2>
-        <p class="text-sm text-sd-muted">Start with the language fundamentals.</p>
+        <p class="text-sm text-sd-muted">
+          Start with the language fundamentals.
+        </p>
       </Card>
-      <Card href="/toc-doc" astroPrefetch={false}>
+      <Card href={`${basePath}/toc-doc`} astroPrefetch={false}>
         <h2 class="text-xl font-semibold">Toc‑Doc</h2>
-        <p class="text-sm text-sd-muted">Build doc sites with different topics.</p>
+        <p class="text-sm text-sd-muted">
+          Build doc sites with different topics.
+        </p>
       </Card>
     </div>
   </section>

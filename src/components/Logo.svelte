@@ -8,7 +8,10 @@
 </script>
 
 <script lang="ts">
-  let { href = '/', icon, text } = $props()
+  import { docsConfig } from '@lib/docs/config'
+  const base = docsConfig.basePath ?? import.meta.env.BASE_URL
+  const defaultHref = base.endsWith('/') ? base : base + '/'
+  let { href = defaultHref, icon, text } = $props()
 </script>
 
 <a

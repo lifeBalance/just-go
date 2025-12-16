@@ -64,7 +64,10 @@ listSectionPageParams()
 
 ## createSection
 
-- Signature: `createSection(section: string): { base, entries(), resolver(), nav() }`
+- Signature: `createSection(section: string, basePath?: string, contentRoot?: string): { base, entries(), resolver(), nav() }`
+  - `section`: public section id (e.g., 'basics') from docs config
+  - `basePath`: deployment base (e.g., '/just-go')
+  - `contentRoot`: filesystem root for the section (e.g., '/docs/basics') from docs config
 - Purpose: Build a section-specific API used by the route — enumerates content, resolves modules, and builds navigation.
 - Why it stays: Keeps all section logic encapsulated and testable; the route uses a tiny, predictable surface.
 
@@ -73,8 +76,8 @@ listSectionPageParams()
 - Example:
 
 ```ts
-createSection('basics').base
-// => '/basics'
+createSection('basics', '/just-go', '/docs/basics').base
+// => '/just-go/basics'
 ```
 
 ### `.entries()`
@@ -103,7 +106,7 @@ createSection('basics').entries()
 Example:
 
 ```ts
-const api = createSection('basics')
+const api = createSection('basics', '/just-go', '/docs/basics')
 const resolve = api.resolver()
 resolve('variables/intro')   // => MdModule (truthy)
 resolve('variables/missing') // => undefined
@@ -150,7 +153,7 @@ createSection('basics').nav()
 Examples (for `basics`):
 
 ```ts
-const api = createSection('basics')
+const api = createSection('basics', '/just-go', '/docs/basics')
 
 resolveOrNext(api, '')
 // => { kind: 'redirect', url: '/basics/introduction/hello-world', nav: [...] }
@@ -171,8 +174,8 @@ resolveOrNext(api, 'variables/missing')
 Example:
 
 ```ts
-const { nav } = createSection('basics').nav()
-getPrevNext(nav, '/basics/introduction/lorem')
+const { nav } = createSection('basics', '/just-go', '/docs/basics').nav()
+getPrevNext(nav, '/just-go/basics/introduction/lorem')
 // => {
 //   prev: { url: '/basics/introduction/hello-world', title: 'Hello World' },
 //   next: { url: '/basics/introduction/overview',    title: 'Overview' }

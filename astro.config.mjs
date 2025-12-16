@@ -5,7 +5,6 @@ import svelte from '@astrojs/svelte'
 import mdx from '@astrojs/mdx'
 import expressiveCode from 'astro-expressive-code'
 import icons from 'astro-icon'
-import ecConfig from './ec.config.mjs'
 
 // Vite alias aligned with your tsconfig
 const alias = {

@@ -1,4 +1,5 @@
 import { parseTocConfig, type TocConfig } from './tocParser'
+import { docsConfig } from './config'
 
 // Single source of truth for path operations
 // Path utilities for routes and FS paths
@@ -6,11 +7,16 @@ const Path = {
   normalize: (p: string) => p.replace(/\/$/, ''),
   trimSlashes: (p: string) => p.replace(/^\/+|\/+$/g, ''),
   isGroup: (p: string) => /\/$/.test(p),
-  fsToRoute: (fs: string) =>
-    fs
-      .replace(/^\/docs/, '')
+  fsToRoute: (fs: string) => {
+    const br = docsConfig.branches.find((b) => fs.startsWith(`${b.root.replace(/\/$/, '')}/`))
+    if (!br) return ''
+    const rel = fs
+      .slice(br.root.length)
+      .replace(/^\/+/, '')
       .replace(/index\.(md|mdx)$/, '')
-      .replace(/\.(md|mdx)$/, ''),
+      .replace(/\.(md|mdx)$/, '')
+    return `/${br.id}/${rel}`
+  },
   toRelative: (url: string, base: string) => {
     const esc = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     return url.replace(new RegExp('^' + esc + '/'), '')
@@ -39,25 +45,30 @@ export type ContentEntry = {
 
 // ContentStore: caches docs and _toc modules; provides lookups
 class ContentStore {
-  private mods = import.meta.glob('/docs/**/*.{md,mdx}', {
-    eager: true,
-  }) as Record<string, MdModule>
-  private tocs = import.meta.glob('/docs/**/_toc.{ts,js}', {
-    eager: true,
-  }) as Record<string, any>
+  // Important: Vite globs must be static literals. To avoid pulling unrelated repo Markdown,
+  // we scope globs to the docs area. If you add another root, add another glob line.
+  private mods = {
+    ...import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>,
+  }
+  private tocs = {
+    ...import.meta.glob('/docs/**/_toc.{ts,js}', { eager: true }) as Record<string, any>,
+  }
 
   getAllModPaths(): string[] {
     return Object.keys(this.mods)
   }
 
   getModsForSection(section: string) {
-    const prefix = `/docs/${Path.trimSlashes(section)}/`
+    const branch = docsConfig.branches.find((b) => b.id === Path.trimSlashes(section))
+    if (!branch) return {}
+    const prefix = `${branch.root.replace(/\/$/, '')}/`
     return Object.fromEntries(
       Object.entries(this.mods).filter(([path]) => path.startsWith(prefix))
     )
   }
 
-  getTocForPath(root: string): TocConfig {
+  getTocForPath(root?: string): TocConfig {
+    if (!root) return parseTocConfig(null)
     const tocPath = ['.ts', '.js']
       .map((ext) => `${root}/_toc${ext}`)
       .find((p) => this.tocs[p])
@@ -74,6 +85,8 @@ function capitalize(name: string) {
 export type SectionPageParam = { section: string; page?: string }
 
 // Enumerate {section, page} pairs from /docs for static paths
+
+
 export function listSectionPageParams(): SectionPageParam[] {
   const fsList = store.getAllModPaths()
   const sections = new Set<string>()
@@ -81,9 +94,16 @@ export function listSectionPageParams(): SectionPageParam[] {
 
   for (const fs of fsList) {
     const route = Path.fsToRoute(fs)
+    if (!route) continue
     const parts = route.split('/').filter(Boolean)
     const section = parts[0] || ''
     const page = parts.slice(1).join('/')
+
+    // Filter by configured branches
+    if (section && !docsConfig.branches.some((b) => b.id === section)) {
+      continue
+    }
+
     if (section) sections.add(section)
     if (page) out.push({ section, page })
   }
@@ -170,10 +190,15 @@ function categorizeEntries(entries: ContentEntry[], base: string) {
   return { topDocs, groupIndex }
 }
 
-export function createSection(section: string) {
+export function createSection(
+  section: string,
+  basePath?: string,
+  contentRootArg?: string
+) {
   const sec = Path.trimSlashes(section)
-  const base = `/${sec}`
-  const contentRoot = `/docs/${sec}`
+  const basePrefix = (basePath ?? docsConfig.basePath ?? import.meta.env.BASE_URL).replace(/\/$/, '')
+  const contentRoot = contentRootArg ?? `/docs/${sec}`
+  const base = `${basePrefix}/${sec}`
   const mods = store.getModsForSection(section)
 
   return {
@@ -182,7 +207,7 @@ export function createSection(section: string) {
     entries(): ContentEntry[] {
       return Object.entries(mods).map(([fs, mod]) => {
         const isIndex = /\/index\.(md|mdx)$/.test(fs)
-        const url = Path.fsToRoute(fs)
+        const url = `${basePrefix}${Path.fsToRoute(fs)}`
         const rel = Path.toRelative(url, base)
         const dir = rel.split('/').slice(0, -1).join('/') || ''
         const fallbackTitle = isIndex ? dir || sec : rel.split('/').pop() || ''
@@ -194,7 +219,7 @@ export function createSection(section: string) {
     resolver() {
       const routeMap = new Map(
         Object.entries(mods).map(([fs, mod]) => [
-          Path.normalize(Path.fsToRoute(fs)),
+          Path.normalize(`${basePrefix}${Path.fsToRoute(fs)}`),
           mod as MdModule,
         ])
       )

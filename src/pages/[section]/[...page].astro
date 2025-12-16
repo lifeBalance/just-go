@@ -30,11 +30,15 @@ const { section, page } = Astro.params as {
 // Normalize page to a simple "segment" string (e.g., "variables/intro")
 const segment = Array.isArray(page) ? page.join('/') : page || ''
 
+import { docsConfig } from '@lib/docs/config'
+const basePrefix = (docsConfig.basePath ?? import.meta.env.BASE_URL).replace(/\/$/, '')
+
 // Build a section-scoped API and decide what to do with the current segment
 // - ok: render the resolved MD/MDX module
 // - redirect: send the user to the first listed item for section/group
 // - not_found: unable to resolve (handled below with a fallback message)
-const sectionApi = createSection(section)
+const branch = docsConfig.branches.find((b) => b.id === section)
+const sectionApi = createSection(section, basePrefix, branch?.root)
 const result = resolveOrNext(sectionApi, segment)
 
 // If section or group root was requested, redirect to its first listed item
@@ -49,7 +53,7 @@ const currentSegment = result.kind === 'ok' ? result.segment : segment
 // - Breadcrumb.
 // - Nav item highlighting.
 // - Prev/next page buttons.
-const currentPath = `/${section}` + (currentSegment ? `/${currentSegment}` : '')
+const currentPath = `${basePrefix}/${section}` + (currentSegment ? `/${currentSegment}` : '')
 
 // Resolve the compiled MD/MDX module for the current segment and pick its default export
 const resolve = sectionApi.resolver()
