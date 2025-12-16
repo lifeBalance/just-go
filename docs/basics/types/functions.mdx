@@ -12,10 +12,69 @@ import functionsCode6 from './code/functions6/main.go?raw'
 import functionsCode7 from './code/functions7/main.go?raw'
 import functionsCode8 from './code/functions8/main.go?raw'
 
-
 # Functions
 
-Functions in Go work, for the most part, like in any other programming language. We use the `func` keyword before a function declaration.
+[Functions](https://go.dev/ref/spec#Function_types) in Go work, for the most part, like in any other programming language.
+
+## How Functions Work
+
+A function is declared with the `func` keyword, a **name**, parameters (with types), and optional return types. For example:
+
+```go
+// Single return value
+func add(a int, b int) int {
+    return a + b
+}
+```
+
+The function above is named `add`, it takes two parameters of type `int`, and it returns a single `int` value (the addition of the two parameters).
+
+<Admonition variant="info" title="Parameters">
+  Parameters are defined as a list of names followed by their type. When
+  multiple parameters share the same type, you can omit the type for all but the
+  last one.
+</Admonition>
+
+You **call the function** by passing **arguments** that match its **parameters**:
+
+```go
+result := add(2, 3) // result is 5
+```
+
+Functions can also return multiple values. For example, a function that performs integer division and returns both the quotient and the remainder:
+
+```go
+func divisionRemainder(n, d int) (int, int) {
+    return n/d, n%d
+}
+```
+
+Optionally, you can name the return values in the **function signature**:
+
+```go
+func divisionRemainder(n, d int) (int, int) {
+    return n/d, n%d
+}
+```
+
+<Admonition variant="info" title="Return types">
+  Return types appear after the parameter list; use parentheses when returning
+  multiple values.
+</Admonition>
+
+You can call this function and capture both return values:
+
+```go
+q, r := divisionRemainder(7, 3) // q is 2, r is 1
+```
+
+Functions can also have **no return values** at all:
+
+```go
+func greet(name string) {
+    fmt.Println("Hello,", name)
+}
+```
 
 ## Functions are References
 
@@ -37,7 +96,7 @@ Anonymous functions are also known as [function literals](https://go.dev/ref/spe
 
 ## Variadic Functions
 
-In Go, we can define tunctions that can take variable number of arguments:
+In Go, we can define functions that can take variable number of arguments:
 
 <Code code={functionsCode6} lang="go" title="functions6/main.go" />
 
@@ -96,3 +155,32 @@ TODO:
 - Named function types: `define type Handler func(...)` and even attach methods to that named type.
 - Use in goroutines: `go func() { ... }()` runs concurrently.
 - higher-order functions work naturally.
+
+## Returning errors
+
+Functions commonly return a value plus an `error`. [Errors](https://go.dev/ref/spec#Errors) are ordinary values; callers should check and handle them.
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+func divideNumbers(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("Cannot divide by Zero")
+    }
+    return a / b, nil
+}
+
+func main() {
+    r, err := divideNumbers(12, 0)
+    if err != nil {
+        fmt.Println("error:", err)
+        return
+    }
+    fmt.Println(r)
+}
+```
