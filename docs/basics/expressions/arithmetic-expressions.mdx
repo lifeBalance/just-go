@@ -37,6 +37,33 @@ result := (2 + 3) * 4  // 20
 // Parentheses first: 2 + 3 = 5, then 5 * 4 = 20
 ```
 
+## Integer division
+
+For integer types, `/` truncates toward zero. Mixed signs truncate the quotient toward zero as well.
+
+```go
+fmt.Println(7/2)    // 3
+fmt.Println(-7/2)   // -3
+fmt.Println(7/-2)   // -3
+fmt.Println(-7/-2)  // 3
+```
+
+To get a fractional result, use floating‑point operands (convert explicitly if needed):
+
+```go
+fmt.Println(7.0/2)           // 3.5
+fmt.Println(float64(7)/2)    // 3.5
+```
+
+**Division by zero** panics at run time.
+
+The remainder operator `%` pairs with integer division: `a == (a/b)*b + (a%b)`. The remainder has the same sign as the dividend (`a`).
+
+```go
+a, b := -7, 2
+fmt.Println(a/b, a%b)        // -3 -1   (-7 == (-3)*2 + (-1))
+```
+
 ## Unary Operators are Statements
 
 [Increment and decrement](https://go.dev/ref/spec#IncDec_statements) are actually **statements** (not expressions). For example:
@@ -85,30 +112,3 @@ Shorthand operators update a variable in place; `x += y` is the same as `x = x +
 | `*=`     | multiply and assign  | `n *= 2`  |
 | `/=`     | divide and assign    | `n /= 2`  |
 | `%=`     | remainder and assign | `n %= 10` |
-
-## Integer division
-
-For integer types, `/` truncates toward zero. Mixed signs truncate the quotient toward zero as well.
-
-```go
-fmt.Println(7/2)    // 3
-fmt.Println(-7/2)   // -3
-fmt.Println(7/-2)   // -3
-fmt.Println(-7/-2)  // 3
-```
-
-To get a fractional result, use floating‑point operands (convert explicitly if needed):
-
-```go
-fmt.Println(7.0/2)           // 3.5
-fmt.Println(float64(7)/2)    // 3.5
-```
-
-**Division by zero** panics at run time.
-
-The remainder operator `%` pairs with integer division: `a == (a/b)*b + (a%b)`. The remainder has the same sign as the dividend (`a`).
-
-```go
-a, b := -7, 2
-fmt.Println(a/b, a%b)        // -3 -1   (-7 == (-3)*2 + (-1))
-```
