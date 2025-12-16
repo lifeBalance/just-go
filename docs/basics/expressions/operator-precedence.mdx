@@ -2,7 +2,7 @@ import Admonition from '@components/Admonition.astro'
 
 # Operator precedence
 
-When you mix [operators](https://go.dev/ref/spec#Operators) of different kind, there are some precedence rules, to determine what operations are performed first. From higher to lower precedence:
+When you mix [operators](https://go.dev/ref/spec#Operators) of different kind, there are some precedence rules to determine what operations run first. From higher to lower precedence:
 
 1. Parentheses — add them when in doubt.
 2. Unary operators — `+x`, `-x`, `!x`, `^x`, `*p`, `&x` (apply before binary ops)
@@ -21,62 +21,88 @@ When you mix [operators](https://go.dev/ref/spec#Operators) of different kind, t
 Within each precedence level, operators associate left‑to‑right. Parentheses always take precedence, and unary operators apply before binary operators.
 </Admonition>
 
+Mixing **arithmetic** and **bitwise** operators is common in systems work, parsing, compression, graphics, hashing/cryptography, and performance‑critical code. It’s much less common in everyday business logic.
+
 ## Bitwise Shifts are like Multiplication/Division
 
-Shifts scale by powers of two. A left shift by `n` multiplies by `2^n`; a right shift by `n` divides by `2^n` (for unsigned values):
+Shifts scale by powers of two. They are equivalent to multiplication and division by powers of two, so they share the same precedence group as `*`, `/`, and `%`.
 
-- `a << 2` ≈ `a * 4`
-- `c >> 1` ≈ `c / 2`
+### Left shifts
+
+A left shift (`<<`) multiplies by a power of two, check this formula:
+
+```
+a << n == a * 2^n
+```
+
+Example:
+
+```
+3 << 2 == 12  // 3 * 2^2
+```
+
+### Right shifts
+
+A right shift (`>>`) divides by a power of two, check this formula:
+
+```
+a >> n == floor(a / 2^n)
+```
+
+Note: right shift is arithmetic for signed integers (sign bit propagates) and logical for unsigned (zeros shift in). Prefer unsigned if you need zero‑fill behavior.
+
+Examples:
+- `a << 2` is `a * 4`
+- `c >> 1` is `c / 2`
 
 Similarly, bitwise AND appears in the same group as multiplication, while bitwise OR and XOR share the group with addition because their precedence mirrors those arithmetic operations.
 
-## Bitwise AND/OR are like Addition
+## Bitwise AND and AND NOT is like Multiplication/Remainder
 
-Bitwise AND (`&`) groups with the multiplicative operators, while bitwise OR (`|`) and XOR (`^`) group with the additive operators. This affects how mixed expressions are parsed without parentheses.
+Bitwise AND (`&`) groups with the multiplicative operators; bitwise OR (`|`) and XOR (`^`) group with the additive operators. This matters when you mix bitwise and arithmetic without parentheses.
 
-## Some Examples
+Formulas:
+```
+// Per bit (bits in {0,1}):
+x & y == x * y
 
-Let's start with a few arithmetic and mixed examples:
-
-```go
-a, b, c := 2, 3, 4
-
-r1 := 2 + 3*4     // 14  (× before +)
-r2 := (2 + 3) * 4 // 20  (parentheses change it)
-
-x := a << 2       // 8   (2 * 2^2)
-y := c >> 1       // 2   (4 / 2^1)
-
-z := 2 & 7 + 4    // 6   (& has higher precedence: (2 & 7) + 4)
-w := 2 | 4 + 1    // 7   (| and + same group; left-to-right: (2 | 4) + 1)
+// Useful identities:
+a | b == (a ^ b) + (a & b)
+a + b == (a ^ b) + 2*(a & b)
 ```
 
-A bitwise shift is equivalent to multiplying or dividing by powers of two:
+## Bitwise OR and XOR is like Addition/Subtraction
+
+Bitwise OR (`|`) and XOR (`^`) share the additive group with `+` and `-`. They associate left‑to‑right, so mixed expressions without parentheses parse the same way.
+
+### Bitwise OR
+
+The `|` operator sets a bit when either input bit is 1.
 
 ```go
-x := a << 2    // a * 2^2 == 8
-y := c >> 1    // c / 2^1 == 2
+m := 2 | 4  // 6
 ```
 
-Whereas a bitwise AND is equivalent to multiplication in precedence:
+If you visualize binary integers, it’s clearer:
 
 ```go
-z := 2 & 7 + 4 //  == 2
+x := uint8(0b0010)          // 0 0 1 0 👉 2
+y := uint8(0b0100)          // 0 1 0 0 👉 4
+fmt.Printf("%04b\n", x|y)   // 0 1 1 0 👉 6
 ```
 
-And a bitwise OR is equivalent to addition in precedence:
+### Bitwise XOR
+
+The `^` operator sets a bit when input bits differ.
 
 ```go
-w := 2 | 4 + 1 //  == 7
+n := 8 ^ 3  // 11
 ```
 
-A couple quick checks:
+Let's visualize with binary integers:
 
 ```go
-r1 := 2 + 3*4    // 14  (× before +)
-r2 := (2 + 3) * 4// 20  (parentheses change it)
-
-ok := a < b && b < c  // comparison binds before &&
+p := uint8(0b1000)          // 1 0 0 0 👉 8
+q := uint8(0b0011)          // 0 0 1 1 👉 3
+fmt.Printf("%04b\n", p^q)   // 1 0 1 1 👉 11 
 ```
-
-
