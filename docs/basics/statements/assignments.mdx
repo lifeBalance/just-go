@@ -11,7 +11,7 @@ n = 42          // assignment statement, no value
 
 The `=` operator assigns the value on the right to the variable on the left. The type of the variable being assigned to determines what types of values can be assigned.
 
-<Admonition variant="info" title="Assignments set or update variable values">
+<Admonition type="info" title="Assignments set or update variable values">
   Assignments are use to set or update variable values.
 </Admonition>
 
@@ -38,7 +38,7 @@ a = b // 👍
 b = c // 👍
 ```
 
-<Admonition variant="warning" title="Chained assignment vs Tuple assignment">
+<Admonition type="warning" title="Chained assignment vs Tuple assignment">
   Do not confuse **chained assignment** (not allowed) with **tuple assignment**
   (allowed).
 </Admonition>
@@ -49,7 +49,7 @@ But you can assign multiple variables at once using **tuple assignment**. For ex
 a, b := 1 + 4, 2 * 3   // a=5, b=6
 ```
 
-<Admonition variant="tip" title="Evaluation order">
+<Admonition type="tip" title="Evaluation order">
   In assignments, the entire right side is evaluated before any left side is
   written. This makes swaps and parallel updates predictable.
 </Admonition>
@@ -92,15 +92,6 @@ Rules:
 - At least one new variable on the left side
 - Types are inferred from the right side
 
-## No assignment as expression
-
-Assignments have no value; you can’t use them in conditions or other expressions.
-
-```go
-// if x = 3 { ... }   // invalid in Go
-// y := (x = 3)       // invalid; assignment has no value
-```
-
 ## Compound assignment (shorthand)
 
 There are some operators that combine an **assignment** with an arithmetic operation. The official docs talk about them together with other [operators and punctuation](https://go.dev/ref/spec#Operators_and_punctuation):
@@ -114,10 +105,32 @@ n /= 3  // 4   (integer division if n is int)
 n %= 3  // 1
 ```
 
-<Admonition variant="tip" title="Why also in Expressions?">
+<Admonition type="tip" title="Why also in Expressions?">
   In Go, these operators are assignment statements (not expressions), so they
   don’t participate in operator precedence. We still discuss their operator part
   alongside other arithmetic in the [Expressions section](../expressions/intro).
 </Admonition>
 
 See also: [Arithmetic expressions](../expressions/arithmetic-expressions) for operator details.
+
+## No assignment as expression
+
+**Short variable declarations** and **assignments** are **statements**, not expressions. This means they do not produce values and cannot be used where a value is expected:
+
+```go
+age := 17
+
+if age = getAge() {  // ❌ invalid: assignment used as value
+    fmt.Println("hi")
+}
+```
+
+This is correct though:
+
+```go
+age := 17
+
+if age = getAge(); age >= 18 {  // ✅ valid
+    fmt.Println("hi")
+}
+```
