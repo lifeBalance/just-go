@@ -1,5 +1,5 @@
 import { parseTocConfig, type TocConfig } from './tocParser'
-import { docsConfig } from './config'
+import { docsConfig, getGlobRegistry } from './config'
 
 // Single source of truth for path operations
 // Path utilities for routes and FS paths
@@ -43,16 +43,18 @@ export type ContentEntry = {
   isIndex: boolean
 }
 
-// Static module maps gathered by Vite. Globs must be literals.
-// When adding a new root in config.ts, add a matching glob here.
-const STATIC_MODS: Record<string, MdModule> = {
-  ...import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>,
-  ...import.meta.glob('/toc-doc/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>,
+const GLOB_REGISTRY = getGlobRegistry() as Record<string, Record<string, any>>
+
+function mergeSelected<T>(registry: Record<string, Record<string, T>>, keys: readonly string[]) {
+  const out: Record<string, T> = {}
+  for (const k of keys) {
+    if (registry[k]) Object.assign(out, registry[k])
+  }
+  return out
 }
-const STATIC_TOCS: Record<string, any> = {
-  ...import.meta.glob('/docs/**/_toc.{ts,js}', { eager: true }) as Record<string, any>,
-  ...import.meta.glob('/toc-doc/**/_toc.{ts,js}', { eager: true }) as Record<string, any>,
-}
+
+const STATIC_MODS = mergeSelected(GLOB_REGISTRY, docsConfig.branches.flatMap((b) => b.globKeys)) as Record<string, MdModule>
+const STATIC_TOCS = mergeSelected(GLOB_REGISTRY, docsConfig.branches.flatMap((b) => b.tocGlobKeys)) as Record<string, any>
 
 // ContentStore: caches docs and _toc modules; provides lookups
 class ContentStore {
@@ -204,7 +206,8 @@ export function createSection(
 ) {
   const sec = Path.trimSlashes(section)
   const basePrefix = (basePath ?? docsConfig.basePath ?? import.meta.env.BASE_URL).replace(/\/$/, '')
-  const contentRoot = contentRootArg ?? `/docs/${sec}`
+  const branch = docsConfig.branches.find((b) => b.id === sec)
+  const contentRoot = contentRootArg ?? branch?.root
   const base = `${basePrefix}/${sec}`
   const mods = store.getModsForSection(section)
 
