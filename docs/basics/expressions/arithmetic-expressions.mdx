@@ -39,29 +39,57 @@ result := (2 + 3) * 4  // 20
 
 ## Integer division
 
-For integer types, `/` truncates toward zero. Mixed signs truncate the quotient toward zero as well.
+When both operands of the division operator `/` are integers, Go performs **integer division**, which discards any fractional part and returns an integer result. For example:
 
 ```go
 fmt.Println(7/2)    // 3
-fmt.Println(-7/2)   // -3
-fmt.Println(7/-2)   // -3
-fmt.Println(-7/-2)  // 3
+fmt.Println(8/3)    // 2
 ```
 
-To get a fractional result, use floating‑point operands (convert explicitly if needed):
+As you can see, the fractional part is discarded, and the result truncates toward zero. For example:
+
+```go
+fmt.Println(7 / 2)    // 3 and not 3.5 or 4
+```
+
+Mixed signs truncate the quotient toward zero as well.
+
+```go
+fmt.Println(-7 / 2)   // -3
+fmt.Println(7 / -2)   // -3
+fmt.Println(-7 / -2)  // 3
+```
+
+To get a **fractional result**, use **floating‑point operands** (convert explicitly if needed):
 
 ```go
 fmt.Println(7.0/2)           // 3.5
-fmt.Println(float64(7)/2)    // 3.5
+fmt.Println(float64(7) / 2)    // 3.5
 ```
 
-**Division by zero** panics at run time.
+<Admonition type="info" title="Division by zero">
+  In Go, dividing an integer by zero using the `/` operator results in a
+  **compile-time error**. For floating-point division, dividing by zero yields
+  positive or negative infinity, or NaN (Not a Number), depending on the
+  operands.
+</Admonition>
 
-The remainder operator `%` pairs with integer division: `a == (a/b)*b + (a%b)`. The remainder has the same sign as the dividend (`a`).
+## The Remainder Operator
+
+The remainder operator `%` works as in other programming languages:
 
 ```go
-a, b := -7, 2
-fmt.Println(a/b, a%b)        // -3 -1   (-7 == (-3)*2 + (-1))
+fmt.Println(7 % 3)    // 1
+```
+
+In case you're not familiar, the remainder operator returns the remainder after **integer division**. So `7` divided by `3` is `2` with a remainder of `1`.
+
+The remainder has the same sign as the **dividend**, for example:
+
+```go
+fmt.Println(-7 % 3)    // -1 (dividend is -7)
+fmt.Println(7 % -3)    // 1
+fmt.Println(-7 % -3)   // -1
 ```
 
 ## Unary Operators are Statements
