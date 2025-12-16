@@ -9,39 +9,41 @@ import Admonition from '@components/Admonition.astro'
 - `!` negates a boolean value.
 
 <Admonition variant="warning" title="Boolean values">
-They only work with boolean values (`true` and `false`).
+  They only work with boolean values (`true` and `false`).
 </Admonition>
 
 ## AND operator `&&`
 
 As a remainder, here is the truth table for the `&&` operator:
 
-| A      | B      | A && B |
-| ------ | ------ | ------ |
-| false  | false  | false  |
-| false  | true   | false  |
-| true   | false  | false  |
-| true   | true   | true   |
+| `a`   | `b`   | `a && b` |
+| ----- | ----- | -------- |
+| false | false | false    |
+| false | true  | false    |
+| true  | false | false    |
+| true  | true  | true     |
 
 ## OR operator `||`
 
 And the truth table for the `||` operator:
 
-| A      | B      | A \|\| B |
-| ------ | ------ | -------- |
-| false  | false  | false    |
-| false  | true   | true     |
-| true   | false  | true     |
-| true   | true   | true     |
-s
+| `a`   | `b`   | `a \|\| b` |
+| ----- | ----- | ---------- |
+| false | false | false      |
+| false | true  | true       |
+| true  | false | true       |
+| true  | true  | true       |
+
 ## NOT operator `!`
 
 The `!` operator negates a boolean value. Here is its truth table:
 
-| A      | !A     |
-| ------ | ------ |
-| false  | true   |
-| true   | false  |
+| `a`   | `!a`  | 
+| ----- | ----- |
+| false | true  |
+| true  | false |
+
+In other words, it flips `true` to `false` and `false` to `true`.
 
 ## Precedence
 
@@ -69,10 +71,17 @@ The `&&` operator is evaluated first due to its higher precedence.
 
 ## Short‑circuit evaluation
 
-The order of evaluation is **left to right**, which is important for `&&` and `||` because of short‑circuiting. Short‑circuiting enables safe “guard” patterns:
+As with other operators, the order of evaluation in boolean expressions is **left to right**. This is particularly important for `&&` and `||` because it enables short‑circuit evaluation.
+
+<Admonition type="info" title="Short‑circuit evaluation">
+  Short‑circuit evaluation means that in a logical expression, evaluation stops
+  as soon as the overall truth value is determined. This can prevent unnecessary
+  computations and side effects.
+</Admonition>
+
+Short‑circuit evaluation enables **safe guard** patterns:
 
 ```go
-// Safe: second test only runs when needed
 if s != nil && len(s) > 0 {
   fmt.Println("first:", s[0])
 }
@@ -88,4 +97,3 @@ if cached || compute() {
 ```
 
 The `compute()` function is only called if `cached` is `false`, which can save time and resources.
-
