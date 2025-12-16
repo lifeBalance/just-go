@@ -2,9 +2,19 @@
 import MainLayout from '@layouts/MainLayout.astro'
 import Card from '@components/Card.astro'
 import Hero from '@components/Hero.astro'
-import { docsConfig } from '@lib/docs/config'
 
-const basePath = docsConfig.basePath
+import { docsConfig } from '@lib/docs/config'
+import { createSection, resolveOrNext } from '@lib/docs/section'
+
+const basePrefix = docsConfig.basePath ?? import.meta.env.BASE_URL
+
+const basicsApi = createSection('basics')
+const basicsNext = resolveOrNext(basicsApi, '')
+const basicsHref = basicsNext.kind === 'redirect' ? basicsNext.url : `${basePrefix}basics/`
+
+const tocApi = createSection('toc-doc')
+const tocNext = resolveOrNext(tocApi, '')
+const tocHref = tocNext.kind === 'redirect' ? tocNext.url : `${basePrefix}toc-doc/`
 ---
 
 <MainLayout>
@@ -13,13 +23,13 @@ const basePath = docsConfig.basePath
       <Hero rotate="-2deg" />
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-      <Card href={`${basePath}/basics`} astroPrefetch={false}>
+      <Card href={basicsHref} astroPrefetch={false}>
         <h2 class="text-xl font-semibold">Basics</h2>
         <p class="text-sm text-sd-muted">
           Start with the language fundamentals.
         </p>
       </Card>
-      <Card href={`${basePath}/toc-doc`} astroPrefetch={false}>
+      <Card href={tocHref} astroPrefetch={false}>
         <h2 class="text-xl font-semibold">Toc‑Doc</h2>
         <p class="text-sm text-sd-muted">
           Build doc sites with different topics.
