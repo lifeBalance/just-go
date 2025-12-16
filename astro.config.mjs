@@ -18,6 +18,8 @@ const alias = {
 }
 
 export default defineConfig({
+  site: 'https://lifebalance.github.io/just-go',
+  base: '/just-go/',
   integrations: [svelte(), expressiveCode(), mdx(), icons()],
   vite: { plugins: [tailwindcss()], resolve: { alias } },
 })
