@@ -6,7 +6,6 @@
   import gopher from '@assets/gopher.png?url'
   import gopherPink from '@assets/gopher-pink.png?url'
   import { docsConfig } from '@lib/docs/config'
-
   const basePrefix = (docsConfig.basePath ?? import.meta.env.BASE_URL)
   const homeHref = basePrefix.endsWith('/') ? basePrefix : `${basePrefix}/`
   let logoSrc = $state<string>(gopher)
@@ -40,7 +39,7 @@
     {/snippet}
 
     {#snippet right()}
-      <a href={`${basePrefix}/colors`} class="text-sm no-underline text-sd-muted hover:text-sd-accent">Colors</a>
+      <a href={`${basePrefix}colors`} class="text-sm no-underline text-sd-muted hover:text-sd-accent">Colors</a>
       <ThemeToggle />
     {/snippet}
   </TopBar>

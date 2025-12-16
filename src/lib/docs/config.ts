@@ -10,7 +10,7 @@ export type DocsBranch = {
 }
 
 // Default to the build-time base (Astro/Vite sets BASE_URL), trimmed of trailing slash
-const defaultBase = (import.meta.env.DEV ? '/' : (import.meta.env.BASE_URL || '/')).replace(/\/$/, '')
+const defaultBase = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
 
 // Registry of literal globs keyed by branch id
 export function getGlobRegistry() {
