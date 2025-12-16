@@ -27,10 +27,9 @@ For example:
 
 ```go
 result := 2 + 3 * 4    // 14 (not 20)
-// Multiplication happens first: 3 * 4 = 12, then 2 + 12 = 14
 ```
 
-To change the order of operations, use parentheses:
+In the example above, multiplication happens first, so `3 * 4 = 12`, then addition is performed `2 + 12 = 14`. To change the order of operations, use parentheses:
 
 ```go
 result := (2 + 3) * 4  // 20
@@ -91,6 +90,21 @@ fmt.Println(-7 % 3)    // -1 (dividend is -7)
 fmt.Println(7 % -3)    // 1
 fmt.Println(-7 % -3)   // -1
 ```
+
+### Cycling through a range
+
+The remainder operator is often used to cycle through a range of values. For example, let's say you have an array of values, and you want to cycle throught them:
+
+```go
+months := []string{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+
+for i := 0; i < 15; i++ {
+    month := months[i % len(months)]
+    fmt.Println(month)
+}
+```
+
+This will print the months, cycling back to `Jan` after `Dec`. The reason is that `len(months)` is `12`, so when `i` reaches `12`, `i % 12` becomes `0`, and the cycle starts over.
 
 ## Unary Operators are Statements
 
