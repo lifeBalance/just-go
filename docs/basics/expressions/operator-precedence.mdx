@@ -2,13 +2,65 @@ import Admonition from '@components/Admonition.astro'
 
 # Operator precedence
 
-When you mix [operators](https://go.dev/ref/spec#Operators), precedence determines what operations are performed first. From higher to lower (within each group, left‑to‑right):
+When you mix [operators](https://go.dev/ref/spec#Operators) of different kind, there are some precedence rules, to determine what operations are performed first. From higher to lower precedence:
 
-- Multiplicative: `* / % << >> & &^`
-- Additive: `+ - | ^`
-- Comparison: `== != < <= > >=`
-- Logical AND: `&&`
-- Logical OR: `||`
+1. **Parentheses** win every time, if in doubt, add them for clarity.
+2. **Multiplication**: 
+    - `*`, `/`, and `%` (multiplication, division, remainder)
+    - `<<` and `>>` (bitwise shifts)
+    - `&` and `&^` (bitwise AND and AND NOT)
+3. **Addition**: 
+    - `+` and `-` (addition and subtraction)
+    - `|` and `^` (bitwise OR and XOR)
+4. **Comparison**: `== != < <= > >=`
+5. **Logical AND**: `&&`
+7. **Logical OR**: `||`
+
+<Admonition variant="tip" title="Evaluation left to right">
+Within each precedence level, expressions are evaluated **left to right**.
+</Admonition>
+
+## Bitwise Shifts are like Multiplication/Division
+
+If you're wondering why bitwise shifts have the same precedence as multiplication and division, it's because a shift left by `n` is equivalent to multiplying by `2^n`:
+
+
+Whereas a shift right by `n` is equivalent to dividing by `2^n`:
+
+
+
+Similarly, bitwise AND has the same precedence as multiplication because it can be thought of as a form of multiplication in binary logic, and bitwise OR has the same precedence as addition for similar reasons.
+
+## Bitwise AND/OR are like Addition
+
+## Some Examples
+
+Let's start refreshing our memory with some arithmetic expressions:
+
+```go
+a, b, c := 2, 3, 4
+
+// add some arithmetic expression
+```
+
+A bitwise shift is equivalent to multiplying or dividing by powers of two:
+
+```go
+x := a << 2    // a * 2^2 == 8
+y := c >> 1    // c / 2^1 == 2
+```
+
+Whereas a bitwise AND is equivalent to multiplication in precedence:
+
+```go
+z := 2 & 7 + 4 //  == 2
+```
+
+And a bitwise OR is equivalent to addition in precedence:
+
+```go
+w := 2 | 4 + 1 //  == 7
+```
 
 A couple quick checks:
 
@@ -19,8 +71,4 @@ r2 := (2 + 3) * 4// 20  (parentheses change it)
 ok := a < b && b < c  // comparison binds before &&
 ```
 
-**Parentheses** win every time. If in doubt, add them for clarity.
 
-<Admonition variant="tip" title="Evaluation vs. precedence">
-Precedence controls grouping; it does not change evaluation order. Operands and call arguments are still evaluated left‑to‑right, and `&&`/`||` still short‑circuit.
-</Admonition>
