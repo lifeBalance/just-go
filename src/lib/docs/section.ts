@@ -43,16 +43,23 @@ export type ContentEntry = {
   isIndex: boolean
 }
 
+// Static module maps gathered by Vite. Globs must be literals.
+// When adding a new root in config.ts, add a matching glob here.
+const STATIC_MODS: Record<string, MdModule> = {
+  ...import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>,
+  ...import.meta.glob('/toc-doc/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>,
+}
+const STATIC_TOCS: Record<string, any> = {
+  ...import.meta.glob('/docs/**/_toc.{ts,js}', { eager: true }) as Record<string, any>,
+  ...import.meta.glob('/toc-doc/**/_toc.{ts,js}', { eager: true }) as Record<string, any>,
+}
+
 // ContentStore: caches docs and _toc modules; provides lookups
 class ContentStore {
-  // Important: Vite globs must be static literals. To avoid pulling unrelated repo Markdown,
-  // we scope globs to the docs area. If you add another root, add another glob line.
-  private mods = {
-    ...import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, MdModule>,
-  }
-  private tocs = {
-    ...import.meta.glob('/docs/**/_toc.{ts,js}', { eager: true }) as Record<string, any>,
-  }
+  constructor(
+    private mods: Record<string, MdModule>,
+    private tocs: Record<string, any>
+  ) {}
 
   getAllModPaths(): string[] {
     return Object.keys(this.mods)
@@ -76,7 +83,7 @@ class ContentStore {
   }
 }
 
-const store = new ContentStore()
+const store = new ContentStore(STATIC_MODS, STATIC_TOCS)
 
 function capitalize(name: string) {
   return name.replace(/(^|\/ )\w/g, (m) => m.toUpperCase())

@@ -15,6 +15,6 @@ export const docsConfig = {
   // Each branch maps a public section id to a filesystem root (absolute from project root)
   branches: [
     { id: 'basics',  root: '/docs/basics' },
-    { id: 'toc-doc', root: '/docs/toc-doc' },
+    { id: 'toc-doc', root: '/toc-doc' },
   ] as DocsBranch[],
 }
