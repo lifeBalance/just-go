@@ -7,21 +7,23 @@
 export type DocsBranch = {
   id: string
   root: string
-  globKeys: readonly string[]
-  tocGlobKeys: readonly string[]
 }
 
 // Default to the build-time base (Astro/Vite sets BASE_URL), trimmed of trailing slash
-const defaultBase = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+const defaultBase = (import.meta.env.DEV ? '/' : (import.meta.env.BASE_URL || '/')).replace(/\/$/, '')
 
-// Return a registry of literal globs Vite can statically analyze
+// Registry of literal globs keyed by branch id
 export function getGlobRegistry() {
   return {
-    docs: import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }) as Record<string, any>,
-    tocDoc: import.meta.glob('/toc-doc/**/*.{md,mdx}', { eager: true }) as Record<string, any>,
-    docsToc: import.meta.glob('/docs/**/_toc.{ts,js}', { eager: true }) as Record<string, any>,
-    tocDocToc: import.meta.glob('/toc-doc/**/_toc.{ts,js}', { eager: true }) as Record<string, any>,
-  }
+    basics: {
+      content: import.meta.glob('/docs/basics/**/*.{md,mdx}', { eager: true }) as Record<string, any>,
+      toc: import.meta.glob('/docs/basics/**/_toc.ts', { eager: true }) as Record<string, any>,
+    },
+    'toc-doc': {
+      content: import.meta.glob('/toc-doc/**/*.{md,mdx}', { eager: true }) as Record<string, any>,
+      toc: import.meta.glob('/toc-doc/**/_toc.ts', { eager: true }) as Record<string, any>,
+    },
+  } as Record<string, { content: Record<string, any>; toc: Record<string, any> }>
 }
 
 export const docsConfig = {
@@ -29,17 +31,7 @@ export const docsConfig = {
   basePath: defaultBase,
   // Each branch maps a public section id to a filesystem root (absolute from project root)
   branches: [
-    {
-      id: 'basics',
-      root: '/docs/basics',
-      globKeys: ['docs'],
-      tocGlobKeys: ['docsToc'],
-    },
-    {
-      id: 'toc-doc',
-      root: '/toc-doc',
-      globKeys: ['tocDoc'],
-      tocGlobKeys: ['tocDocToc'],
-    },
+    { id: 'basics',  root: '/docs/basics' },
+    { id: 'toc-doc', root: '/toc-doc' },
   ] as DocsBranch[],
 }

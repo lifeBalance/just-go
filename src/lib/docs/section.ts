@@ -45,16 +45,15 @@ export type ContentEntry = {
 
 const GLOB_REGISTRY = getGlobRegistry() as Record<string, Record<string, any>>
 
-function mergeSelected<T>(registry: Record<string, Record<string, T>>, keys: readonly string[]) {
-  const out: Record<string, T> = {}
-  for (const k of keys) {
-    if (registry[k]) Object.assign(out, registry[k])
-  }
-  return out
-}
+const STATIC_MODS = Object.assign(
+  {},
+  ...docsConfig.branches.map((b) => (GLOB_REGISTRY[b.id]?.content ?? {}))
+) as Record<string, MdModule>
 
-const STATIC_MODS = mergeSelected(GLOB_REGISTRY, docsConfig.branches.flatMap((b) => b.globKeys)) as Record<string, MdModule>
-const STATIC_TOCS = mergeSelected(GLOB_REGISTRY, docsConfig.branches.flatMap((b) => b.tocGlobKeys)) as Record<string, any>
+const STATIC_TOCS = Object.assign(
+  {},
+  ...docsConfig.branches.map((b) => (GLOB_REGISTRY[b.id]?.toc ?? {}))
+) as Record<string, any>
 
 // ContentStore: caches docs and _toc modules; provides lookups
 class ContentStore {
@@ -120,6 +119,13 @@ export function listSectionPageParams(): SectionPageParam[] {
   for (const section of sections) {
     out.push({ section })
   }
+
+  if (import.meta.env.DEV) {
+    const sample = out.slice(0, 20)
+    console.log('[docs] discovered routes:', sample)
+    console.log('[docs] sections:', Array.from(sections))
+  }
+
   return out
 }
 
