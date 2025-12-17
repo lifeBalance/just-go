@@ -1,7 +1,7 @@
 export default [
   { path: 'intro', label: 'Introduction' },
   { path: 'strings', label: 'Strings' },
-  { path: 'numeric-types', label: 'Numbers, Runes and Bytes' },
+  { path: 'numeric-types', label: 'Numeric Types' },
   { path: 'arrays', label: 'Arrays' },
   { path: 'slices', label: 'Slices' },
   { path: 'structs', label: 'Structs' },

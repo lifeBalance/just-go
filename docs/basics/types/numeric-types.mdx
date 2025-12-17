@@ -54,6 +54,15 @@ Generally speaking if you are working with integers you should just use the `int
 For general use, the type `int` is recommended over the other integer types. The same stands for `uint`, in case you need unsigned integers.
 </Admonition>
 
+## Integer Aliases
+
+- `byte` is an alias of `uint8`. Commonly used for raw bytes (binary data) and ASCII.
+- `rune` is an alias of `int32`. Represents a single Unicode code point.
+
+<Admonition type="info" title="More on runes and text">
+`rune` usage and Unicode details (iteration, decoding, printing) are covered in the [Strings](./strings) section.
+</Admonition>
+
 ## Floats
 
 For representing [floating point numbers](https://en.wikipedia.org/wiki/Floating-point_arithmetic#Floating-point_numbers) we have two types:

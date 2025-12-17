@@ -3,29 +3,37 @@ import { Code } from 'astro-expressive-code/components'
 
 # Strings
 
-A string in Go is sequences of characters. You can create strings using **double quotes**:
+A [string](https://go.dev/ref/spec#String_types) in Go is a sequence of **bytes**. By convention, strings contain **UTF-8 encoded** text, but we can put any bytes in a string, even if they don’t represent valid UTF-8.
+
+<Admonition type="tip" title="Use strings for text">
+ Go strings can hold arbitrary bytes (the language doesn’t enforce UTF‑8). However, by convention, strings are used for text. For binary data, use `[]byte`.
+</Admonition>
+
+The [predeclared identifier](https://golang.org/ref/spec#Predeclared_identifiers) for all type of strings is `string`.
+
+## String Literals
+
+We can define strings in our programs directly by wrapping text, using either **double quotes** or **backticks** are known as [string literals](https://golang.org/ref/spec#String_literals). There are two types:
+
+- **Interpreted string literals** are are the most commonly used; they're just text surrounded by double quotes:
 
 ```go
 var greeting string = "Hello, World!"
 ```
 
-One limitation of using double quotes, interpreted string literals is that our string cannot span multiple lines. If you need a string that spans multiple lines, you can use **backticks**:
+<Admonition type="warning" title="Only single line">
+One limitation of using double quotes, interpreted string literals is that our string cannot span multiple lines.
+</Admonition>
+
+
+- **Raw string literals** use **backticks**, and they can span **multiple lines**:
 
 ```go
 var multiLine string = `This is a
 multi-line string.`
 ```
 
-The [predeclared identifier](https://golang.org/ref/spec#Predeclared_identifiers) for all type of strings is `string`.
-
-## String Literals
-
-Strings defined in our programs directly (by typing the text), using either **double quotes** or **backticks** are known as [string literals](https://golang.org/ref/spec#String_literals). There are two types:
-
-- String literals surrounded by double quotes are known as **interpreted string literals**.
-- Multiline strings are known as **raw string literals**.
-
-Interpreted string literals are the most commonly used, but raw string literals are useful for writing multiline messages, HTML, and regular expressions.
+Raw string literals can be used to write HTML, and regular expressions.
 
 <Admonition type="info" title="Runes">
 
@@ -35,9 +43,65 @@ In other languages, we can use single quotes for strings, but in Go, single quot
 
 </Admonition>
 
+## Length of a String
+
+We can get the length of a string using the [len](https://go.dev/ref/spec#Length_and_capacity) built-in function. For example:
+
+```go
+var greeting string = "Hello, World!"
+length := len(greeting) // length is 13
+```
+
+The length returned is the number of **bytes** in the string, not the number of characters. So if we do:
+
+```go
+var emoji string = "🌍"
+
+fmt.Println(len(emoji)) // 4
+```
+
+The length is `4` because the emoji character "🌍" is represented using 4 bytes in UTF-8 encoding.
+
+## Accessing Characters in a String
+
+You can access individual characters in a string using [index expressions](https://go.dev/ref/spec#Index_expressions). As in many other programming languages, in Go, strings are also **zero-based**, which means that the index of the first character is `0`, the second character is at index `1`, and so on. For example:
+
+```go
+var greeting string = "Hello, World!"
+firstChar := greeting[0] // 'H'
+secondChar := greeting[1] // 'e'
+```
+
+## Empty Strings
+
+A string may consist of an **empty sequence of characters**, what is known as an **empty string**.
+
+```go
+emptyString := ""
+
+fmt.Println(len(emptyString)) // 0
+```
+
+## Strings are Immutable
+
+In Go, strings are **immutable**, meaning that once created, it is impossible to change any of its characters:
+
+```go
+greeting[0] = 'h' // ❌ This will result in a compilation error
+```
+
+Any operation that seems to modify a string actually creates a new string.
+
+```go
+original := "Hello"
+modified := original + ", World!" // Creates a new string
+fmt.Println(original) // Outputs: Hello
+fmt.Println(modified) // Outputs: Hello, World!
+```
+
 ## Unicode and UTF-8
 
-In Go, [strings](https://go.dev/ref/spec#String_types) are sequences of [UTF-8](https://en.wikipedia.org/wiki/UTF-8) characters. That means that we can use emojis in our strings:
+In Go, [strings](https://go.dev/ref/spec#String_types) are usually used to store sequences of [UTF-8](https://en.wikipedia.org/wiki/UTF-8) characters. That means that we can use emojis in our strings:
 
 ```go
 var greeting string = "Hello, 🌍!"
@@ -62,24 +126,6 @@ In Go, each character in a string can use from 1 to 4 bytes depending on the cha
   of **bytes** that can represent a much larger set of characters thanks to
   UTF-8 encoding.
 </Admonition>
-
-## Accessing Characters in a String
-
-You can access individual characters in a string using **indexing**. The index of the first character is `0`, the second character is at index `1`, and so on. For example:
-
-```go
-var greeting string = "Hello, World!"
-firstChar := greeting[0] // 'H'
-secondChar := greeting[1] // 'e'
-```
-
-In Go, strings are **immutable**, meaning that once created, it is impossible to change any of its characters:
-
-```go
-greeting[0] = 'h' // ❌ This will result in a compilation error
-```
-
-A string may consist of an **empty sequence of characters**, what is known as an **empty string**.
 
 ## Escape sequences
 
