@@ -1,0 +1,21 @@
+import Admonition from '@components/Admonition.astro'
+
+# Bytes
+
+- `string` is immutable bytes, usually UTF‑8 encoded text
+- `[]byte` is a mutable slice of bytes (binary data)
+
+## Conversions
+
+```go
+b := []byte("Go")          // decode UTF‑8 bytes
+t := string([]byte{71,111}) // "Go"
+```
+
+## I/O boundaries
+
+Many I/O APIs work with `[]byte`. Convert to/from `string` at the boundary where you know the encoding.
+
+<Admonition type="warning" title="Encoding matters">
+`string` assumes bytes are meaningful text. If you don’t control the source, validate or sanitize before display.
+</Admonition>

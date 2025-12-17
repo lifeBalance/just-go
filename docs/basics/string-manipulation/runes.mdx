@@ -1,0 +1,128 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import runeMain from './code/runes/main.go?raw'
+
+# Runes
+
+We mentioned in the section about the [string type](../types/strings) that strings are intended to store text, and that text is usually UTF‑8 encoded.
+
+<Admonition  title="Rune Type">
+[rune](https://go.dev/ref/spec#Rune_literals) is an alias for `int32` and represents a single Unicode code point.
+</Admonition>
+
+Imagine we have to traverse a string containing non-ASCII characters, like `"Café 😀"`:
+
+<Code code={runeMain} lang="go" />
+
+The loop above iterates over each byte in the string and prints its index and value. If you run the program above, you'll see output like this:
+
+```
+0: 'C'
+1: 'a'
+2: 'f'
+3: 'Ã'      ❌ Starts breaking here!
+4: '©'
+5: ' '
+6: 'ð'
+7: '\u009f'
+8: '\u0098'
+9: '\u0080'
+```
+
+The first three characters (`C`, `a`, `f`) are printed fine, since ASCII characters use **1 byte** codepoints. However:
+
+- The character `é` prints out two lines (`Ã` and `©`).  
+- And the emoji `😀` prints out four lines (`ð`, `\u009f`, `\u0098`, and `\u0080`).
+
+The problem is that this code will prints out a line for each **byte** in the string, not each character. Some unicode characters are represented by multiple bytes, so we need a way to work with the actual characters (code points) in the string. This is where **runes** come in.
+
+## Iterating runes
+
+When we use a [range](https://go.dev/ref/spec#For_range) clause on a string, Go automatically decodes each character as a **rune** (a Unicode code point):
+
+```go
+for i, r := range "Go😀" {
+  fmt.Printf("%d %U %q\n", i, r, r)
+}
+```
+
+If you run this code, you'll see output like this:
+
+```
+0 U+0047 'G'
+1 U+006F 'o'
+2 U+1F600 '😀'
+```
+
+## Counting characters correctly
+
+When you need to know how many **characters** (not bytes) are in a string, use `utf8.RuneCountInString()`:
+```go
+package main
+
+import (
+    "fmt"
+    "unicode/utf8"
+)
+
+func main() {
+    str := "Café 😀"
+    
+    fmt.Println("Bytes:", len(str))                           // 10
+    fmt.Println("Characters:", utf8.RuneCountInString(str))   // 6
+}
+```
+
+## Working with individual characters
+
+If you need to access or modify specific characters, convert the string to a slice of runes:
+```go
+package main
+
+import "fmt"
+
+func main() {
+    str := "Café 😀"
+    
+    // Convert to []rune to safely index
+    runes := []rune(str)
+    
+    fmt.Printf("First character: %c\n", runes[0])  // C
+    fmt.Printf("Fourth character: %c\n", runes[3]) // é (works correctly!)
+    fmt.Printf("Last character: %c\n", runes[5])   // 😀
+    
+    // Modify a character
+    runes[5] = '🎉'
+    fmt.Println(string(runes))  // Café 🎉
+}
+```
+
+## Decoding/Encoding runes from bytes
+
+The `unicode/utf8` package is useful when working directly with bytes:
+```go
+package main
+
+import (
+    "fmt"
+    "unicode/utf8"
+)
+
+func main() {
+    str := "😀"
+    
+    // Decode first rune from byte slice
+    r, size := utf8.DecodeRuneInString(str)
+    fmt.Printf("Rune: %c, Size: %d bytes\n", r, size)  // Rune: 😀, Size: 4 bytes
+    
+    // Check if a byte slice is valid UTF-8
+    bytes := []byte(str)
+    fmt.Println("Valid UTF-8:", utf8.Valid(bytes))  // true
+}
+```
+
+**Common use cases:**
+- Processing streaming data byte-by-byte
+- Validating UTF-8 encoding
+- Low-level text processing where you need to know byte sizes
