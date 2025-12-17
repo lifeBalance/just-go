@@ -1,0 +1,66 @@
+import Admonition from '@components/Admonition.astro'
+
+# Strings
+
+Working with text is ubiquitous in Go — parsing input, formatting messages, building URLs, handling JSON, and talking to APIs. This section focuses on practical string operations and patterns.
+
+For the fundamentals of the `string` type (bytes, immutability, and runes), see the Types chapter: [Strings](../types/strings).
+
+## Basic Operations
+
+Let's start with some basic operations you can perform on strings in Go.
+
+### Concatenation
+
+Use `+` for simple concatenation:
+
+```go
+s1 := "Hello, "
+s2 := "Gopher"
+s := s1 + s2 // "Hello, Gopher"
+```
+
+For building strings incrementally, prefer `strings.Builder` to avoid quadratic copies.
+
+```go
+import "strings"
+
+var b strings.Builder
+b.WriteString("Hello")
+b.WriteString(", ")
+b.WriteString("Gopher")
+final := b.String()
+```
+
+<Admonition type="tip" title="When to use Builder">
+Use `strings.Builder` (or `bytes.Buffer`) when concatenating in loops or building large strings incrementally.
+</Admonition>
+
+### Substrings and search
+
+```go
+import "strings"
+
+s := "Go gophers"
+strings.Contains(s, "go")           // false (case sensitive)
+strings.Contains(strings.ToLower(s), "go") // true
+strings.HasPrefix(s, "Go")          // true
+strings.HasSuffix(s, "phers")       // true
+strings.Index(s, "ph")              // 4
+```
+
+### Split and join
+
+```go
+parts := strings.Split("a,b,c", ",") // ["a","b","c"]
+joined := strings.Join(parts, ";")    // "a;b;c"
+```
+
+### Case and trim
+
+```go
+strings.ToUpper("go")    // "GO"
+strings.ToLower("Go")    // "go"
+strings.TrimSpace("  x ") // "x"
+strings.Trim("--x--", "-") // "x"
+```
