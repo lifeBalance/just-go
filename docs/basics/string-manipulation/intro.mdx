@@ -1,10 +1,19 @@
 import Admonition from '@components/Admonition.astro'
 
-# Strings
+# String Manipulation
 
-Working with text is ubiquitous in Go — parsing input, formatting messages, building URLs, handling JSON, and talking to APIs. This section focuses on practical string operations and patterns.
+String manipulation is ubiquitous in Go — parsing input, formatting messages, building URLs, handling JSON, and talking to APIs. This section focuses on practical string operations and patterns.
 
-For the fundamentals of the `string` type (bytes, immutability, and runes), see the Types chapter: [Strings](../types/strings).
+<Admonition  title="Rune Type">
+For the fundamentals of the `string` type see the Types chapter about [Strings](../types/strings), where we cover things like:
+
+    - String as byte sequences and intended use.
+    - String literals.
+    - Immutability.
+    - Accessing characters and length.
+    - UTF-8 encoding and escape sequences.
+
+</Admonition>
 
 ## Basic Operations
 
@@ -12,7 +21,9 @@ Let's start with some basic operations you can perform on strings in Go.
 
 ### Concatenation
 
-Use `+` for simple concatenation:
+There are multiple ways to concatenate strings in Go.
+
+1. Use `+` for **simple concatenation**:
 
 ```go
 s1 := "Hello, "
@@ -20,23 +31,75 @@ s2 := "Gopher"
 s := s1 + s2 // "Hello, Gopher"
 ```
 
-For building strings incrementally, prefer `strings.Builder` to avoid quadratic copies.
+2. Use `fmt.Sprintf` for formatted concatenation:
+
+```go
+import "fmt"
+
+s1 := "Hello, "
+s2 := "Gopher"
+s := fmt.Sprintf("%s%s", s1, s2) // "Hello, Gopher!"
+```
+
+3. Use `strings.Join` for joining multiple strings with a separator:
+
+```go
+import "strings"
+parts := []string{"Hello", "Gopher"}
+s := strings.Join(parts, ", ") // "Hello, Gopher"
+```
+
+If we use an **empty separator**, it simply concatenates the strings:
+
+```go
+s := strings.Join(parts, "") // "HelloGopher"
+```
+
+## Efficient String Concatenation
+
+In Go, strings are **immutable**. When you concatenate strings using the `+` operator, a new string is created, and the contents of both strings are copied into the new string.
+
+If you are building a string in a loop by concatenating, you are creating a new string in each iteration, and the entire string built so far is copied again and again. For example, suppose we have a loop that concatenates a small string in each iteration:
+
+```go
+s := ""
+for i := 0; i < 1000; i++ {
+    s += "x"
+}
+```
+
+Let's see what happens in each iteration:
+
+- Iteration 1: `s = "a"` (copied 1 character)
+- Iteration 2: `s = "aa"` (copied 2 characters)
+- Iteration 3: `s = "aaa"` (copied 3 characters)
+- ...
+- Iteration `n: s = "a...a"` (copied n characters)
+
+The total number of characters copied is `1 + 2 + 3+ ... + n = n(n + 1) / 2`, which is `O(n^2)` or quadratic.
+
+In contrast, `strings.Builder` uses a buffer (a slice of bytes) that grows in a way that minimizes copies. Typically, it grows by doubling the capacity when needed, which results in `O(n)` time for building the string.
 
 ```go
 import "strings"
 
-var b strings.Builder
-b.WriteString("Hello")
-b.WriteString(", ")
-b.WriteString("Gopher")
-final := b.String()
+var sb strings.Builder
+
+for i := 0; i < n; i++ {
+    sb.WriteString("a")
+}
+
+s := sb.String()
 ```
 
 <Admonition type="tip" title="When to use Builder">
-Use `strings.Builder` (or `bytes.Buffer`) when concatenating in loops or building large strings incrementally.
+  Use `strings.Builder` (or `bytes.Buffer`) when concatenating in loops or
+  building large strings incrementally.
 </Admonition>
 
-### Substrings and search
+### Substring Search and Casing
+
+The `strings` package provides many useful functions for substring operations:
 
 ```go
 import "strings"
@@ -48,6 +111,12 @@ strings.HasPrefix(s, "Go")          // true
 strings.HasSuffix(s, "phers")       // true
 strings.Index(s, "ph")              // 4
 ```
+
+- The strings.`Contains`, `HasPrefix`, and `HasSuffix` allow. us to search for substrings. These functions are **case-sensitive**.
+- To perform case-insensitive checks, convert the string to lower or upper case first using `strings.ToLower` or `strings.ToUpper`.
+- `strings.Index` returns the index of the first occurrence of a substring, or `-1` if not found.
+
+Check the [strings package documentation](https://pkg.go.dev/strings) for many more useful functions.
 
 ### Split and join
 

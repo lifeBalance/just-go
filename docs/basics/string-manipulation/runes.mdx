@@ -5,13 +5,22 @@ import runeMain from './code/runes/main.go?raw'
 
 # Runes
 
-We mentioned in the section about the [string type](../types/strings) that strings are intended to store text, and that text is usually UTF‑8 encoded.
+We mentioned in the section about the [string type](../types/strings) that even though strings are bytes sequences, they are intended to store text, and that text is usually UTF‑8 encoded.
 
 <Admonition  title="Rune Type">
 [rune](https://go.dev/ref/spec#Rune_literals) is an alias for `int32` and represents a single Unicode code point.
 </Admonition>
 
-Imagine we have to traverse a string containing non-ASCII characters, like `"Café 😀"`:
+If we use **byte indexing** to access characters in a string, we get the underlying byte values, not the actual characters (runes):
+
+```go
+str := "Hi"
+
+fmt.Println(str[0])  // 72 (byte value, not rune)
+fmt.Println(str[1])  // 105 (byte value, not rune)
+```
+
+In ASCII, `72` represents `H` and `105` represents `i`, so this works fine. But what happens when we have non-ASCII characters? Imagine we have to traverse a string containing non-ASCII characters, like `"Café 😀"`:
 
 <Code code={runeMain} lang="go" />
 
