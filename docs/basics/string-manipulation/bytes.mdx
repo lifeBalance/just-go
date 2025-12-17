@@ -2,20 +2,135 @@ import Admonition from '@components/Admonition.astro'
 
 # Bytes
 
-- `string` is immutable bytes, usually UTF‑8 encoded text
+In Go, handling text and binary data revolves around two core types: string and `[]byte`:
+
+- `string` is immutable bytes, usually used to store UTF‑8 encoded text.
 - `[]byte` is a mutable slice of bytes (binary data)
 
-## Conversions
+Understanding their relationship—and when to convert between them—is key to writing efficient, safe code, especially when dealing with I/O, networking, or any scenario where data crosses the boundary between your program's memory and the outside world. This section builds on the basics of strings and integer aliases, focusing on how bytes power everything under the hood.
+
+## The Relationship: Strings as Immutable Bytes
+
+At its core, a string in Go is nothing more than an immutable sequence of bytes, typically interpreted as UTF-8 encoded text. This means:
+
+- You can't change a string after creation (e.g., no `s[0] = 'x'`, it'll compile but panic at runtime).
+- Strings are efficient for text because UTF-8 allows variable-length characters (1-4 bytes per rune), but Go treats them as opaque byte arrays for storage.
+- Under the hood, `len("hello")` returns `5` (bytes), not 5 runes (use `utf8.RuneCountInString` for character count).
+
+In contrast, `[]byte` is a **mutable** slice of bytes, representing **raw binary data**. It's like a string's flexible sibling:
+
+- You can read, write, append, or resize it (e.g., `b[0] = 65` sets the first byte to `'A'`).
+- No built-in text interpretation—it's just numbers (0-255 per byte), perfect for non-text data like images, encrypted payloads, or protocol buffers.
+
+Why the distinction? Strings enforce immutability for safety (no accidental overwrites in concurrent code) and zero-copy sharing (strings can alias byte slices without duplication). But for performance-critical ops like buffering I/O or parsing binaries, mutability wins. Think of strings as "read-only text views" over bytes; converting between them is cheap (`O(1)` time, no allocation) but requires care with encoding.
+
+<Admonition type="info" title="Quick Analogy">
+  A string is like a printed book page (immutable, easy to read/share). A
+  `[]byte` is like a whiteboard (writable, erasable, but you might smudge the
+  text).
+</Admonition>
+
+## Conversions: From Text to Bytes and Back
+
+Conversions are straightforward and efficient—Go's compiler handles the byte-level reinterpretation without decoding/re-encoding. Use them sparingly: stay in one type as long as possible to avoid unnecessary copies.
+
+### Converting String to Raw Bytes
+
+When you need to treat text as raw data (e.g., for writing or hashing):
 
 ```go
-b := []byte("Go")          // decode UTF‑8 bytes
-t := string([]byte{71,111}) // "Go"
+s := "Go"  // UTF-8 string: bytes [71, 111] ('G' + 'o')
+b := []byte(s)  // Converts to mutable slice: [71, 111]
+b[0] = 72  // Now b is [72, 111] ("Ho"), but s unchanged!
+fmt.Println(string(b))  // "Ho" (back to string for printing)
 ```
 
-## I/O boundaries
+This is usefule when preparing a message to send over a socket (`net.Conn.Write(b)`) or hashing a password (`sha256.Sum256(b)`). Strings are immutable, so convert early if you'll modify the data.
 
-Many I/O APIs work with `[]byte`. Convert to/from `string` at the boundary where you know the encoding.
+### Converting Raw Bytes to Strings
 
-<Admonition type="warning" title="Encoding matters">
-`string` assumes bytes are meaningful text. If you don’t control the source, validate or sanitize before display.
+When you have raw bytes and want text operations (e.g., searching or displaying):
+
+```go
+raw := []byte{71, 111}  // ASCII bytes for "Go"
+t := string(raw)  // Immutable string: "Go"
+fmt.Println(t[1])  // 111 (byte value, not rune)
+if strings.Contains(t, "G") { /* ... */ }  // Text search
+```
+
+After reading a file (`os.ReadFile` returns `[]byte`), convert to string for strings.Split or template rendering. But validate UTF-8 first if the source is untrusted (more below).
+
+<Admonition type="tip" title="Conversions and UTF-8 Validity">
+  Conversions are symmetric and free, i.e. `string([]byte(s)) == s` always holds
+  for **valid UTF-8**. For non-UTF-8 (e.g., legacy encodings), use
+  `golang.org/x/text/encoding` packages.
 </Admonition>
+
+## Crossing I/O Boundaries: When Bytes Rule
+
+Go's standard library favors `[]byte` for I/O because it's versatile: handles text and binary without assumptions about encoding. This keeps your code fast and flexible—decode to strings only when you need human-readable ops.
+
+### Common Scenarios for []byte
+
+Keep data as `[]byte` during transit or processing to avoid encoding mismatches:
+
+- **File I/O** and **Streaming** (os, io, bufio): `ioutil.ReadFile` or `bufio.Reader.Read` return `[]byte`. Append to buffers (`b = append(b, data...)`) without string overhead.
+  Example: Reading a config file as bytes, then `json.Unmarshal` to a struct.
+
+- **Networking** and **Web Servers** (net/http, WebSockets): HTTP bodies are `[]byte` (`r.Body.Read`). Modify in-place for proxies or compression.
+  Example: Streaming a large response: `w.Write([]byte("chunk"))` in a loop.
+
+- **Encoding/Decoding** (encoding/json, encoding/csv, protobuf): Parsers take `[]byte` input, output structs or strings.
+  Example: `json.NewDecoder(bytes.NewReader(b)).Decode(&obj)`—no string needed.
+
+- **Cryptography** and **Hashing** (crypto/\*): Functions like `aes.NewCipher` or `h.Write` expect `[]byte`.
+  Example: Encrypt a message: `cipher.Encrypt(dst, src)` operates on byte slices.
+
+- **Compression** and **Archives** (compress/_, archive/_): `gzip.NewWriter` processes `[]byte` streams.
+  Example: Zipping files: Read as bytes, compress, write.
+
+- **Binary Protocols**, **Media** (e.g., images via image.Decode, audio): Data is inherently bytes—no text assumption.
+  Example: Parsing a PNG header: Inspect first few bytes of `[]image` data.
+
+### Guidance for Conversions
+
+- Default to `[]byte` at Boundaries: Read/write with bytes to handle any data type. Convert to string inside your logic, where you control encoding (e.g., after `http.Request.FormValue`).
+- When to Convert to String:
+  - Text manipulation: strings.Replace, regexp.FindAllString—faster on strings.
+  - Logging/UI: `fmt.Println(string(b))` for readability.
+  - Validation: After conversion, check `utf8.ValidString(t)` to catch garbled text.
+
+- When to Convert to `[]byte`:
+  - Output ops: Writing to disk/network, where APIs expect buffers.
+  - Binary-safe transforms: Sorting bytes, zeroing sensitive data (`for i := range b { b[i] = 0 }`).
+
+- Avoid Ping-Pong Conversions: If you're hashing then printing, hash bytes, convert once at the end.
+
+<Admonition type="warning" title="Encoding Pitfalls">
+Strings assume UTF-8: `string([]byte{0xFF, 0xFE})` might render as garbage (not valid UTF-8). For untrusted sources (e.g., user uploads), use `unicode/utf8.Valid(b)` before `string(b)`, or sanitize with `html.EscapeString`. Invalid bytes can lead to security issues like XSS if displayed raw.
+</Admonition>
+
+<Admonition type="tip" title="Performance Note">
+Conversions are O(1), but repeated ones add up. Profile with `go test -bench` if I/O-heavy—tools like `pprof` show allocation spikes from unnecessary strings.
+</Admonition>
+
+
+## Hands-On: A Quick Example
+
+Put it together: Read a text file as bytes, search for a word (as string), then write modified bytes back.
+
+```go
+data, err := os.ReadFile("input.txt")  // []byte from file
+if err != nil { /* handle */ }
+text := string(data)  // To string for search
+if strings.Contains(text, "Go") {
+    modified := []byte(strings.ReplaceAll(text, "Go", "Rust"))  // Back to bytes
+    os.WriteFile("output.txt", modified, 0644)
+}
+```
+
+This minimizes conversions: bytes in/out, string only for the text op.
+
+```
+TODO: Try invalid bytes (`[]byte{200}`) and see string() output � (replacement char).
+```
