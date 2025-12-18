@@ -17,7 +17,7 @@ For the fundamentals of the `string` type see the Types chapter about [Strings](
 
 ## Basic Operations
 
-Let's start with some basic operations you can perform on strings in Go.
+Let's start with some basic operations you can perform on strings in Go. Check the [strings package documentation](https://pkg.go.dev/strings) for many more useful functions.
 
 ### Concatenation
 
@@ -39,20 +39,6 @@ import "fmt"
 s1 := "Hello, "
 s2 := "Gopher"
 s := fmt.Sprintf("%s%s", s1, s2) // "Hello, Gopher!"
-```
-
-3. Use `strings.Join` for joining multiple strings with a separator:
-
-```go
-import "strings"
-parts := []string{"Hello", "Gopher"}
-s := strings.Join(parts, ", ") // "Hello, Gopher"
-```
-
-If we use an **empty separator**, it simply concatenates the strings:
-
-```go
-s := strings.Join(parts, "") // "HelloGopher"
 ```
 
 ## Efficient String Concatenation
@@ -97,9 +83,41 @@ s := sb.String()
   building large strings incrementally.
 </Admonition>
 
-### Substring Search and Casing
+### Changing the Case
 
-The `strings` package provides many useful functions for substring operations:
+Changing the case of a string is quite common, [ToUpper](https://pkg.go.dev/strings#ToUpper) and [ToLower](https://pkg.go.dev/strings#ToLower) get the job done:
+
+```go
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+func main() {
+	fmt.Println(strings.ToUpper("Gopher")) // GOPHER
+	fmt.Println(strings.ToLower("Gopher")) // gopher
+}
+```
+
+### Trimmming Strings
+
+Trimmming strings is quite useful in several scenarios, such as getting rid of whitespace before doing a search:
+
+```go
+strings.TrimSpace("  x ") // "x"
+strings.Trim("--x--", "-") // "x"
+```
+
+### Substring Search
+
+To search for substrings, the [strings](https://pkg.go.dev/stringshttps://pkg.go.dev/strings#pkg-functions) package offers several functions:
+
+- [Contains](https://pkg.go.dev/strings#Contains) will check for the substring anywhere in the string.
+- [HasPrefix](https://pkg.go.dev/strings#HasPrefix) will check for the substring at the **beginning** of the string.
+- [HasSuffix](https://pkg.go.dev/strings#HasSuffix) will check for the substring at the **end** of the string.
+- [Index](https://pkg.go.dev/strings#Index) returns the index of the first occurrence of a substring, or `-1` if not found.
 
 ```go
 import "strings"
@@ -112,24 +130,94 @@ strings.HasSuffix(s, "phers")       // true
 strings.Index(s, "ph")              // 4
 ```
 
-- The strings.`Contains`, `HasPrefix`, and `HasSuffix` allow. us to search for substrings. These functions are **case-sensitive**.
-- To perform case-insensitive checks, convert the string to lower or upper case first using `strings.ToLower` or `strings.ToUpper`.
-- `strings.Index` returns the index of the first occurrence of a substring, or `-1` if not found.
+The functions above are **case-sensitive**, so it's common to combine them with some casing function, such as `strings.ToLower` or `strings.ToUpper`.
 
-Check the [strings package documentation](https://pkg.go.dev/strings) for many more useful functions.
+#### Removing a Substring at a Particular Location
+
+We can combine the `Index` function with a **slicing expression** to remove a substring at a particular location:
+
+```go
+import "strings"
+
+// Remove by index (one occurrence)
+text := "alpha beta gamma"
+needle := "beta "
+
+if i := strings.Index(text, needle); i >= 0 {
+    text = text[:i] + text[i+len(needle):] // "alpha gamma"
+}
+```
+
+Since strings are **inmutable**, `text` ends up pointing to a **new strings**.
 
 ### Split and join
 
+Splitting strings is a workhorse when dealing with CSV data:
+
 ```go
 parts := strings.Split("a,b,c", ",") // ["a","b","c"]
+
+// Do some operations, then join back
+
 joined := strings.Join(parts, ";")    // "a;b;c"
 ```
 
-### Case and trim
+The result of [Split](https://pkg.go.dev/strings#Split) is an array of strings, which can be then joined back with the [Join](https://pkg.go.dev/strings#Join) function. This last function simply concatenates the strings if we use an **empty separator**:
 
 ```go
-strings.ToUpper("go")    // "GO"
-strings.ToLower("Go")    // "go"
-strings.TrimSpace("  x ") // "x"
-strings.Trim("--x--", "-") // "x"
+import "strings"
+
+parts := []string{"Hello", "Gopher"}
+
+s := strings.Join(parts, "") // "HelloGopher"
 ```
+
+Use `strings.Join` for joining the items in strings array with a separator:
+
+```go
+import "strings"
+parts := []string{"Hello", "Gopher"}
+s := strings.Join(parts, ", ") // "Hello, Gopher"
+```
+
+If we use an **empty separator**, it simply concatenates the strings:
+
+```go
+s := strings.Join(parts, "") // "HelloGopher"
+```
+
+We could use these two functions in tandem to **remove all occurrences** of a substring:
+
+```go
+import "strings"
+
+parts := strings.Split("foo-bar-baz-bar", "-bar")
+
+result := strings.Join(parts, "") // "foobaz"
+```
+
+In the next section we'll see an easier way.
+
+### Replacing Strings
+
+To [Replace]() the **first occurrence** of a substring:
+
+```go
+import "strings"
+
+s := "hello, gopher! hello again"
+
+first := strings.Replace(s, "hello", "see you", 1)   // "see you, gopher! hello again"
+```
+
+And if we want to replace all occurrences:
+
+```go
+import "strings"
+
+s := "hello, gopher! hello again"
+
+all := strings.ReplaceAll(s, "hello", "hi")     // "hi, gopher! hi again"
+```
+
+We could use these two functions to **remove** substrings by passing an **empty string** as a second argument.
