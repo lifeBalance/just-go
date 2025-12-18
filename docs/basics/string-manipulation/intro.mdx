@@ -1,4 +1,9 @@
 import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import concatNaive from './code/concat-naive/main.go?raw'
+import concatBuilder from './code/concat-builder/main.go?raw'
+import removeNth from './code/removeNth/main.go?raw'
 
 # String Manipulation
 
@@ -47,11 +52,12 @@ In Go, strings are **immutable**. When you concatenate strings using the `+` ope
 
 If you are building a string in a loop by concatenating, you are creating a new string in each iteration, and the entire string built so far is copied again and again. For example, suppose we have a loop that concatenates a small string in each iteration:
 
-```go
-s := ""
-for i := 0; i < 1000; i++ {
-    s += "x"
-}
+<Code code={concatNaive} lang='go' />
+
+This code outputs:
+
+```
+naive: len=100000 time=298.739583ms 🐌 Slow (milliseconds)
 ```
 
 Let's see what happens in each iteration:
@@ -66,16 +72,12 @@ The total number of characters copied is `1 + 2 + 3+ ... + n = n(n + 1) / 2`, wh
 
 In contrast, `strings.Builder` uses a buffer (a slice of bytes) that grows in a way that minimizes copies. Typically, it grows by doubling the capacity when needed, which results in `O(n)` time for building the string.
 
-```go
-import "strings"
+<Code code={concatBuilder} lang='go' />
 
-var sb strings.Builder
+The output of this one:
 
-for i := 0; i < n; i++ {
-    sb.WriteString("a")
-}
-
-s := sb.String()
+```
+builder: len=100000 time=500.125µs 🚀 Fast! (microseconds)
 ```
 
 <Admonition type="tip" title="When to use Builder">
@@ -123,11 +125,11 @@ To search for substrings, the [strings](https://pkg.go.dev/stringshttps://pkg.go
 import "strings"
 
 s := "Go gophers"
-strings.Contains(s, "go")           // false (case sensitive)
-strings.Contains(strings.ToLower(s), "go") // true
-strings.HasPrefix(s, "Go")          // true
-strings.HasSuffix(s, "phers")       // true
-strings.Index(s, "ph")              // 4
+strings.Contains(s, "go")                   // false (case sensitive)
+strings.Contains(strings.ToLower(s), "go")  // true
+strings.HasPrefix(s, "Go")                  // true
+strings.HasSuffix(s, "phers")               // true
+strings.Index(s, "ph")                      // 4
 ```
 
 The functions above are **case-sensitive**, so it's common to combine them with some casing function, such as `strings.ToLower` or `strings.ToUpper`.
@@ -221,3 +223,91 @@ all := strings.ReplaceAll(s, "hello", "hi")     // "hi, gopher! hi again"
 ```
 
 We could use these two functions to **remove** substrings by passing an **empty string** as a second argument.
+
+## Example: Remove the Nth Occurrence of a Substring
+
+Let's write a function to remove only the nth occurrence of a substring.
+
+<Code code={removeNth} lang='go' />
+
+## Comparing and Sorting Strings
+
+Comparing and ordering strings comes up often in programming contexts like filters, sorted lists, and UI rendering. In Go, strings are compared [lexicographically](https://en.wikipedia.org/wiki/Lexicography) by their byte values in UTF-8 encoding, which has important implications for correctness and performance.
+
+<Admonition title='Lexicographically'>
+Lexicographically simply means by comparing the position of the letters in the alphabet.
+</Admonition>
+
+### Basic Comparison
+
+Go's comparison operators (`==`, `!=`, `<`, `>`, `<=`, `>=`) perform byte-by-byte comparisons:
+
+```go
+fmt.Println("absence" < "axe")  // true
+fmt.Println('b')                // 98
+fmt.Println('x')                // 120
+```
+
+The first letters of both words are the same, then the comparison moves to the next byte, and since the byte value of `b` (`98`) is less than the value of `x` (`120`), the first word is lexicographically smaller than the second one.
+
+### Dedicated Function
+
+Go provides a dedicated comparison function in the [strings](https://pkg.go.dev/strings) package:
+
+```go
+result := strings.Compare("apple", "banana")
+
+switch result {
+case -1:
+    fmt.Println("apple comes before banana")
+case 0:
+    fmt.Println("strings are equal")
+case 1:
+    fmt.Println("apple comes after banana")
+}
+```
+
+[Compare](https://pkg.go.dev/strings#example-Compare) returns an integer comparing two strings lexicographically. The result will be:
+
+- `0` if `a == b`
+- `-1` if `a < b`
+- And `+1` if `a > b`.
+
+The [EqualFold]() function tells us if two strings are equal (case insensitive)
+
+```go
+import (
+  "sort"
+  "strings"
+)
+
+_ = ("Go" == "go")                 // false (case-sensitive)
+_ = strings.EqualFold("Go", "go")   // true (case-insensitive)
+```
+
+## Sorting
+
+For sorting strings the [sort](https://pkg.go.dev/sort) package comes in handy. The [Sort](https://pkg.go.dev/sort#Sort) function sorts data in **ascending order**:
+
+```go
+// In English, we expect: apple, café, zebra
+// But byte-wise: apple, zebra, café (café comes last)
+words := []string{"café", "zebra", "apple"}
+
+sort.Strings(words)  // ["apple", "zebra", "café"] - incorrect for French!
+```
+
+This method uses byte-wise comparison, which doesn't respect locale-specific rules.
+
+### Locale-Aware Sorting
+
+For locale-aware sorting, use [golang.org/x/text](https://pkg.go.dev/golang.org/x/text):
+
+```go
+import "golang.org/x/text/collate"
+import "golang.org/x/text/language"
+
+// French-aware sorting
+cl := collate.New(language.French)
+cl.SortStrings(words)  // ["apple", "café", "zebra"]
+```
