@@ -130,11 +130,37 @@ Both of our handlers have the same signature of the `ServeHTTP` method, but they
 
 ### The Verbose Way
 
-We could define our own type, that implements the `Handler` interface, and attach our handlers to it:
+We could define our own types that implement `http.Handler` and rewrite each function as a method. It works — but it’s boilerplate.
 
 ```go
+package main
 
+import (
+    "fmt"
+    "net/http"
+    "mywebapp/handlers"
+)
+
+// One type per handler, each with ServeHTTP
+type HomeHandler struct{}
+func (HomeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    handlers.Home(w, r)
+}
+
+type ContactHandler struct{}
+func (ContactHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    handlers.Contact(w, r)
+}
+
+func main() {
+    fmt.Println("Server starting on :3000")
+    http.Handle("/", HomeHandler{})
+    http.Handle("/contact", ContactHandler{})
+    http.ListenAndServe(":3000", nil)
+}
 ```
+
+This is “verbose” because you create a named struct only to attach a single method that forwards to an existing function. The adapter avoids this.
 
 ### Using HandleFunc
 
@@ -161,7 +187,16 @@ func main() {
 Without the **adapter**, you'd need to create a struct for each handler:
 
 ```go
+// Verbose: a wrapper type per function
 
+type H1 struct{}
+func (H1) ServeHTTP(w http.ResponseWriter, r *http.Request) { handlers.Home(w, r) }
+
+type H2 struct{}
+func (H2) ServeHTTP(w http.ResponseWriter, r *http.Request) { handlers.Contact(w, r) }
+
+http.Handle("/", H1{})
+http.Handle("/contact", H2{})
 ```
 
 The adapter pattern saves you from this boilerplate.
