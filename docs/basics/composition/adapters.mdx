@@ -162,9 +162,9 @@ func main() {
 
 This is “verbose” because you create a named struct only to attach a single method that forwards to an existing function. The adapter avoids this.
 
-### Using HandleFunc
+### Using `http.HandleFunc`
 
-[HandleFunc](https://pkg.go.dev/net/http#example-HandleFunc) is a helper function that takes your plain function and **internally** wraps it with `http.HandlerFunc` **adapter** before registering it. It's applying the adapter pattern for you behind the scenes.
+[http.HandleFunc](https://pkg.go.dev/net/http#example-HandleFunc) is a helper function that takes your plain function and **internally** wraps it with `http.HandlerFunc` **adapter** before registering it. It's applying the adapter pattern for you behind the scenes.
 
 ```go
 package main
@@ -172,7 +172,7 @@ package main
 import (
     "fmt"
     "net/http"
-    "yourproject/handlers"
+    "mywebapp/handlers"
 )
 
 func main() {
@@ -184,24 +184,7 @@ func main() {
 }
 ```
 
-Without the **adapter**, you'd need to create a struct for each handler:
-
-```go
-// Verbose: a wrapper type per function
-
-type H1 struct{}
-func (H1) ServeHTTP(w http.ResponseWriter, r *http.Request) { handlers.Home(w, r) }
-
-type H2 struct{}
-func (H2) ServeHTTP(w http.ResponseWriter, r *http.Request) { handlers.Contact(w, r) }
-
-http.Handle("/", H1{})
-http.Handle("/contact", H2{})
-```
-
-The adapter pattern saves you from this boilerplate.
-
-## Using http.Handle (adapter)
+## Using `http.Handle`
 
 [http.Handle](https://pkg.go.dev/net/http#Handle) expects something that satisfies the `http.Handler` interface (has a `ServeHTTP` method). Our functions don't have that method, so we use `http.HandlerFunc` to adapt them.
 
@@ -211,7 +194,7 @@ package main
 import (
     "fmt"
     "net/http"
-    "yourproject/handlers"
+    "mywebapp/handlers"
 )
 
 func main() {
