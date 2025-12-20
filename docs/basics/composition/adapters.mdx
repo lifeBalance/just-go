@@ -160,11 +160,15 @@ func main() {
 }
 ```
 
-This is “verbose” because you create a named struct only to attach a single method that forwards to an existing function. The adapter avoids this.
+This is “verbose” because you create a named struct only to attach a single method that forwards to an existing function.
 
-### Using `http.HandleFunc`
+<Admonition>
+[http.Handle](https://pkg.go.dev/net/http#Handle) expects something that satisfies the `http.Handler` interface (has a `ServeHTTP` method). 
+</Admonition>
 
-[http.HandleFunc](https://pkg.go.dev/net/http#example-HandleFunc) is a helper function that takes your plain function and **internally** wraps it with `http.HandlerFunc` **adapter** before registering it. It's applying the adapter pattern for you behind the scenes.
+### Less Verbose: Roll Your Own Handler Adapter
+
+We can implement the adapter pattern ourselves to keep plain functions and avoid wrapper structs.
 
 ```go
 package main
@@ -175,18 +179,23 @@ import (
     "mywebapp/handlers"
 )
 
-func main() {
-    http.HandleFunc("/", handlers.Home)
-    http.HandleFunc("/contact", handlers.Contact)
+type OurHandlerFunc func(http.ResponseWriter, *http.Request)
+func (f OurHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    f(w, r) // Just call the underlying function
+}
 
-    fmt.Println("Server starting on :3000")
+func main() {
+    http.Handle("/",        OurHandlerFunc(handlers.Home))
+    http.Handle("/contact", OurHandlerFunc(handlers.Contact))
+
+    fmt.Println("Server on :3000")
     http.ListenAndServe(":3000", nil)
 }
 ```
 
-## Using `http.Handle`
+## Using `http.HandlerFunc`
 
-[http.Handle](https://pkg.go.dev/net/http#Handle) expects something that satisfies the `http.Handler` interface (has a `ServeHTTP` method). Our functions don't have that method, so we use `http.HandlerFunc` to adapt them.
+Fortunately, the `http` package already includes [http.HandlerFunc](https://pkg.go.dev/net/http#HandlerFunc), with does the same for us:
 
 ```go
 package main
@@ -206,12 +215,36 @@ func main() {
 }
 ```
 
+### Using `http.HandleFunc`
+
+Another option is to use the [http.HandleFunc](https://pkg.go.dev/net/http#example-HandleFunc) helper function, which takes your **plain function** and **internally** wraps it with the `http.HandlerFunc` **adapter** before registering it. 
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "mywebapp/handlers"
+)
+
+func main() {
+    http.HandleFunc("/", handlers.Home)
+    http.HandleFunc("/contact", handlers.Contact)
+
+    fmt.Println("Server starting on :3000")
+    http.ListenAndServe(":3000", nil)
+}
+```
+
+In other words, `http.HandleFunc` it's applying the **adapter pattern** for you behind the scenes.
+
 ## Custom Router Example
 
 In the examples above, we've used:
 
-- `http.HandleFunc` - convenience function, takes plain functions directly
-- `http.Handle` - takes `http.Handler` interface, requires adapter for plain functions
+- `http.HandlerFunc` which adapts our plain functions to the `http.Handler` interface expected
+- `http.HandleFunc` convenience function, which takes plain functions directly, and applies `http.HandlerFunc` behind the scenes.
 
 We could create our own `Router` type, and attach a `ServeHTTP` method to it
 
