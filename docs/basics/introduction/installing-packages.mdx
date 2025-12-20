@@ -39,6 +39,10 @@ go get github.com/Code-Hex/Neo-cowsay/v2
   get the package **repository name** 👍
 </Admonition>
 
+<Admonition type="warning" title="Use Package Version">
+  Whenever we `go get` a package, we should indicate the **version** (`go get github.com/bob/somepkg/v4`), otherwise we wouldn't be getting the most **recent version**. Usually repos has the version information available, so make sure you install the version you're interested in!
+</Admonition>
+
 If you open your `go.mod` file, you'll see how the new dependency has been added:
 
 ```go

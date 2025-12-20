@@ -1,0 +1,318 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import handlersGo from './code/adapters1/handlers/handlers.go?raw'
+
+# Adapters
+
+An **adapter** is a pattern that lets you use existing code (functions or types) to satisfy an interface, without rewriting or wrapping it in a custom struct.
+
+## The Problem: Functions Don't Satisfy Interfaces
+
+Let's say you have an interface that requires a method:
+
+```go
+package main
+
+import "fmt"
+
+// Interface that requires a Greet method
+type Greeter interface {
+    Greet(name string)
+}
+
+func useGreeter(g Greeter, name string) {
+    g.Greet(name)
+}
+```
+
+We want to use `useGreeter`, passing a function with the same signature as `Greet`:
+```go
+func sayHello(name string) {
+    fmt.Println("Hello,", name)
+}
+
+useGreeter(sayHello, "Alice") // ❌ compile error
+```
+
+The problem: `sayHello` is just a standalone function. It's not attached to any type as a method, so even though its signature matches what `Greet` does, it can't satisfy the `Greeter` interface.
+
+<Admonition type='warning'>
+Go interfaces are satisfied by **types** with **methods**, not standalone functions.
+</Admonition>
+
+We need a way to **adapt** a plain function into something that looks like a type implementing the interface. Without adapters, you'd rewrite `sayHello` as a method on a dummy struct (wasteful) or ignore it entirely (silly).
+
+```go
+type DummyWastefulType struct {}
+
+func (dummy DummyWastefulType) Greet(name string) {
+    fmt.Println("Hello,", name)
+}
+```
+
+Let's take a look at a better way.
+
+## Solution: Function Adapter
+
+Create a **function type** and give it the method:
+
+```go
+package main
+
+import "fmt"
+
+type Greeter interface {
+    Greet(name string)
+}
+
+type GreeterFunc func(string)
+
+func (f GreeterFunc) Greet(name string) {
+    f(name) // Just call the underlying function
+}
+
+func sayHello(name string) {
+    fmt.Println("Hello,", name)
+}
+
+func sayHi(name string) {
+    fmt.Println("Hi there,", name)
+}
+
+func useGreeter(g Greeter, name string) {
+    g.Greet(name)
+}
+
+func main() {
+    // Wrap functions with the adapter to satisfy the interface
+    useGreeter(GreeterFunc(sayHello), "Alice") // Hello, Alice
+    useGreeter(GreeterFunc(sayHi), "Bob")      // Hi there, Bob
+
+    // Also works with anonymous functions
+    useGreeter(GreeterFunc(func(name string) {
+        fmt.Println("Hey,", name)
+    }), "Charlie") // Hey, Charlie
+}
+```
+
+**What happened:**
+
+1. `GreeterFunc` is a type (not a function, a **type** that happens to be a function signature)
+2. We gave `GreeterFunc` a `Greet` method that just calls the function
+3. Now `GreeterFunc(anyFunction)` satisfies the `Greeter` interface
+
+<Admonition variant="tip" title="Why This Works">
+  When you write `GreeterFunc(sayHello)`, you're **converting** the function
+  `sayHello` to the type `GreeterFunc`. Since `GreeterFunc` has a `Greet`
+  method, it now satisfies the `Greeter` interface.
+</Admonition>
+
+## Real Example: http.HandlerFunc
+
+Let's see the **adapter pattern** in action with Go's [net/http](https://pkg.go.dev/net/http) package. Imagine we're writing a web app, and we have a `handlers` package, with a couple of functions:
+
+<Code code={handlersGo} lang="go" />
+
+The `http` package has:
+
+```go
+type Handler interface {
+    ServeHTTP(ResponseWriter, *Request)
+}
+
+func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
+    f(w, r)
+}
+```
+
+Both of our handlers have the same signature of the `ServeHTTP` method, but they're mere standalone functions! Let's see a couple of ways of solving this.
+
+### The Verbose Way
+
+We could define our own type, that implements the `Handler` interface, and attach our handlers to it:
+
+```go
+
+```
+
+### Using HandleFunc
+
+[HandleFunc](https://pkg.go.dev/net/http#example-HandleFunc) is a helper function that takes your plain function and **internally** wraps it with `http.HandlerFunc` **adapter** before registering it. It's applying the adapter pattern for you behind the scenes.
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "yourproject/handlers"
+)
+
+func main() {
+    http.HandleFunc("/", handlers.Home)
+    http.HandleFunc("/contact", handlers.Contact)
+
+    fmt.Println("Server starting on :3000")
+    http.ListenAndServe(":3000", nil)
+}
+```
+
+Without the **adapter**, you'd need to create a struct for each handler:
+
+```go
+
+```
+
+The adapter pattern saves you from this boilerplate.
+
+## Using http.Handle (adapter)
+
+[http.Handle](https://pkg.go.dev/net/http#Handle) expects something that satisfies the `http.Handler` interface (has a `ServeHTTP` method). Our functions don't have that method, so we use `http.HandlerFunc` to adapt them.
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "yourproject/handlers"
+)
+
+func main() {
+    http.Handle("/", http.HandlerFunc(handlers.Home))
+    http.Handle("/contact", http.HandlerFunc(handlers.Contact))
+
+    fmt.Println("Server starting on :3000")
+    http.ListenAndServe(":3000", nil)
+}
+```
+
+## Custom Router Example
+
+In the examples above, we've used:
+
+- `http.HandleFunc` - convenience function, takes plain functions directly
+- `http.Handle` - takes `http.Handler` interface, requires adapter for plain functions
+
+We could create our own `Router` type, and attach a `ServeHTTP` method to it
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "mywebapp/handlers"
+)
+
+type Router struct {}
+
+func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    switch r.URL.Path {
+    case "/":
+        homeHandler(w, r)
+    case "/contact":
+        contactHandler(w, r)
+    default:
+        http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+    }
+}
+
+func main() {
+    const Router router
+    http.ListenAndServe(":3000", router)
+}
+```
+
+Or we could use the **adapter pattern**, and pass a plain `router` function to `http.ListenAndServe`:
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "mywebapp/handlers"
+)
+
+func router(w http.ResponseWriter, r *http.Request) {
+    switch r.URL.Path {
+    case "/":
+        handlers.Home(w, r)
+    case "/contact":
+        handlers.Contact(w, r)
+    default:
+        http.Error(w, "404 page not found", http.StatusNotFound)
+    }
+}
+
+func main() {
+    http.ListenAndServe(":3000", http.HandlerFunc(router))
+}
+```
+
+## Struct Adapters
+
+Sometimes you need to adapt a type you don't control. Use a thin wrapper:
+
+```go
+package main
+
+import "fmt"
+
+// Your interface
+type Storage interface {
+    Get(key string) (string, error)
+}
+
+// Third-party library you can't modify
+type ExternalCache struct{}
+
+func (c *ExternalCache) Retrieve(k string) (string, error) {
+    // Different method name!
+    return "cached:" + k, nil
+}
+
+// Adapter wraps the external type
+type CacheAdapter struct {
+    cache *ExternalCache
+}
+
+func (a *CacheAdapter) Get(key string) (string, error) {
+    // Forwards to the external type's method
+    return a.cache.Retrieve(key)
+}
+
+func useStorage(s Storage, key string) {
+    value, _ := s.Get(key)
+    fmt.Println("Got:", value)
+}
+
+func main() {
+    external := &ExternalCache{}
+    adapter := &CacheAdapter{cache: external}
+
+    useStorage(adapter, "mykey") // Got: cached:mykey
+}
+```
+
+## When to Use Adapters
+
+✅ **Use function adapters when:**
+
+- You have plain functions but need to satisfy an interface
+- You want to avoid creating wrapper structs for simple callbacks
+- You're working with `http.Handler`, middleware, or similar patterns
+
+✅ **Use struct adapters when:**
+
+- Integrating third-party libraries with incompatible interfaces
+- The external type's method names don't match yours
+- You need to add behavior during the adaptation
+
+<Admonition variant="note">
+  The key insight: adapters let you satisfy interfaces **without modifying
+  existing code**. The adapter acts as a translator between what you have and
+  what an interface expects.
+</Admonition>
