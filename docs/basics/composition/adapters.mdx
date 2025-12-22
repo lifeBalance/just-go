@@ -108,7 +108,7 @@ func main() {
   method, it now satisfies the `Greeter` interface.
 </Admonition>
 
-## Real Example: http.HandlerFunc
+## Real Example: The `net/http` package
 
 Let's see the **adapter pattern** in action with Go's [net/http](https://pkg.go.dev/net/http) package. Imagine we're writing a web app, and we have a `handlers` package, with a couple of functions:
 
@@ -217,7 +217,7 @@ func main() {
 
 ### Using `http.HandleFunc`
 
-Another option is to use the [http.HandleFunc](https://pkg.go.dev/net/http#example-HandleFunc) helper function, which takes your **plain function** and **internally** wraps it with the `http.HandlerFunc` **adapter** before registering it. 
+Another option is to use the [http.HandleFunc](https://pkg.go.dev/net/http#example-HandleFunc) helper function, which takes your **plain function** and **internally** wraps it with the `http.HandlerFunc` **adapter** before calling `http.Handle` with it. 
 
 ```go
 package main

@@ -1,0 +1,79 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import errorsGo from './code/errors1/main.go?raw'
+import errorsGo2 from './code/errors2/main.go?raw'
+
+# Adding Context to Errors
+
+As we mentioned at the beginning, in Go errors are treated as values we return from functions or methods. Whenever we have functions calling functions, it's a good idea to wrap errors with some messages, to add some context to the error. For example:
+
+<Code code={errorsGo} lang="go" />
+
+If we run this code:
+
+```
+create org: create user: connection failed
+```
+
+The error message contains useful information wo we can track down the error, following the breadcrumb. The [fmt.Errorf](https://pkg.go.dev/fmt#Errorf) and `%w` comes in handy.
+
+## Unwrapping Errors
+
+The [errors.Unwrap](https://pkg.go.dev/errors#Unwrap) function walks one step down the chain created with `fmt.Errorf("…: %w", err)`. You can iterate to inspect all layers or get the root cause.
+
+<Code code={errorsGo2} lang="go" />
+
+If we run the code above:
+
+```
+-> create org: create user: connection failed
+-> create user: connection failed
+-> connection failed
+root: connection failed
+```
+
+Notes:
+
+- Use `errors.Is(err, target)` to check for a specific **sentinel error** anywhere in the chain.
+- Use `errors.As(err, &typed)` to extract a typed error.
+- `Unwrap` is handy for logging/inspection; prefer `Is`/`As` for programmatic checks.
+
+## Sentinel Errors
+
+A **sentinel error** is a pre-defined, well-known error value that you create once and reuse throughout your code to signal a specific condition. Think of it as a "flag" that says "this particular thing went wrong."
+
+<Code code={errorsGo3} lang="go" />
+
+In the code above, our sentinel error is created with:
+
+```go
+var ErrNotFound = errors.New("not found")
+```
+
+Then, whenever we want to check for that error, we'd do:
+
+```go
+if errors.Is(err, ErrNotFound) {  // ✅ Checks the actual error
+    // handle not found
+}
+```
+
+Without a **sentinel error**, we'd have to compare error messages (fragile and error-prone):
+
+```go
+if err != nil && err.Error() == "not found" {  // ❌ Bad - string comparison
+    // handle not found
+}
+```
+
+If we run this code, we'd get:
+
+```
+user missing → show 404 or similar
+```
+
+<Admonition type="tip" title="Sentinel Errors at Package Level">
+  Define **sentinel errors** as exported **package-level** variables (e.g., `var
+  ErrX = errors.New("x")`) so consumers can compare reliably.
+</Admonition>
