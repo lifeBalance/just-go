@@ -1,0 +1,128 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+
+# Introduction
+
+In the previous section, we've seen how we use `errors` to manage **expected failures** that our programs may experience. They're just like any other values that we check explicitly (`if err != nil {}`) to decide the next steps to **recover** for them.
+
+<Admonition title="Errors: recoverable and expected">
+Errors are for recoverable, expected failures (e.g., network timeouts, invalid input).
+</Admonition>
+
+## Implicit Panics
+
+There are certain situations when a runtime error can cause our program to crash:
+
+- Slice index out of bounds
+- Dereferencing a nil pointer
+- Sending on a closed channel
+- Type assertion failures (if not using the comma-ok idiom)
+- Etc.
+
+Such execution errors are known as [run-time panics](https://go.dev/ref/spec#Run_time_panics). We usually know about these errors after our program crashes at runtime. For example:
+
+```go
+package main
+
+func main() {
+    s := []int{1, 2, 3}
+    _ = s[5] // ❌ This will cause a panic because index 5 is out of bounds.
+}
+```
+
+When a panic occurs, normal execution stops, the current function returns immediately, deferred functions are executed, and the program begins unwinding the call stack. If the panic is not recovered, the program terminates and prints a stack trace.
+
+## Explicit Panics
+
+We can also cause a **run-time panic** by calling the [panic](https://go.dev/ref/spec#Handling_panics) built-in function. We can call this function passing a value of any type (usually a `string` or an `error`), and it becomes the panic value printed in the stack trace. For example:
+
+```go
+func divide(a, b int) int {
+    if b == 0 {
+        panic("divide by zero: this is a bug in the caller") // 😬 Yikes!
+    }
+    return a / b
+}
+```
+
+Basically, we're saying: hey, if the user call divide with `0` as the dividend, **crash** the program!
+
+<Admonition title="Crashing on purpose">
+Calling `panic` is crashing on purpose.
+</Admonition>
+
+In Go, **explicit panics** are frowned upon, and the idiomatic way to handle failures is to return errors:
+
+```go
+func divide(a, b int) (int, error) {
+    if b == 0 {
+        return 0, errors.New("divide by zero") // 👍
+    }
+    return a / b, nil
+}
+```
+
+**1. Initialization failures** - when your program can't start without certain resources:
+```go
+func init() {
+    db, err := sql.Open("postgres", connectionString)
+    if err != nil {
+        panic(fmt.Sprintf("cannot connect to database: %v", err))
+    }
+}
+```
+
+**2. Detecting impossible states** - when your program's internal invariants are violated:
+```go
+func (s *Server) process() {
+    if s.config == nil {
+        // Should never happen—indicates a serious bug
+        panic("server config is nil: internal bug")
+    }
+    // continue...
+}
+```
+
+**3. Programmer errors** - when the caller made a mistake that should be fixed in code:
+```go
+func MustCompile(pattern string) *Regexp {
+    re, err := Compile(pattern)
+    if err != nil {
+        panic("regexp: Compile(" + pattern + "): " + err.Error())
+    }
+    return re
+}
+```
+
+<Admonition variant="warning" title="Use panic sparingly">
+Reserve `panic` for programmer errors or truly exceptional conditions. Returning `error` keeps control flow explicit and testable.
+</Admonition>
+
+## When NOT to panic
+
+Never use panic for:
+
+- **Expected failures**: file not found, network timeouts, invalid user input
+- **Library code**: let callers decide how to handle errors
+- **Anything the caller might handle**: database errors, API failures, validation errors
+
+```go
+// ❌ Bad - forces panic on all callers
+func (c *Client) FetchData(id string) Data {
+    resp, err := http.Get(c.url + id)
+    if err != nil {
+        panic(err)  // Network errors are expected!
+    }
+    // ...
+}
+
+// ✅ Good - lets caller decide how to handle
+func (c *Client) FetchData(id string) (Data, error) {
+    resp, err := http.Get(c.url + id)
+    if err != nil {
+        return Data{}, fmt.Errorf("fetch data: %w", err)
+    }
+    // ...
+}
+```

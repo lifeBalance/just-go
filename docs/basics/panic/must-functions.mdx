@@ -1,0 +1,144 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+# Must Functions
+
+Some packages offer variations of some of their functions that that `panic` instead of returning errors. Such is the case of [template.Must](https://pkg.go.dev/html/template#Must) (in the [html](https://pkg.go.dev/html) package). These variants are known as **must functions**. If you check the source code of such function:
+
+```go
+func Must(t *Template, err error) *Template {
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+```
+
+Basically you call this function passing the template and an error; if the error is not `nil`, it panics. In a small web application, a missing template is a weird thing, and a sign that something weird has happened, so nothing wrong with using a **must function** in case a template has been misplaced.
+
+## Example: Simple HTTP server with template
+
+[template.Must](https://pkg.go.dev/html/template#Must) is a function specifically designed for initialization-time template parsing where failure should prevent the program from starting.
+
+```go
+package main
+
+import (
+	"html/template"
+	"net/http"
+)
+
+// Parse template at package initialization
+// If the template is invalid, the program panics before starting
+var tmpl = template.Must(template.New("hello").Parse(`
+	<!DOCTYPE html>
+	<html>
+		<body>
+			<h1>Hello, {{.Name}}!</h1>
+			<p>Welcome to our site.</p>
+		</body>
+	</html>
+`))
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	data := struct{ Name string }{Name: "Gopher"}
+	tmpl.Execute(w, data)
+}
+
+func main() {
+	http.HandleFunc("/", helloHandler)
+	http.ListenAndServe(":8080", nil)
+}
+```
+
+If the template string has a syntax error, `template.Must` panics **before** the server starts listening. This is exactly what we want—fail fast during initialization rather than at runtime when serving requests.
+
+**Without `Must`**, we'd have to check the error:
+```go
+// More verbose version without Must
+var tmpl *template.Template
+
+func init() {
+	var err error
+	tmpl, err = template.New("hello").Parse(`
+		<!DOCTYPE html>
+		<html>
+			<body>
+				<h1>Hello, {{.Name}}!</h1>
+			</body>
+		</html>
+	`)
+	if err != nil {
+		panic(err)  // Have to panic manually
+	}
+}
+```
+
+The `Must` wrapper simplifies this common pattern — if initialization fails, the program shouldn't start anyway.
+
+## Creating your own Must functions
+
+Creating a **must function** is no big deal. It could be useful in a program where we're loading some files, but some of them, such as a **configuration file** is critical:
+
+```go
+package config
+
+import (
+    "encoding/json"
+    "os"
+)
+
+type Config struct {
+    Port int    `json:"port"`
+    Host string `json:"host"`
+}
+
+// Regular version: returns error
+func Load(path string) (*Config, error) {
+    data, err := os.ReadFile(path)
+    if err != nil {
+        return nil, err
+    }
+    
+    var cfg Config
+    if err := json.Unmarshal(data, &cfg); err != nil {
+        return nil, err
+    }
+    
+    return &cfg, nil
+}
+
+// Must version: panics on error
+func MustLoad(path string) *Config {
+    cfg, err := Load(path)
+    if err != nil {
+        panic("failed to load config: " + err.Error())
+    }
+    return cfg
+}
+```
+
+<Admonition type="tip" title="Naming Convention">
+If you provide both versions, follow the standard library pattern:
+
+- `Load(path string) (*Config, error)` - returns error
+- `MustLoad(path string) (*Config)` - panics on error
+</Admonition>
+
+Then, in our `main.go` we'd do:
+
+```go
+package main
+
+import "myapp/config"
+
+var cfg = config.MustLoad("config.json")  // Hard-coded path to config
+
+func main() {
+    // Use cfg...
+}
+```
+
+<Admonition variant="tip" title="Rule of thumb">
+Use `Must` functions **only with literal, hardcoded values**. If the input could vary at runtime, use the error-returning version.
+</Admonition>

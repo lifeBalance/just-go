@@ -1,0 +1,105 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+# Recovering from Panics
+
+In the previous section, we learn that we should avoid **explicit panics** in most cases. Sometimes, when dealing with code we don't control or protecting critical services like HTTP servers we need to recover from them. We can catch a panic using the [recover](https://go.dev/ref/spec#Handling_panics) built-in function inside a [deferred](https://go.dev/ref/spec#Defer_statements) function:
+
+```go
+package main
+
+import "fmt"
+
+func riskyBiz() {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("Recovered from panic:", r)
+        }
+    }()
+
+    panic("something went wrong!")
+    fmt.Println("This won't print")
+}
+
+func main() {
+    riskyBiz()
+    fmt.Println("Program continues...")
+}
+```
+
+If you run this program, you'll see that, even though `riskyBiz` panicked explicitely, we were able to `recover` from it. This is the output:
+
+```
+Recovered from panic: something went wrong!
+Program continues...
+```
+
+When a panic occurs:
+
+- The current function stops executing immediately.
+- **Deferred functions** run in reverse order (LIFO).
+- `recover()` catches the panic value and stops the unwinding.
+- Execution resumes after the function that panicked.
+
+<Admonition type="warning" title="Recover only from deferred functions">
+  `recover()` only works inside a **deferred function**. Calling it elsewhere
+  returns `nil`.
+</Admonition>
+
+## Real-world example: Protecting HTTP handlers
+
+A common use case is preventing a single bad request from crashing your entire web server:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "net/http"
+)
+
+func safeHandler(h http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        defer func() {
+            if err := recover(); err != nil {
+                log.Printf("panic in handler: %v", err)
+                http.Error(w, "Internal Server Error", 500)
+            }
+        }()
+
+        h(w, r)
+    }
+}
+
+func riskyHandler(w http.ResponseWriter, r *http.Request) {
+    // Simulate a panic from buggy code or third-party library
+    panic("database connection lost!")
+}
+
+func main() {
+    http.HandleFunc("/", safeHandler(riskyHandler))
+    fmt.Println("Server starting on :8080")
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+Without the `safeHandler` wrapper, a single panic would crash the entire server. With it, we log the error, return a 500 to the client, and keep the server running.
+
+## When to use recover
+
+✅ Use recover when:
+
+- You're running a long-lived service (web server, worker pool)
+- You're calling third-party code that might panic
+- You need to clean up resources before terminating
+
+❌ Don't use recover to:
+
+- Hide bugs instead of fixing them
+- Turn panics into errors for normal error handling (use errors from the start)
+- Make library code "safer" (fix the panics instead)
+
+<Admonition variant="warning">
+Recovering from panics doesn't fix the underlying problem—it just prevents crashes. Always log recovered panics and investigate the root cause.
+</Admonition>

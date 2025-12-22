@@ -5,6 +5,7 @@ export default [
   { path: 'expressions/', label: 'Expressions' },
   { path: 'statements/', label: 'Statements' },
   { path: 'errors/', label: 'Errors' },
+  { path: 'panic/', label: `Don't Panic, it's organic` },
   { path: 'string-manipulation/', label: 'Working with Strings' },
   { path: 'composition/', label: 'Composition' },
   { path: 'concurrency/', label: 'Concurrency' },
