@@ -100,7 +100,17 @@ In Go, we can define functions that can take variable number of arguments:
 
 <Code code={functionsCode6} lang="go" title="functions6/main.go" />
 
-If your function is gonna take more arguments, it's essential you add the variadic arguments at the end.
+If your function is gonna take more arguments, it's essential you add the variadic arguments at the end. Ok, but what if we have all the numbers in a slice? Well, you can still use your variadic function, just make sure you unpack the slice items:
+
+```go
+func main() {
+    numbers := []{1, 4, 5}
+    result := addNumbers(numbers...)
+    fmt.Println(result) // 10
+}
+```
+
+This technique is a bit hard to find in the docs, but it's [there](https://go.dev/ref/spec#Passing_arguments_to_..._parameters)!
 
 ## Naked Return
 
