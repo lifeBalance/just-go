@@ -1,0 +1,17 @@
+import Admonition from '@components/Admonition.astro'
+
+# Creating a Module
+
+See: [Modules](https://go.dev/ref/mod) and the `go mod` commands ([cmd/go](https://pkg.go.dev/cmd/go)).
+
+```bash
+mkdir myapp && cd myapp
+go mod init github.com/you/myapp
+```
+
+- `go.mod` declares your module path ([ref/mod](https://go.dev/ref/mod)).
+- Add [packages](https://go.dev/ref/spec#Packages) under subfolders (e.g., `cmd/`, `pkg/`, `internal/`).
+
+<Admonition variant="tip" title="Module path">
+Use the repo URL if the module will be published (e.g., `github.com/you/myapp`).
+</Admonition>

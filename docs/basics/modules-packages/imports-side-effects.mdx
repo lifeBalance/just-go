@@ -1,0 +1,62 @@
+import Admonition from '@components/Admonition.astro'
+
+# Imports with Side Effects
+
+At this point you should be familiar with the [blank identifier](https://go.dev/ref/spec#Blank_identifier) is usually used to signify that we're not interesting in a given value, for example:
+
+```go
+numbers := []int{12, 44, 23}
+
+for _, n := range numbers {
+    fmt.Println(n)
+}
+```
+
+We're just looping over a slice of numbers, and printing them to stdout. Since `range` returns both the **index** and the **value** of the slice element, we use an `_` to discard it (we're not using the index at all).
+
+<Admonition title='Package Initialization'>
+Some packages expose functionality via `init()` functions that register drivers, plugins, or handlers. This function is invoked as soon as the package is imported; that's how [Package initialization](https://go.dev/ref/spec#Package_initialization) works.
+</Admonition>
+
+If you've worked with databases, you may have come accross an [import declarations](https://go.dev/ref/spec#Import_declarations) such as this one:
+
+```go
+import _ "github.com/jackc/pgx/v5/stdlib"
+```
+
+You may have thought, what's the point of importing a package, if we're discarding it? Well, Sometimes you need a package not for its exported functions or types, but just to run its **initialization code**. This is common with database drivers, image format decoders, and plugins that register themselves with a central registry.
+
+<Admonition title='Unused Packages are Removed'>
+If none of the members of a package is used in a file, it's import declaration is **removed**. We can avoid that by importing them with a blank identifier (`_`).
+</Admonition>
+
+
+See [Import declarations](https://go.dev/ref/spec#Import_declarations) and ; for database drivers, also see [database/sql](https://pkg.go.dev/database/sql).
+
+## Example: pgx Postgres driver
+
+For example, let's say we want to register the the [pgx](https://github.com/jackc/pgx) driver, to use it with [database/sql](https://pkg.go.dev/database/sql):
+
+```go
+package main
+
+import (
+    "database/sql"
+    "fmt"
+
+    _ "github.com/jackc/pgx/v5/stdlib"
+)
+
+func main() {
+    db, err := sql.Open("pgx", "host=localhost port=5433 user=bob password=1234 dbname=mydata sslmode=disable")
+    if err != nil { panic(err) }
+    defer db.Close()
+
+    if err := db.Ping(); err != nil { panic(err) }
+    fmt.Println("Connected!")
+}
+```
+
+<Admonition variant="warning" title="Use blank imports sparingly">
+Blank imports are fine for driver/plugin registration (database/sql, image, go:generate tooling). Avoid them for ordinary code — they can hide unused dependencies.
+</Admonition>

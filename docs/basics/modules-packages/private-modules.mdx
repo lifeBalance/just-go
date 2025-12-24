@@ -1,0 +1,15 @@
+import Admonition from '@components/Admonition.astro'
+
+# Private Modules
+
+- Use SSH URLs in `go.mod` (e.g., `git@github.com:org/repo.git`)
+- Configure `GOPRIVATE=github.com/yourorg/*` to skip the proxy and checksum DB
+- Auth via your git credentials (SSH keys recommended)
+
+```bash
+export GOPRIVATE=github.com/yourorg/*
+```
+
+<Admonition variant="tip" title="No proxy for private">
+With `GOPRIVATE` set, `go` fetches directly from the VCS instead of the public proxy.
+</Admonition>

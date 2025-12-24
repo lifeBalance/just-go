@@ -1,0 +1,22 @@
+import Admonition from '@components/Admonition.astro'
+
+# Local Development
+
+## replace for local modules
+
+```go
+module github.com/you/app
+
+require github.com/you/lib v0.0.0
+replace github.com/you/lib => ../lib
+```
+
+## Workspaces (go.work)
+
+```bash
+go work init ./app ./lib
+go work use ./tools
+```
+
+- Helps develop multiple modules together locally.
+- `go build` resolves imports across the workspace.

@@ -1,0 +1,15 @@
+import Admonition from '@components/Admonition.astro'
+
+# Workspaces
+
+Use `go work` to develop multiple modules locally without editing `replace` lines.
+
+```bash
+go work init ./app ./lib
+# Add/remove modules
+go work use ./tools
+go work edit -dropreplace github.com/you/oldlib
+```
+
+- Workspace resolves imports across listed modules.
+- Keep `go.work` at the repo root for local dev only; commit it if you want to share the workspace setup with teammates.

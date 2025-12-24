@@ -1,0 +1,21 @@
+import Admonition from '@components/Admonition.astro'
+
+# Dependency Management
+
+See: [Modules](https://go.dev/ref/mod), [mod commands](https://go.dev/ref/mod#mod-commands), and [`cmd/go`](https://pkg.go.dev/cmd/go).
+
+- `go.mod`: module path + `require` entries ([ref/mod](https://go.dev/ref/mod#go-mod-file)).
+- `go.sum`: checksums for exact versions ([ref/mod](https://go.dev/ref/mod#go-sum-files)).
+- `go mod tidy`: add missing / remove unused deps ([ref/mod](https://go.dev/ref/mod#go-mod-tidy)).
+- `replace`: point a module to a local path or fork ([ref/mod](https://go.dev/ref/mod#go-mod-file-replace)).
+
+```go
+module github.com/you/app
+
+require github.com/acme/lib v1.2.3
+replace github.com/acme/lib => ../lib
+```
+
+<Admonition variant="tip" title="Version selection">
+Go uses [Minimal Version Selection](https://go.dev/ref/mod#minimal-version-selection) (MVS). It picks the minimal version that satisfies all requirements.
+</Admonition>

@@ -1,0 +1,11 @@
+import Admonition from '@components/Admonition.astro'
+
+# Versioning & Publishing
+
+- Tag releases: `git tag -a v1.2.3 -m "Release v1.2.3" && git push origin v1.2.3`
+- Semantic import versioning (v2+): module path includes `/vN` (e.g., `github.com/you/app/v2`)
+- Annotated tags preferred; CI can build on tag push.
+
+<Admonition variant="tip" title="v2 and beyond">
+For `v2` or higher, update `module` path in `go.mod` to include `/v2`, and import with the same suffix.
+</Admonition>

@@ -1,0 +1,17 @@
+import Admonition from '@components/Admonition.astro'
+
+# Testing Across Packages
+
+- Black-box tests: `package foo_test` (imports `foo`)
+- White-box tests: `package foo` (access unexported identifiers in the same package)
+- Subpackages: test via imports; keep helpers in internal testutil packages if needed.
+
+```go
+// foo/foo_test.go
+package foo_test
+import (
+  "testing"
+  "github.com/you/app/foo"
+)
+func TestX(t *testing.T) { /* ... */ }
+```

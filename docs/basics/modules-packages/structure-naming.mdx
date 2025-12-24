@@ -1,0 +1,14 @@
+import Admonition from '@components/Admonition.astro'
+
+# Structure & Naming
+
+- Package names: short, lower-case; avoid stutter (`image.Image`).
+- Layout:
+  - `cmd/<app>`: binaries
+  - `internal/`: non-exported packages for this module
+  - `pkg/`: exported packages (optional; tastes vary)
+- Keep APIs small; export only what’s needed.
+
+<Admonition variant="tip" title="Avoid stutter">
+If your module is `github.com/you/math`, prefer `vector` over `mathvector` inside.
+</Admonition>
