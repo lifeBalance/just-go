@@ -2,7 +2,7 @@ import Admonition from '@components/Admonition.astro'
 
 # Imports with Side Effects
 
-At this point you should be familiar with the [blank identifier](https://go.dev/ref/spec#Blank_identifier) is usually used to signify that we're not interesting in a given value, for example:
+At this point you should be familiar with the [blank identifier](https://go.dev/ref/spec#Blank_identifier), usually used to signify that we're not interesting in a given value, for example:
 
 ```go
 numbers := []int{12, 44, 23}
@@ -12,7 +12,7 @@ for _, n := range numbers {
 }
 ```
 
-We're just looping over a slice of numbers, and printing them to stdout. Since `range` returns both the **index** and the **value** of the slice element, we use an `_` to discard it (we're not using the index at all).
+We're just looping over a slice of numbers, and printing them to stdout. Since `range` returns both the **index** and the **value** of the slice element, we use an `_` to discard the index (which we're not using at all).
 
 <Admonition title='Package Initialization'>
 Some packages expose functionality via `init()` functions that register drivers, plugins, or handlers. This function is invoked as soon as the package is imported; that's how [Package initialization](https://go.dev/ref/spec#Package_initialization) works.
@@ -27,7 +27,7 @@ import _ "github.com/jackc/pgx/v5/stdlib"
 You may have thought, what's the point of importing a package, if we're discarding it? Well, Sometimes you need a package not for its exported functions or types, but just to run its **initialization code**. This is common with database drivers, image format decoders, and plugins that register themselves with a central registry.
 
 <Admonition title='Unused Packages are Removed'>
-If none of the members of a package is used in a file, it's import declaration is **removed**. We can avoid that by importing them with a blank identifier (`_`).
+If none of the members of a package is used in a file, it's import declaration is **removed** as soon as we save the file. We can avoid that by importing them with a blank identifier (`_`).
 </Admonition>
 
 
@@ -57,6 +57,54 @@ func main() {
 }
 ```
 
-<Admonition variant="warning" title="Use blank imports sparingly">
-Blank imports are fine for driver/plugin registration (database/sql, image, go:generate tooling). Avoid them for ordinary code — they can hide unused dependencies.
+This pattern has fallen out of favor for several reasons:
+
+- **It feels like magic** - The driver registration happens invisibly through `init()` functions. There's no explicit call in your code that says "register this driver," making it harder for newcomers to understand what's happening.
+- **Hidden dependencies** - A blank import makes it unclear that your code depends on that package. Someone might remove it thinking it's unused, breaking your database connection.
+- **Global state** - The `init()` function modifies a global registry in `database/sql`, which can lead to subtle bugs if you're not careful about import order.
+
+- **Testing difficulties** - Since `init()` runs automatically at package import time, it's harder to control or mock for testing.
+
+## The modern alternative
+
+Many newer libraries, including `pgx`, now offer an **explicit registration approach**. Instead of relying on blank imports, you directly use the driver:
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/jackc/pgx/v5"
+)
+
+func main() {
+    conn, err := pgx.Connect(context.Background(), "host=localhost port=5433 user=bob password=1234 dbname=mydata sslmode=disable")
+    if err != nil {
+        panic(err)
+    }
+    defer conn.Close(context.Background())
+
+    if err := conn.Ping(context.Background()); err != nil {
+        panic(err)
+    }
+    
+    fmt.Println("Connected!")
+}
+```
+
+This approach is **explicit** - you can see exactly what driver you're using. There's no hidden `init()` magic, and your dependencies are clear.
+
+<Admonition variant="note">
+The blank import pattern exists mainly for **backward compatibility** with older `database/sql` code. Modern Go libraries increasingly favor explicit initialization over `init()` side effects.
 </Admonition>
+
+## When blank imports are still okay
+
+Despite the concerns, blank imports remain acceptable for:
+
+- Many **legacy database/sql drivers** projects still use this pattern.
+- The [image](https://pkg.go.dev/image) packages still uses `import _ "image/png"` to support PNG format.
+- **Plugins and tools** like `import _ "net/http/pprof"` for profiling
+
+Just be aware of the trade-offs and prefer explicit initialization when it's available.
