@@ -2,6 +2,9 @@ import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 import { Image, Picture } from 'astro:assets'
 
+import typeAssertions1 from './code/interfaces/type-assertions/main.go?raw'
+import typeAssertions2 from './code/interfaces/type-assertions2/main.go?raw'
+
 # Interfaces
 
 An [interface](https://go.dev/ref/spec#Interface_types) is a type that specifies a set of method signatures. For example:
@@ -211,3 +214,25 @@ func main() {
 ```
 
 **The key insight**: Interfaces let us write code that works with behaviors (methods) rather than concrete types. This makes our code more flexible, reusable, and easier to extend.
+
+## Type Assertions
+
+A [type assertion](https://go.dev/tour/methods/15) is an [expression](https://go.dev/ref/spec#Type_assertions) that we can use on interfaces to extract a value, only if it's of a certain type. For example:
+
+<Code code={typeAssertions1} lang="go" />
+
+Since the interface `x` has a **dynamic type**, we could assign a value of any type to it. Using a **type assertion**, we make sure it contains an integer value before trying to assign it to `anInteger`.
+
+<Admonition>
+In the code above, if `x` is not an `int`, `ok` will be `false`.
+</Admonition>
+
+Check this other example:
+
+<Code code={typeAssertions2} lang="go" />
+
+In the code above, `someDude` could be anything, so before extracting the values of any of its fields, we have to make sure that the types match the recipients.
+
+<Admonition title='any is an alias for interface{}'>
+In the code above, we're using `any`, which is equivalent to `interface{}`.
+</Admonition>
