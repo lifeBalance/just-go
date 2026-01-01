@@ -1,6 +1,140 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import errorsGo3 from './code/errors3/main.go?raw'
+
 ## Sentinel Errors
 
-A **sentinel error** is a pre-defined, well-known **error value** that you create once and reuse throughout your code to signal a specific condition. Think of it as a "flag" that says "this particular thing went wrong."
+In Go, errors are **instances** of the `error` interface. Trying to compare error instances may yield unexpected results:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+func main() {
+	err1 := foo()
+	err2 := foo()
+
+	fmt.Println(err1 == err2) 			// ❌ false
+	fmt.Println(errors.Is(err1, err2)) 	// ❌ false
+}
+
+func foo() error {
+	return errors.New("woopsie")
+}
+```
+
+Both functions return errors with the exact same message, but the comparison fails!
+
+<Admonition variant="warning" title="Error Instances">
+  Every time we call `errors.New("same message")`, it creates a **different
+  error instance** even if the message is identical. Error comparison only
+  returns `true` for the **exact same instance**.
+</Admonition>
+
+Now, compare the previous code with this version:
+
+```go
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrWoopsie = errors.New("woopsie")
+
+func main() {
+	err1 := foo()
+	err2 := foo()
+
+	fmt.Println(err1 == err2) 			// ✅ true
+	fmt.Println(errors.Is(err1, err2)) 	// ✅ true
+
+    err3 := bar()
+    fmt.Println(errors.Is(err3, err1)) 	// ✅ true
+}
+
+func foo() error {
+	return errors.New(ErrWoopsie)
+}
+
+func bar() error {
+    return fmt.Errorf("bar: %w", ErrWoopsie)
+}
+```
+
+In the code above, we're defining a variable named `ErrWoopsie` at the **package level**, and assigning it an **error value** (instance of the `error` interface), which is what `errors.New` returns. Now we can reliably compare errors, even if they're wrapped!
+
+<Admonition variant="warning" title="Don't miss the target">
+  It's important to learn how `errors.Is(err, target)` works. It's like asking,
+  does `err` contains `target` in its chain? The order of arguments is key!
+</Admonition>
+
+A **sentinel error** is a pre-defined, well-known **error instance** that you create once and reuse throughout your code to signal a specific condition.
+
+## Performance
+
+Sentinel errors have zero allocation overhead when creating:
+
+```go
+var ErrNotFound = errors.New("not found") // Allocated once
+```
+
+Compare with formatted errors, which allocate new strings each time:
+
+```go
+fmt.Errorf("user %d not found", id)
+```
+
+## Good Practices
+
+1. Always define sentinel errors as exported **package-level variables**. Sentinel errors serve as **documentation** for the package, indicating what kinds of errors a caller might expect and handle. They also provide **consistency**, ensuring that the same error condition is represented by the same error value throughout the package.
+
+This ensures they're singletons (only instance) that can be reliably compared with `errors.Is`.
+
+2. Keep them **generic** and **semantic**:
+
+```go
+package validation
+
+var (
+    ErrRequired  = errors.New("required")
+    ErrInvalid   = errors.New("invalid")
+    ErrTooLong   = errors.New("too long")
+    ErrTooShort  = errors.New("too short")
+)
+```
+
+Don't use too specific errors:
+
+```go
+package validation
+
+var (
+    ErrTooSpecific =  errors.New("userstore.GetUser(42): user not found in database.users table")
+)
+```
+
+3. Add **context** with `fmt.Errorf("context: %w", sentinel)`. Each **wrapping layer** adds relevant details while preserving the underlying sentinel.
+
+```go
+package validation
+
+var (
+    ErrTooSpecific =  errors.New("userstore.GetUser(42): user not found in database.users table")
+)
+```
+
+4. **Private helpers can return raw sentinels** - let callers add context.
+
+5. Never check errors by comparing their message strings. This is brittle and breaks if error messages change or get translated. Always use `errors.Is()`, never **direct comparison** (`==`) because the latter breaks when errors are wrapped.
+
+6. Don't create too many sentinels! Only export sentinels that callers should handle. Use sentinel errors for **expected, recoverable conditions** that callers should handle differently.
+
+By using sentinel errors as the "DNA" of your error handling and wrapping them with contextual information at each layer, you create error chains that are both semantically checkable and richly informative for debugging. Sentinel errors are like **leaves** in the error tree: the wrapping layers explain **where** the error occured, the **sentinel** points to **what** went wrong.
 
 <Code code={errorsGo3} lang="go" />
 
@@ -19,20 +153,12 @@ if errors.Is(err, ErrNotFound) {
 }
 ```
 
-Without a **sentinel error**, we'd have to compare error messages (fragile and error-prone):
-
-```go
-// ❌ Bad - string comparison
-if err != nil && strings.Contains(err.Error(), "not found") { 
-    // handle not found
-}
-```
-
 <Admonition type="tip" title="Sentinel Errors at Package Level">
-  Define **sentinel errors** as exported **package-level** variables (e.g., `var ErrX = errors.New("x")`) so consumers can compare reliably.
+  Define **sentinel errors** as exported **package-level** variables (e.g., `var
+  ErrX = errors.New("x")`) so consumers can compare reliably.
 </Admonition>
 
-Even if our errors are **wrapped**, `errors.Is` can detect nested errors:
+Even if we wrap our sentinel error, `errors.Is` can detect it:
 
 ```go
 package main

@@ -21,30 +21,6 @@ The error message contains useful information so we can track down the error, fo
 
 ## Comparing Errors
 
-Trying to compare errors with the `==` operator may yield unexpected results:
-
-```go
-package main
-
-import (
-	"errors"
-	"fmt"
-)
-
-func main() {
-	err1 := foo()
-	err2 := foo()
-
-	// Even though the message is the same, these are different errors
-	fmt.Println(err1 == err2) // ❌ false
-
-	// Each call to errors.New creates a new error
-}
-
-func foo() error {
-	return errors.New("woopsie")
-}
-```
 
 For comparing errors is better to use `errors.Is`:
 
@@ -70,6 +46,15 @@ func main() {
 
 func foo() error {
 	return ErrWoopsie // Return the same error every time
+}
+```
+
+Without `errors.Is`, we'd have to compare **error messages** (fragile and error-prone):
+
+```go
+// ❌ Bad - string comparison
+if err != nil && strings.Contains(err.Error(), "not found") { 
+    // handle not found
 }
 ```
 
