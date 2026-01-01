@@ -2,7 +2,19 @@ import Admonition from '@components/Admonition.astro'
 
 # Custom Errors
 
-Define your own error types to carry structured context. Any type that implements `Error() string` satisfies `error`.
+In Go, [error](https://go.dev/ref/spec#Errors) is a built‑in interface type used to report failures.
+
+```go
+type error interface {
+    Error() string
+}
+```
+
+When we create an error with `errors.New("some error")`, we're basically setting the value of the string that `Error()` returns. When we print an error, Go calls its `Error()` method, and prints the returned value.
+
+## Creating Custom Errors
+
+Any type that implements the `Error() string` method, satisfies the `error` interface. That's how we can define your own error types to carry additional information.
 
 ```go
 package main
@@ -33,6 +45,55 @@ func main() {
 }
 ```
 
-<Admonition variant="tip" title="errors.As for typed errors">
-Use `errors.As(err, &target)` to extract a specific custom error and inspect its fields.
-</Admonition>
+## Inspecting Custom Error fields
+
+Sometimes, we may need to check for a given field of our custom error, let's say the **line** where the error happened. Use [errors.As](https://pkg.go.dev/errors#example-As) to extract a specific custom error and inspect its fields:
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+// Custom error for file operations
+type FileError struct {
+    Path      string
+    Operation string
+    Err       error // Wrapped underlying error
+}
+
+func (e FileError) Error() string {
+    return fmt.Sprintf("%s failed on %s: %v", e.Operation, e.Path, e.Err)
+}
+
+
+func main() {
+    err := readFile("/nonexistent/file.txt")
+    if err != nil {
+        var fileErr FileError
+        if errors.As(err, &fileErr) {
+            fmt.Println("Operation:", fileErr.Operation)
+            fmt.Println("Path:", fileErr.Path)
+            fmt.Println("Underlying error:", fileErr.Err)
+        }
+    }
+}
+
+func readFile(path string) error {
+    // Simulate an error
+    return FileError{
+        Path:      path,
+        Operation: "read",
+        Err:       errors.New("file not found"),
+    }
+}
+```
+
+If we run the program above, it'd output:
+```
+Operation: read
+Path: /nonexistent/file.txt
+Underlying error: file not found
+```

@@ -1,0 +1,127 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import errorsGo1 from './code/errors1/main.go?raw'
+import errorsGo2 from './code/errors2/main.go?raw'
+import errorsGo3 from './code/errors3/main.go?raw'
+
+# Wrapping Errors
+
+As we mentioned at the beginning, in Go errors are treated as values we return from functions or methods. Whenever we have functions calling functions, it's a good idea to wrap errors with some messages, to add some context to the error. For example:
+
+<Code code={errorsGo1} lang="go" />
+
+If we run this code:
+
+```
+create org: create user: connection failed
+```
+
+The error message contains useful information so we can track down the error, following the breadcrumb. The [fmt.Errorf](https://pkg.go.dev/fmt#Errorf) and `%w` comes in handy.
+
+## Comparing Errors
+
+Trying to compare errors with the `==` operator may yield unexpected results:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+func main() {
+	err1 := foo()
+	err2 := foo()
+
+	// Even though the message is the same, these are different errors
+	fmt.Println(err1 == err2) // ❌ false
+
+	// Each call to errors.New creates a new error
+}
+
+func foo() error {
+	return errors.New("woopsie")
+}
+```
+
+For comparing errors is better to use `errors.Is`:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+// Define a sentinel error (a single, reusable error value)
+var ErrWoopsie = errors.New("woopsie")
+
+func main() {
+	err := foo()
+
+	// Now we can compare properly
+	if errors.Is(err, ErrWoopsie) {
+		fmt.Println("Got the woopsie error!") // This prints
+	}
+}
+
+func foo() error {
+	return ErrWoopsie // Return the same error every time
+}
+```
+
+## Unwrapping Errors
+
+The [errors.Unwrap](https://pkg.go.dev/errors#Unwrap) function walks one step down the chain created with `fmt.Errorf("…: %w", err)`. You can iterate to inspect all layers or get the root cause.
+
+<Code code={errorsGo2} lang="go" />
+
+If we run the code above:
+
+```
+-> create org: create user: connection failed
+-> create user: connection failed
+-> connection failed
+root: connection failed
+```
+
+We rarely need to manually unwrap errors, but this is how functions such as  `errors.Is(err, target)` work, they unwrap the errors behind the scenes. If we had to implement `errors.Is` ourselves, it'd look like this:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+func isError(err, target error) bool {
+	for err != nil {
+		if err == target {
+			return true
+		}
+		err = errors.Unwrap(err)
+	}
+	return false
+}
+
+// Example usage
+var ErrNotFound = errors.New("not found")
+
+func main() {
+	err := fmt.Errorf("database error: %w", 
+		fmt.Errorf("query failed: %w", ErrNotFound))
+	
+	// Our implementation
+	fmt.Println(isError(err, ErrNotFound)) // true
+	
+	// Standard library (does the same thing)
+	fmt.Println(errors.Is(err, ErrNotFound)) // true
+}
+```
+
+In the `for` loop weep unwrapping until we find a match or run out of errors. This shows why unwrapping exists - `errors.Is` walks through the error chain, unwrapping each layer until it finds a match (or reaches the end).
+

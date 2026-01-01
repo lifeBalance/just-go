@@ -1,0 +1,80 @@
+## Sentinel Errors
+
+A **sentinel error** is a pre-defined, well-known **error value** that you create once and reuse throughout your code to signal a specific condition. Think of it as a "flag" that says "this particular thing went wrong."
+
+<Code code={errorsGo3} lang="go" />
+
+In the code above, our sentinel error is created with:
+
+```go
+var ErrNotFound = errors.New("not found")
+```
+
+Then, whenever we want to check for that error, we'd do:
+
+```go
+// ✅ Checks the actual error
+if errors.Is(err, ErrNotFound) {
+    // handle not found
+}
+```
+
+Without a **sentinel error**, we'd have to compare error messages (fragile and error-prone):
+
+```go
+// ❌ Bad - string comparison
+if err != nil && strings.Contains(err.Error(), "not found") { 
+    // handle not found
+}
+```
+
+<Admonition type="tip" title="Sentinel Errors at Package Level">
+  Define **sentinel errors** as exported **package-level** variables (e.g., `var ErrX = errors.New("x")`) so consumers can compare reliably.
+</Admonition>
+
+Even if our errors are **wrapped**, `errors.Is` can detect nested errors:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrWoopsie = errors.New("woopsie")
+
+func main() {
+	err := bar()
+
+	fmt.Println("Error:", err)
+	// Output: Error: bar failed: foo failed: woopsie
+
+	// errors.Is still works through the wrapping!
+	if errors.Is(err, ErrWoopsie) {
+		fmt.Println("Found ErrWoopsie wrapped inside!") // This prints
+	}
+}
+
+func foo() error {
+	return ErrWoopsie
+}
+
+func bar() error {
+	err := foo()
+	if err != nil {
+		// Wrap the error with context using %w
+		return fmt.Errorf("foo failed: %w", err)
+	}
+	return nil
+}
+
+func baz() error {
+	err := bar()
+	if err != nil {
+		// Wrap again with more context
+		return fmt.Errorf("bar failed: %w", err)
+	}
+	return nil
+}
+```

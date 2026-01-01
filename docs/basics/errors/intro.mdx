@@ -1,45 +1,30 @@
 import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import errorsCode from './code/errors/main.go?raw'
 
 # Errors
 
-In Go, [error](https://go.dev/ref/spec#Errors) is a built‑in interface type used to report failures.
+In Go [errors](https://go.dev/ref/spec#Errors) are just **values** that we can return from functions. For example:
 
-```go
-type error interface {
-    Error() string
-}
-```
+<Code code={errorsCode} lang="go" title="functions7/main.go" />
 
-## Basics of error handling
+In the example above, `divideTwoNumbers` returns two values:
 
-Let's see how errors work in practice:
+- A floating point value.
+- And an `error`, which could be `nil` if everything went ok.
 
-```go
-package main
+In the caller, we “destructure” the multiple return values of `divideTwoNumbers`, then check `err`.
 
-import (
-    "errors"
-    "fmt"
-)
+<Admonition variant="warning" title="Panic Crash">
+If we didn't have the check for `0` quotient, our program will crash when trying to divide by `0`.
+</Admonition>
 
-func divideTwoNumbers(a, b float64) (float64, error) {
-    if b == 0 {
-        return "", errors.New("cannot divide by zero")
-    }
-    return a / b, nil
-}
+The [errors](https://pkg.go.dev/errors) package contains all that we need for **error management**.
 
-func main() {
-    msg, err := divideTwoNumbers(4, 0)
-    if err != nil {
-        fmt.Println("error:", err)  // ⚠️ error: cannot divide by zero
-        return                      // 👈 early return on error
-    }
-    fmt.Println(msg)
-}
-```
+## The Error Checking Pattern
 
-One of Go’s traits is explicit error handling via multiple returns: you “destructure” the result into a value and an `error`, then check `err`. Some folks from exception‑driven languages find this repetitive; in Go it keeps **control flow** obvious and testable.
+Some folks from exception‑driven languages find this error-checking pattern **repetitive**; in Go it keeps **control flow** obvious and testable:
 
 - Returning `nil` as error signify **success**; otherwise, a non `nil` value indicates **failure**.
 - Errors are **values**, you can pass, wrap, compare, or inspect them.
@@ -48,3 +33,4 @@ One of Go’s traits is explicit error handling via multiple returns: you “des
 <Admonition variant="tip" title="Multiple return values">
 Returning `(T, error)` makes error handling explicit and keeps the happy path straightforward. Callers should check `err` before using the other results.
 </Admonition>
+
