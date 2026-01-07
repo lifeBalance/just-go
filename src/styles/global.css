@@ -97,8 +97,8 @@ body {
   font-size: 0.85em;
 }
 
-.pagefind-ui__drawer {
+.pagefind-ui__drawer .svelte-e9gkc3 {
   background: #a6a09b;
-  border-radius: 12px;
-  padding: 2rem;
+  border-radius: 1rem;
+  padding: 1rem;
 }
