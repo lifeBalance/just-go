@@ -6,6 +6,7 @@ import gopher from '@assets/gopher.png?url'
 
 const base = docsConfig.basePath ?? import.meta.env.BASE_URL
 const homeHref = base.endsWith('/') ? base : base + '/'
+const hidden = Astro.props?.hideSearch === true
 ---
 <nav class="z-50 bg-sd-bg text-sd-fg border-b border-sd-border">
   <div class="site-container flex items-center justify-between px-4 py-2 h-(--topbar-height)">
@@ -20,7 +21,7 @@ const homeHref = base.endsWith('/') ? base : base + '/'
       </a>
     </div>
     <div class="flex items-center gap-3">
-      <PageFind />
+      {hidden ? null : <PageFind />}
       <a href={`${base}colors`} class="text-sm no-underline text-sd-muted hover:text-sd-accent">Colors</a>
       <ThemeToggle client:load />
     </div>

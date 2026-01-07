@@ -96,3 +96,9 @@ body {
     'Courier New', monospace;
   font-size: 0.85em;
 }
+
+.pagefind-ui__drawer {
+  background: #a6a09b;
+  border-radius: 12px;
+  padding: 2rem;
+}

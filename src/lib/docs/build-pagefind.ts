@@ -1,89 +1,109 @@
 #!/usr/bin/env tsx
-import { docsConfig } from './config.ts'
-import { spawn } from 'node:child_process'
+import * as pagefind from 'pagefind'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import os from 'node:os'
+
+const DEFAULT_BRANCHES = ['basics', 'toc-doc']
+const branchIds = (process.env.PAGEFIND_BRANCHES?.split(',')
+  .map((id) => id.trim())
+  .filter(Boolean) ?? DEFAULT_BRANCHES)
 
 async function exists(p: string) {
-  try { await fs.stat(p); return true } catch { return false }
+  try {
+    await fs.stat(p)
+    return true
+  } catch {
+    return false
+  }
 }
 
-async function cp(src: string, dest: string) {
-  // Node 18+: fs.cp is available; fallback to recursive copy
-  // @ts-ignore
-  if (typeof (fs as any).cp === 'function') {
-    // @ts-ignore
-    await (fs as any).cp(src, dest, { recursive: true })
-    return
-  }
-  async function copyDir(s: string, d: string) {
-    await fs.mkdir(d, { recursive: true })
-    const entries = await fs.readdir(s, { withFileTypes: true })
-    for (const e of entries) {
-      const sp = path.join(s, e.name)
-      const dp = path.join(d, e.name)
-      if (e.isDirectory()) await copyDir(sp, dp)
-      else await fs.copyFile(sp, dp)
+async function ensureCleanDir(dir: string) {
+  await fs.rm(dir, { recursive: true, force: true })
+  await fs.mkdir(dir, { recursive: true })
+}
+
+async function copyDir(src: string, dest: string) {
+  await fs.mkdir(dest, { recursive: true })
+  const entries = await fs.readdir(src, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name)
+    const destPath = path.join(dest, entry.name)
+    if (entry.isDirectory()) {
+      await copyDir(srcPath, destPath)
+    } else {
+      await fs.copyFile(srcPath, destPath)
     }
   }
-  const stat = await fs.stat(src)
-  if (stat.isDirectory()) await copyDir(src, dest)
-  else {
-    await fs.mkdir(path.dirname(dest), { recursive: true })
-    await fs.copyFile(src, dest)
-  }
 }
 
-function run(cmd: string, args: string[], cwd: string) {
-  return new Promise<void>((resolve, reject) => {
-    const p = spawn(cmd, args, { cwd, stdio: 'inherit' })
-    p.on('error', reject)
-    p.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`${cmd} exited ${code}`)))
-  })
+async function buildBranchIndex(branchId: string, sectionDist: string, distDir: string, publicDir: string, repoRoot: string) {
+  const res = await pagefind.createIndex()
+  const index = (res as any).index
+  let pageCount = 0
+
+  try {
+    const sectionGlob = `${branchId}/**/*.html`
+    const { errors, page_count } = await index.addDirectory({
+      path: distDir,
+      glob: sectionGlob,
+    })
+    if (errors?.length) {
+      console.error(`Pagefind errors for ${branchId}:`, errors)
+    }
+    pageCount = page_count ?? 0
+
+    const outputSubdir = `pagefind-${branchId}`
+    const distOutput = path.join(distDir, outputSubdir)
+    const publicOutput = path.join(publicDir, outputSubdir)
+
+    await ensureCleanDir(distOutput)
+    await ensureCleanDir(publicOutput)
+
+    await index.writeFiles({ outputPath: distOutput })
+    await copyDir(distOutput, publicOutput)
+
+    console.log(`Indexed ${branchId} (${pageCount} pages) → ${path.relative(repoRoot, distOutput)} and copied to ${path.relative(repoRoot, publicOutput)}`)
+  } finally {
+    await index.deleteIndex()
+  }
+
+  return pageCount
 }
 
 async function main() {
   const repoRoot = process.cwd()
   const distDir = path.join(repoRoot, 'dist')
   const publicDir = path.join(repoRoot, 'public')
+
   if (!(await exists(distDir))) {
     console.error('dist/ not found. Run `npm run build` first.')
     process.exit(1)
   }
-  const pagefindBin = path.join(repoRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'pagefind.cmd' : 'pagefind')
-  if (!(await exists(pagefindBin))) {
-    console.error('Pagefind binary not found. Install with `npm i pagefind`.')
-    process.exit(1)
-  }
 
-  for (const br of docsConfig.branches) {
-    const id = br.id
-    const sectionDist = path.join(distDir, id)
-    if (!(await exists(sectionDist))) {
-      console.warn(`Skipping ${id}: ${sectionDist} not found in dist/`) 
-      continue
+  await fs.mkdir(publicDir, { recursive: true })
+
+  try {
+    for (const branchId of branchIds) {
+      const sectionDist = path.join(distDir, branchId)
+      if (!(await exists(sectionDist))) {
+        console.warn(`Skipping ${branchId}: ${sectionDist} not found in dist/`)
+        continue
+      }
+
+      await buildBranchIndex(branchId, sectionDist, distDir, publicDir, repoRoot)
     }
-    const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), `pf-${id}-`))
-    const tmpSite = path.join(tmpBase, id)
-    await cp(sectionDist, tmpSite)
-
-    // Run pagefind on tmpSite, output under a distinct subdir
-    const outputSubdir = `pagefind-${id}`
-    await run(pagefindBin, ['--site', tmpBase, '--output-subdir', outputSubdir], repoRoot)
-
-    const from = path.join(tmpBase, outputSubdir)
-    const toDist = path.join(distDir, outputSubdir)
-    const toPublic = path.join(publicDir, outputSubdir)
-
-    await fs.mkdir(distDir, { recursive: true })
-    await fs.mkdir(publicDir, { recursive: true })
-
-    await cp(from, toDist)
-    await cp(from, toPublic)
-
-    console.log(`Indexed ${id} → ${path.relative(repoRoot, toDist)} and copied to ${path.relative(repoRoot, toPublic)}`)
+  } finally {
+    if (typeof pagefind.close === 'function') {
+      try {
+        await pagefind.close()
+      } catch (err) {
+        console.warn('Failed to close Pagefind worker cleanly:', err)
+      }
+    }
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1) })
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

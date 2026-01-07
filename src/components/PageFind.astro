@@ -30,9 +30,47 @@ import { Icon } from 'astro-icon/components'
     const os = document.getElementById('os')
     const searchContainer = document.getElementById('search-container')
     const search = document.getElementById('search')
-    
+    const body = document.body
+    const baseAttr = body?.dataset.pagefindBase || import.meta.env.BASE_URL || '/'
+    const bundleAttr = body?.dataset.pagefindBundle
+    if (!bundleAttr) {
+      console.warn('Pagefind bundle not provided on body element; search disabled.')
+      return
+    }
+    const normalizedBase = baseAttr.endsWith('/') ? baseAttr : baseAttr + '/'
+    const bundleName = bundleAttr.replace(/\/$/, '')
+    const branchId = bundleName.replace(/^pagefind-/, '')
+
+    function normalizeUrl(url?: string) {
+      if (!url) return url
+      if (/^(https?:)?\/\//i.test(url)) return url
+
+      const cleaned = url.replace(/^\//, '')
+      return `${normalizedBase}${cleaned}`
+    }
+
+    const bundlePath = normalizedBase + (bundleName.endsWith('/') ? bundleName : bundleName + '/')
+
     console.log('Search element:', search)
     console.log('PagefindUI available:', !!window.PagefindUI)
+
+    function processResult(result: any) {
+      if (!result) return result
+      const url = normalizeUrl(result?.url)
+      const anchors = Array.isArray(result?.anchors)
+        ? result.anchors.map((anchor: any) => ({ ...anchor, url: normalizeUrl(anchor?.url || result?.url) }))
+        : result?.anchors
+
+      return {
+        ...result,
+        url,
+        anchors,
+      }
+    }
+
+    function processTerm(term: string) {
+      return term
+    }
 
     // Wait for PagefindUI to be available
     function initializePagefind() {
@@ -47,7 +85,9 @@ import { Icon } from 'astro-icon/components'
           new window.PagefindUI({
             element: '#search',
             showSubResults: true,
-            bundlePath: import.meta.env.BASE_URL + 'pagefind/',
+            bundlePath,
+            process_result: processResult,
+            process_term: processTerm,
           })
           search.dataset.pagefindInitialized = 'true'
           console.log('Pagefind initialized successfully')

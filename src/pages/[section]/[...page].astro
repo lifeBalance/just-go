@@ -64,7 +64,7 @@ const Page = mod?.default
 const { prev, next } = getPrevNext(nav, currentPath)
 ---
 
-<MainLayout>
+<MainLayout activeBranch={section}>
   <div class="flex gap-6 items-start">
     <!-- Left Sidebar - Table of Contents -->
     <aside
