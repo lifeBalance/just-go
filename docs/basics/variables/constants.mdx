@@ -43,7 +43,7 @@ In Go we have available a [predeclared identifier](https://golang.org/ref/spec#P
 
 For example:
 
-```Go
+```go
 const (
     A = iota  // iota = 0; A = 0
     B = iota  // iota = 1; B = 1
@@ -55,7 +55,7 @@ const (
 
 We can also omit the initialization values for the constants `B` and `C` since they are gonna be `iota` by default. For example:
 
-```Go
+```go
 const (
     A = iota  // iota = 0; A = 0
     B         // iota = 1; B = 1
@@ -67,7 +67,7 @@ const (
 
 We can use underscores to skip the unwanted values:
 
-```Go
+```go
 const (
     A = iota  // iota = 0; A = 0
     B         // iota = 1; B = 1
@@ -81,7 +81,7 @@ const (
 
 We can also use expressions like this one:
 
-```Go
+```go
 const (
     A = iota * 2  // iota = 0; A = 0
     B             // iota = 1; B = 2
@@ -93,7 +93,7 @@ const (
 
 If we put 2 constants in the same line, they both get the same value:
 
-```Go
+```go
 const (
     A = iota + 1  // iota = 0; A =
     B             // iota = 1; B = 1

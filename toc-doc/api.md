@@ -1,20 +1,27 @@
 # API
 
-This page documents the docs engine that powers the dynamic route at `src/pages/[section]/[...page].astro`. The implementation lives in `src/lib/docs/section.ts` with a small `_toc.ts` parser in `src/lib/docs/tocParser.ts`. All content lives under `/docs/**`.
+This page documents the docs engine that powers the dynamic route at `src/pages/[section]/[...page].astro`. The implementation lives in `src/lib/docs/section.ts` with a small `_toc.ts` parser in `src/lib/docs/tocParser.ts`. Content roots are configured in `src/lib/docs/config.ts` — docs can live under `/docs/**` or any other folder you list there.
 
 The format below is one section per function. Each includes a short purpose, signature, a concrete example (input/output), and — where relevant — why the function must stay in the codebase.
 
 > Repo context used for the examples:
 >
 > - Sections: `basics/`, `toc-doc/`
-> - `_toc.ts` files exist at: `/docs/basics/_toc.ts`, `/docs/basics/introduction/_toc.ts`, `/docs/basics/variables/_toc.ts`, `/docs/toc-doc/_toc.ts`
+> - `_toc.ts` files exist at: `/docs/basics/_toc.ts`, `/docs/basics/introduction/_toc.ts`, `/docs/basics/variables/_toc.ts`, `/toc-doc/_toc.ts`
 > - Example docs (abridged):
 >   - `/docs/basics/introduction/hello-world/index.mdx`
 >   - `/docs/basics/introduction/lorem.md`
 >   - `/docs/basics/introduction/overview.mdx`
 >   - `/docs/basics/variables/intro.md` (frontmatter title: `Intro`)
 >   - `/docs/basics/variables/scope.md` (frontmatter title: `Scope`, hidden via `_toc.ts`)
->   - `/docs/toc-doc/intro.md`, `/docs/toc-doc/api.md`
+>   - `/toc-doc/intro.md`, `/toc-doc/api.md`
+
+## Configuration (multi-root)
+
+- File: `src/lib/docs/config.ts`
+- `docsConfig.branches`: list of sections with an `id` and a filesystem `root` (e.g., `{ id: 'basics', root: '/docs/basics' }`, `{ id: 'toc-doc', root: '/toc-doc' }`).
+- `getGlobRegistry()`: returns literal `import.meta.glob` maps per branch id (both content and `_toc.ts`). The engine selects globs by branch id, so docs can live outside `/docs`.
+- `docsConfig.basePath`: deployment base (defaults to `import.meta.env.BASE_URL`), used to build absolute URLs in links and nav.
 
 ## getDocStaticPaths
 
@@ -42,7 +49,7 @@ getDocStaticPaths()
 ## listSectionPageParams
 
 - Signature: `listSectionPageParams(): Array<{ section: string; page?: string }>`
-- Purpose: Enumerate all `{section, page?}` combinations by scanning `/docs/**`.
+- Purpose: Enumerate all `{section, page?}` combinations by scanning the configured content roots from `src/lib/docs/config.ts`.
 - Why it stays: It is the source of truth for static path derivation and may be useful for other tooling (e.g., sitemap generation).
 
 Example output (abridged, order not guaranteed):
