@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 
-	"demo/foo"
+	"myapp.com/demo/foo"
 )
 
 // defaultName is used when no name flag is provided.

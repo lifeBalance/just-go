@@ -23,7 +23,16 @@ Those comments live next to your source, but they can also be used to automatica
 
 ## A Demo Project
 
-This little module shows how documentation flows from package, to type, to method level. Save the files under a folder named `demo/` and run the commands listed in the top comment.
+Let's create a demo project to demonstrate how comments and docs work together. Create a `demo` folder, change into it, and initialize a module:
+
+```
+go mod init myapp.com/demo
+```
+
+> [!WARNING]
+> Avoid using a bare name like `myapp` when you run `go mod init`. Always choose a **module path** that contains a dot—something like `example.com/myapp`. The `pkgsite` tooling (and other parts of the Go ecosystem) assume short, dot-free module names belong to the standard library, so your docs won’t render correctly if you omit it.
+
+After adding some code, we end up with this:
 
 ```
 demo/
@@ -41,42 +50,75 @@ The `foo` package looks like this:
 
 As you can see it includes:
 
-- A `Greeter` struct type.
-- A `DefaultMessage` ...
-
-The purpose of all of these constructs is illustrated with helpful comments...
-
+- A package comment describing what `foo` provides.
+- A `Greeter` struct type with a field-level comment.
+- A `DefaultMessage` constant used when callers omit custom text.
+- Two exported functions (`New` and `Greet`) with documentation explaining their behavior.
 
 Then we have the `cmd/greet/main.go` file:
 
 <Code code={demoCmdCode} lang="go" title="cmd/greet/main.go" />
 
-Let's run this project and see how it works:
+This command uses the `flag` package to accept both a `--name` and a `--message` flag, so you can try different combinations when running it:
 
 ```sh
-go run ...
+cd demo
+go run ./cmd/greet -name "Alice"
+Hello, Alice! Welcome to the Foo greeting tool!
 ```
 
-## Accessing the Documentation
-
-From inside `demo/`, we could access the documentation in the command line, by running:
+Or:
 
 ```sh
-go doc
+go run ./cmd/greet -name "Bob" -message "Welcome aboard"
+Hello, Bob! Welcome aboard
 ```
 
-The output would look like this:
+## Accessing the Documentation in the Command Line
 
-```
-output
-```
-
-We could also launch a local http server to explore our project docs in the browser:
+From inside `demo/`, we could access the documentation on the command line:
 
 ```sh
-
+go doc ./foo
 ```
 
+And we should get a summary of all exported identifiers, in the command-line:
+```
+package foo // import "demo/foo"
+
+Package foo provides helpers for building friendly greetings.
+
+const DefaultMessage = "Welcome to the Foo greeting tool!"
+type Greeter struct{ ... }
+    func New(message string) Greeter
+```
+
+We can drill down further:
+
+```sh
+go doc demo/foo         # package overview
+go doc demo/foo.Greeter # type docs
+go doc demo/foo.Greeter.Greet
+```
+
+## Accessing the Documentation in the Browser
+
+To view the documentation in a browser, we have to install the [pkgsite](https://pkg.go.dev/golang.org/x/pkgsite) package:
+
+```sh
+go install golang.org/x/pkgsite/cmd/pkgsite@latest
+```
+
+> [!WARNING]
+> There's used to be a package named [godoc](https://pkg.go.dev/golang.org/x/tools/cmd/godoc), but it was deprecated several years ago.
+
+
+Once the package has been installed, we can launch a local HTTP server on whatever port:
+```sh
+pkgsite -http=:8080
+```
+
+Then head to [http://localhost:8080/demo](http://localhost:8080/demo).
 
 > [!NOTE]
-> The [golang.org/x/pkgsite/cmd/pkgsite](https://pkg.go.dev/golang.org/x/pkgsite/cmd/pkgsite) is the one ...
+> The `pkgsite` command renders the same UI as [pkg.go.dev](https://pkg.go.dev/), making it ideal for previewing docs before publishing code.
