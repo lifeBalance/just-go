@@ -10,4 +10,5 @@ export default [
   { path: 'string-manipulation/', label: 'Working with Strings' },
   { path: 'composition/', label: 'Composition' },
   { path: 'concurrency/', label: 'Concurrency' },
+  { path: 'docs/', label: 'Documentation' },
 ]

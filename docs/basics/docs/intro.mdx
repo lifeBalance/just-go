@@ -1,0 +1,82 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import demoCmdCode from './code/demo/cmd/greet/main.go?raw'
+import demoPkgCode from './code/demo/foo/foo.go?raw'
+
+# Documentation
+
+The Go project [takes documentation seriously](https://go.dev/blog/godoc). Every Go installation includes the [godoc](https://go.dev/cmd/godoc/) documentation tool that automatically parses your [Go comments](https://go.dev/doc/comment) to extract documentation.
+
+## Go Comments
+
+[Go comments](https://go.dev/doc/comment) can be used at different levels of a project, to explain:
+
+- Packages
+- Commands
+- Types
+- Functions
+- Constants
+- Variables
+
+Those comments live next to your source, but they can also be used to automatically generate proper **documentation** by using the [godoc](https://go.dev/cmd/godoc/) documentation tool .
+
+## A Demo Project
+
+This little module shows how documentation flows from package, to type, to method level. Save the files under a folder named `demo/` and run the commands listed in the top comment.
+
+```
+demo/
+├── go.mod
+├── cmd/
+│   └── greet/
+│       └── main.go
+└── foo/
+    └── foo.go
+```
+
+The `foo` package looks like this:
+
+<Code code={demoPkgCode} lang="go" title="foo/foo.go" />
+
+As you can see it includes:
+
+- A `Greeter` struct type.
+- A `DefaultMessage` ...
+
+The purpose of all of these constructs is illustrated with helpful comments...
+
+
+Then we have the `cmd/greet/main.go` file:
+
+<Code code={demoCmdCode} lang="go" title="cmd/greet/main.go" />
+
+Let's run this project and see how it works:
+
+```sh
+go run ...
+```
+
+## Accessing the Documentation
+
+From inside `demo/`, we could access the documentation in the command line, by running:
+
+```sh
+go doc
+```
+
+The output would look like this:
+
+```
+output
+```
+
+We could also launch a local http server to explore our project docs in the browser:
+
+```sh
+
+```
+
+
+> [!NOTE]
+> The [golang.org/x/pkgsite/cmd/pkgsite](https://pkg.go.dev/golang.org/x/pkgsite/cmd/pkgsite) is the one ...
