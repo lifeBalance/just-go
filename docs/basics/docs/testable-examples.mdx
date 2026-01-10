@@ -1,5 +1,61 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 
+import demo2PkgCode from './code/demo2/foo/foo.go?raw'
+import demo2ExampleCode from './code/demo2/foo/foo_test.go?raw'
 
 # Testable Examples
+
+[Testable examples](https://go.dev/blog/examples) are snippets of Go code that are displayed as **package documentation**, to demonstrate how to use the code. These examples are run by `go test`, which verifies that their **output** matches the documentation.
+
+<Admonition title="Output">
+  When `go test` runs, it executes the examples and verifies the output in a
+  **trailing comment** starting with the `// Output:` string. This keeps code
+  snippets in sync while doubling as documentation.
+</Admonition>
+
+## Demo
+
+Consider the following project:
+
+```
+demo2/
+├── go.mod
+├── cmd/
+│   └── greet/
+│       └── main.go
+└── foo/
+    ├── foo_test.go
+    └── foo.go
+```
+
+The `foo` package looks exactly like in the previous section:
+
+<Code code={demo2PkgCode} lang="go" title="demo2/foo/foo.go" />
+
+But this time, we've added a `foo_test.go` file, with some [testable examples](https://go.dev/blog/examples):
+
+<Code code={demo2ExampleCode} lang="go" title="demo2/foo/foo_test.go" />
+
+Unlike normal test functions, though, **example functions** take **no arguments** and begin with the word `Example` instead of `Test`.
+
+## Running Examples in the browser
+
+They can also be run by a user visiting the godoc web page for the package and clicking the associated **Run** button. Now that we have some testable examples, let's launch a local HTTP server to check the docs:
+
+```sh
+cd demo2
+pkgsite -http=:8080 .
+```
+
+Visit [http://localhost:8080/example.com/demo2/foo](http://localhost:8080/example.com/demo2/foo). Near the bottom of the page you’ll see an **Examples** section showing the snippets we just wrote. Each one includes a **Run** button so anybody reading the documentation can execute the example directly in the browser.
+
+<Admonition title="Run Fails">
+If you try to run the examples in the browser, you'd get an **error** because Go is trying to fetch `example.com/demo2` from the internet, but it's just a local example module. To be able to **run** examples from the browser, we'd have to make the module publicly available, so that the Go Playground can fetch the import path from a public proxy (e.g., proxy.golang.org)
+</Admonition>
+
+The workaround to make sure that our examples are in sync with the output, is to use `go test` from the terminal. Go executes the example functions and verifies that the printed output matches the comment. If the comment diverges from the actual output, the test fails.
+
+<Admonition title="Examples in Sync">
+If we make changes to our examples, rerunning `go test` keeps the code and output synchronized automatically.
+</Admonition>
