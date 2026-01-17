@@ -1,17 +1,87 @@
 import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
 
-# Creating a Module
+import mod1 from './code/modules1/go.mod?raw'
+import foo1 from './code/modules1/foo.go?raw'
+import fooTest1 from './code/modules1/foo_test.go?raw'
+import fooIntTest1 from './code/modules1/foo_internal_test.go?raw'
 
-See: [Modules](https://go.dev/ref/mod) and the `go mod` commands ([cmd/go](https://pkg.go.dev/cmd/go)).
+import mod2 from './code/modules2/go.mod?raw'
+import fooTest2 from './code/modules2/foo/foo_test.go?raw'
+import bar2 from './code/modules2/bar/bar.go?raw'
+
+# Modules
+
+In Go, a [module](https://go.dev/ref/mod) is a mechanism to manage a version collection of code. In practice, a module is a directory containing a `go.mod` file at its root; this file is created using the `go mod init` command.
+
+## Single Package Module
+
+Let's say we have created a folder named `myapp`, and we want to turn it into a module:
 
 ```bash
 mkdir myapp && cd myapp
-go mod init github.com/you/myapp
+go mod init myapp
 ```
 
-- `go.mod` declares your module path ([ref/mod](https://go.dev/ref/mod)).
-- Add [packages](https://go.dev/ref/spec#Packages) under subfolders (e.g., `cmd/`, `pkg/`, `internal/`).
+Using the `go mod init` command creates a `go.mod` file with the following content:
 
-<Admonition variant="tip" title="Module path">
-Use the repo URL if the module will be published (e.g., `github.com/you/myapp`).
+<Code lang="go" code={mod1} title="go.mod" />
+
+This file defines:
+
+1. The [module's path](https://go.dev/ref/mod#module-path), in this case `demo`.
+2. The module's **dependencies**, in this case none.
+
+<Admonition variant="tip" title="Module Path">
+  The module path should be a repository URL (e.g., `github.com/you/myapp`) if
+  we plan to publish the module.
 </Admonition>
+
+For demos or really simple projects, a module can contain a bunch of loose files. For example:
+
+```
+myapp/
+    go.mod
+    foo.go
+    foo_test.go
+    foo_internal_test.go
+```
+
+As you can see, we can put our source code files next to the `go.mod` file. Let's take a look at `foo.go`:
+
+<Code lang="go" code={foo1} title="foo.go" />
+
+We could have any number of files inside this package, and they won't need to declare the module name; they just need to declare the package name:
+
+<Code lang="go" code={fooTest1} title="foo_test.go" />
+
+But since our **external testing files** uses its own package, we would have to import the `foo` package using the **module path**:
+
+<Code lang="go" code={fooIntTest1} title="foo_internal_test.go" />
+
+Think of the **module path** as the **namespace** for the package inside the module.
+
+In Go, every `.go` file that lives in the same directory (apart from `_test.go` files) must declare the **same package name**. That’s how the compiler knows those files belong to a single package and can be built together.
+
+## A More Realistic Module
+
+In real-world projects, we need to create **multiple packages**. In this case, each package lives in its own subdirectory under the module root. Let's say we want to add a second package named `bar` to our previous project:
+
+```
+myapp/
+    go.mod
+    foo/
+        foo.go
+        foo_test.go
+        foo_internal_test.go
+    bar/
+        bar.go
+```
+
+Since we have two packages: `foo` and `bar`, we have to place each package in its own folder. Apart from that, all remains the same, with the exception of the `foo_test.go` file:
+
+<Code lang="go" code={fooTest2} title="foo_test.go" />
+
+Note how we import the `foo` package using the **module path** plus the package folder name, `import foo "demo/foo"`. Finally, let's look at the `bar.go` file:
+
+<Code lang="go" code={bar2} title="bar.go" />
