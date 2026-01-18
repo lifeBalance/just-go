@@ -1,5 +1,6 @@
 export default [
   { path: 'overview', label: 'Overview' },
+  { path: 'single-package', label: 'Single-Package Projects' },
   { path: 'creating-module', label: 'Creating a Module' },
   { path: 'dependency-management', label: 'Dependency Management' },
   { path: 'local-dev', label: 'Local Development' },

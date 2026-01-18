@@ -1,0 +1,51 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import pkg1 from './code/packages1/myapp/main.go?raw'
+import test2 from './code/packages1/myapp/utils_internal_test.go?raw'
+
+# Single-Package Projects
+
+In Go, all source code files, must belong to a [package](https://go.dev/ref/spec#Packages), or in other words, must contain a package declaration at the top of the file, for example:
+
+```go
+package foo
+```
+
+## Single Package Demo
+
+Sometimes we need to put together some code, to create a small executable. Let's say we have created a folder named `myapp`:
+
+```bash
+mkdir myapp && cd myapp
+```
+
+Let's add a `main.go` file, with the following content:
+
+<Code lang="go" code={pkg1} title="myapp/main.go" />
+
+That's all we need for creating an executable in Go. In this case, we can name the package as we wanted to, but the convention here is to use `main`.
+
+### Adding More Files
+
+Now, let's say we want to add more files to our `myapp` package. We can create a new file named `utils.go`:
+
+<Code lang="go" code={pkg1} title="myapp/main.go" />
+
+As you can see, both files declare the same package name: `main`. This is because both files live in the same folder, and in Go, all files in the same folder must belong to the same package.
+
+### Adding Test Files
+
+We can also add test files to our package. Let's create a new file named `utils_internal_test.go`:
+
+<Code lang="go" code={test2} title="myapp/utils_internal_test.go" />
+
+Note that in this case, the test file must declare the same package name as the code it is testing (`main`). This is called an **internal test**.
+
+### Limitations
+
+Without a `go.mod` file, we cannot have multiple packages in the same project. Even testing is limited to **internal tests** only.
+
+<Admonition type="warning" title="Single Package Limitation">
+  The **no module** approach is only suitable for very small projects or for learning purposes. As soon as we want to create a more complex application, with multiple packages, we need to use Go modules.
+</Admonition>

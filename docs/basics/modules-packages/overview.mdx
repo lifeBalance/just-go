@@ -1,10 +1,88 @@
 import Admonition from '@components/Admonition.astro'
 
-# Modules & Packages
+# Packages, Modules & Workspaces
 
-A [module](https://go.dev/ref/mod) is a versioned collection of code managed by `go.mod`. A [package](https://go.dev/ref/spec#Packages) is a directory of Go files compiled together and imported by path.
+In a **Go project**, there are several levels of organization of our source code files:
 
-<Admonition variant="tip" title="Keep it simple">
-Start with a single module per repo. Add subpackages as the project grows.
+- Packages, to group related files.
+- Modules, to group related packages.
+- Workspaces, to group related modules.
+
+## Packages
+
+A [package](https://go.dev/ref/spec#Packages) is a folder containing a bunch of `.go` files. For example:
+
+```sh
+math/
+ ├─ mean.go        # package mathx
+ ├─ median.go      # package mathx
+ ├─ median_test.go # package mathx_test
+ └─ mean_test.go   # package mathx_test
+```
+
+In the example above, we can see how all the files belong to one of two packages:
+
+- `mathx`, which contains the implementation of some math functions.
+- `mathx_test`, which contains the tests for the `mathx` package.
+
+In Go, **folders** act as **package boundaries**, meaning that all `.go` files
+under a given folder, must belong to the same [package](https://go.dev/ref/spec#Packages).
+
+<Admonition type="warning" title="Test Packages">
+  An exception to the **package boundary rule** are test files (i.e., files ending with `_test.go`). These files can belong to either
+  the same package as the code they are testing (internal tests) or to a
+  separate package (external tests).
 </Admonition>
 
+To mark files as belonging to a given package, we use the `package` keyword at the top of the file. All files in the same folder must declare the same package name; for example, both `mean.go` and `median.go` must have at the top a `package mathx` declaration. This is how the Go compiler knows those files belong to the same package and can be compiled together.
+
+## Modules
+
+Then we have [modules](https://go.dev/ref/mod), which act as a top-level **namespace** for the packages. Most of Go projects are composed of **multiple packages** under **one module**. For example:
+
+```sh
+myapp/
+ ├─ go.mod                  # module example.com/analytics
+ ├─ internal/
+ │   └─ stats/
+ │       └─ stats.go        # package stats
+ ├─ cmd/
+ │   └─ dashboard/
+ │       └─ main.go         # package main
+ └─ pkg/
+     └─ viz/
+         ├─ charts.go       # package viz
+         └─ charts_test.go  # package viz_test
+```
+
+Modules are managed in a `go.mod` file; module files are used to declare the **module's path** and its manage the **dependencies** of our application.
+
+## Workspaces
+
+Some large projects may need multiple related modules, which is why in [Go 1.18](https://go.dev/blog/get-familiar-with-workspaces) workspaces were introduced. [Workspaces](https://go.dev/ref/mod#workspaces) are declared in [go.work](https://go.dev/ref/mod#go-work-file) files. For example:
+
+```sh
+myapp/
+ ├─ go.work
+ ├─ tools/                  # module example.com/tools
+ │   ├─ go.mod
+ │   └─ cmd/
+ │       └─ lint/
+ │           └─ main.go
+ ├─ engine/                 # module example.com/engine
+ │   ├─ go.mod
+ │   └─ internal/
+ │       └─ compute/
+ │           └─ solver.go
+ └─ ui/                     # module example.com/ui
+     ├─ go.mod
+     └─ widget/
+         └─ button.go
+```
+
+A [workspace](https://go.dev/ref/mod#workspaces) is a set of modules managed together by `go.work`.
+
+<Admonition variant="tip" title="Summary">
+  Check this tutorial about [Getting started with multi-module
+  workspaces](https://go.dev/doc/tutorial/workspaces).
+</Admonition>
