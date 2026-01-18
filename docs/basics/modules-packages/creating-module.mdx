@@ -12,70 +12,107 @@ import bar2 from './code/modules2/bar/bar.go?raw'
 
 # Modules
 
-In Go, a [module](https://go.dev/ref/mod) is a mechanism to manage a version collection of code. In practice, a module is a directory containing a `go.mod` file at its root; this file is created using the `go mod init` command.
+As we saw in the previous section, without modules, a Go project can only contain **one package**. To create projects with **multiple packages**, we need to use [modules](https://go.dev/ref/mod). Modules are a mechanism that fulfill two purposes:
+
+- They act as a top-level **namespace** for the packages inside the module. That way, we can use code from one package inside another package by importing it using the **module path**.
+- Manage the **dependencies** of our application.
+
+In practice, a module is a directory containing a `go.mod` file at its root. This file declares the **module's path** and manages the **dependencies** of our application.
 
 ## Single Package Module
 
-Let's say we have created a folder named `myapp`, and we want to turn it into a module:
+Let's say we have created a folder named `myapp`:
 
 ```bash
 mkdir myapp && cd myapp
+```
+
+To **initialize a module** we have to use the `go mod init`, followed by the module's path:
+```bash
 go mod init myapp
 ```
 
-Using the `go mod init` command creates a `go.mod` file with the following content:
+This command will create a `go.mod` file at the root of the `myapp` folder; we'll take a look at it later. 
+
+### No Subfolders
+
+For this simple demo, we won't be using folders for our packages; instead we'll keep our packages as loose files. For example:
+
+```sh
+myapp/
+ ├─ go.mod
+ ├─ main.go                # package foo
+ ├─ foo.go                 # package foo
+ ├─ foo_test.go            # package foo_test 👈 (exception)
+ └─ foo_internal_test.go   # package foo
+```
+
+Since we are using **no folders**, all the files (except for `_test.go` files) must belong to the same package, in this case, to the `foo` package. Even `main.go`, where we keep the **entry point** of our program, belongs to `foo`.
+
+<Admonition variant="tip" title="Package Boundaries">
+  Without using **folders**, all `.go` files in the same directory (except for `_test.go` files) must belong to the same package.
+</Admonition>
+
+An **exception** to this rule are test files (i.e., files ending with `_test.go`), which can belong to either the same package as the code they are testing (internal tests) or to a separate package (external tests). For example:
+
+<Code lang="go" code={fooTest1} title="foo_test.go" />
+
+Since our **external testing files** uses its own package, we would have to import the `foo` package using the **module path**. Apart from that, we could have any number of files declaring the `foo` package, and they will have access to all identifiers declared accross all the files.
+
+<Admonition variant="tip" title="Module Path as Namespace">
+Think of the **module path** as the **namespace** for the package inside the module.
+</Admonition>
+
+Another advantage of using a module is that we can add **external dependencies** to our project. For example, let's say we want to use the `github.com/stretchr/testify` package for testing. We can add it as a dependency by running:
+
+```bash
+go get github.com/stretchr/testify
+```
+
+This command will do two things:
+
+1. Create a new `go.sum` file to keep track of the module's dependencies.
+2. Update our `go.mod` file to include the new dependency.
+
+Let's take a look at the updated `go.mod` file:
 
 <Code lang="go" code={mod1} title="go.mod" />
 
-This file defines:
+As you can see, this file defines:
 
 1. The [module's path](https://go.dev/ref/mod#module-path), in this case `demo`.
-2. The module's **dependencies**, in this case none.
+2. The module's **dependencies**, in this case `testify`.
 
 <Admonition variant="tip" title="Module Path">
   The module path should be a repository URL (e.g., `github.com/you/myapp`) if
   we plan to publish the module.
 </Admonition>
 
-For demos or really simple projects, a module can contain a bunch of loose files. For example:
-
-```
-myapp/
-    go.mod
-    foo.go
-    foo_test.go
-    foo_internal_test.go
-```
-
-As you can see, we can put our source code files next to the `go.mod` file. Let's take a look at `foo.go`:
-
-<Code lang="go" code={foo1} title="foo.go" />
-
-We could have any number of files inside this package, and they won't need to declare the module name; they just need to declare the package name:
-
-<Code lang="go" code={fooTest1} title="foo_test.go" />
-
-But since our **external testing files** uses its own package, we would have to import the `foo` package using the **module path**:
+Now we can use the `testify` package in our tests. For example:
 
 <Code lang="go" code={fooIntTest1} title="foo_internal_test.go" />
 
-Think of the **module path** as the **namespace** for the package inside the module.
+👉 If you get some errors while importing the `testify` package, try running `go mod tidy` to clean up the module's dependencies. ✅
 
+<Admonition variant="tip" title="All Files in Same Package">
 In Go, every `.go` file that lives in the same directory (apart from `_test.go` files) must declare the **same package name**. That’s how the compiler knows those files belong to a single package and can be built together.
+</Admonition>
+
+Not using subfolders for packages is **not a common practice**, except for the smallest projects. In the next section, we'll see how to create a more realistic module with multiple packages, each on its own folder.
 
 ## A More Realistic Module
 
 In real-world projects, we need to create **multiple packages**. In this case, each package lives in its own subdirectory under the module root. Let's say we want to add a second package named `bar` to our previous project:
 
-```
+```sh
 myapp/
-    go.mod
-    foo/
-        foo.go
-        foo_test.go
-        foo_internal_test.go
-    bar/
-        bar.go
+ ├─ go.mod
+ ├─ foo/
+ │   ├─ foo.go
+ │   ├─ foo_test.go
+ │   └─ foo_internal_test.go
+ └─ bar/
+     └─ bar.go
 ```
 
 Since we have two packages: `foo` and `bar`, we have to place each package in its own folder. Apart from that, all remains the same, with the exception of the `foo_test.go` file:

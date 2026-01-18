@@ -3,12 +3,13 @@ package foo_test
 import (
 	foo "demo"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFoo(t *testing.T) {
+
 	want := "expected"
 	got := foo.Foo("EXPECTED")
-	if got != want {
-		t.Errorf("Foo() = %q, want %q", got, want)
-	}
+	assert.Equal(t, want, got)
 }
