@@ -272,9 +272,124 @@ type Bad struct {
 }
 ```
 
-## Methods on Structs
+## Adding Behaviour
 
-The same way objects in OOP have methods, in Go, structs can as well:
+There are two main ways to add behavior to structs: function fields and methods.
+
+### Function Fields
+
+Apart from grouping related data, struct fields can also store function values, allowing us to add behavior to our structs:
+
+```go
+func sayHi(name string) {
+	fmt.Printf("Hi, I'm %s\n", name)
+}
+
+func sayBye(name string) {
+	fmt.Printf("%s is out!\n", name)
+}
+
+type Person struct {
+    name  string
+    age   int
+    greet func(string)
+}
+
+
+func Main() {
+    p := Person{name: "Bob", age: 42, greet: sayHi}
+
+    p.greet(p.name) // Hi, I'm Bob
+
+    p.greet = sayBye // Change behavior
+
+    p.greet(p.name) // Bob is out!
+}
+```
+
+The **function-field pattern** is fine when you literally want **per-instance behavior** that callers can swap out (e.g., dependency injection, test doubles, runtime strategy selection). It’s more flexible but also more explicit: each instance carries a function pointer you must remember to set.
+
+#### DI Example
+
+The **function-field pattern** should only be used in particular scenarios — for example, if consumers should be able to **inject** their own logger or callback per instance. For example:
+
+```go
+type Thing struct {
+	Log func(string)
+}
+
+func (t Thing) DIDemo() {
+	logFn := t.Log          // Check for injected logger
+	if logFn == nil {       // Fallback to default
+		logFn = func(msg string) {
+			log.Println(msg)
+		}
+	}
+	err := doThing()
+	if err != nil {
+		logFn(fmt.Sprintf("failed to do the thing: %v", err))
+		return
+	}
+	// pretend to keep going
+}
+```
+
+Callers can now inject whatever logger they want:
+
+```go
+func Main() {
+    custom := Thing{
+        Log: func(msg string) {
+            fmt.Println("API logger:", msg)
+        },
+    }
+    custom.DIDemo() // logs through the injected callback
+}
+```
+
+In the next section, we'll look at the **idiomatic Go way** to add behavior to structs.
+
+### Methods
+
+Go’s idiomatic way to hang behavior on a struct is known as the [receiver syntax](https://go.dev/ref/spec#Method_declarations). Here’s how we can rewrite the previous example using this syntax:
+
+```go
+type Person struct {
+    name string
+    age  int
+}
+
+func (p Person) greet(greeting string) {
+    fmt.Printf("%s %s", greeting, p.name)
+}
+
+func Main() {
+    p := Person{name: "Bob", age: 42}
+
+    p.greet("What's up! I'm")       // What's up! I'm Bob
+    p.greet("Hello, my name is")    // Hello, my name is Bob
+}
+```
+
+The big win is ergonomics: **methods** automatically have access to the struct’s fields, so you don’t have to pass `name`, `age`, and everything else as arguments every time.
+
+<Admonition title="Receiver">
+  In the example above, the receiver is `(p Person)`, a **value** of the type
+  `Person`.
+</Admonition>
+
+If we want to modify the struct inside the method, we can use a **pointer receiver**:
+
+```go
+func (p *Person) haveBirthday() {
+    p.age++ // Modify the age field
+    fmt.Printf("Happy birthday %s! You are now %d years old.\n", p.name, p.age)
+}
+```
+
+#### Type of Methods
+
+Struct methods can have either **value receivers** or **pointer receivers**. Let's see another example with a `Rectangle` struct that has methods to calculate the area and scale its size:
 
 ```go
 type Rectangle struct {
@@ -293,10 +408,11 @@ func (r *Rectangle) Scale(factor float64) {
     r.height *= factor
 }
 
-// Usage
-rect := Rectangle{width: 10, height: 5}
-fmt.Println(rect.Area())  // 50
+func Main() {
+    rect := Rectangle{width: 10, height: 5}
 
-rect.Scale(2)
-fmt.Println(rect.Area())  // 200
+    fmt.Println(rect.Area())  // 50
+    rect.Scale(2)
+    fmt.Println(rect.Area())  // 200
+}
 ```
