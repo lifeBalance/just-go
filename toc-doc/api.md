@@ -19,7 +19,8 @@ The format below is one section per function. Each includes a short purpose, sig
 ## Configuration (multi-root)
 
 - File: `src/lib/docs/config.ts`
-- `docsConfig.branches`: list of sections with an `id` and a filesystem `root` (e.g., `{ id: 'basics', root: '/docs/basics' }`, `{ id: 'toc-doc', root: '/toc-doc' }`).
+- `docsConfig.branches`: list of sections with an `id`, filesystem `root`, and optional metadata (`title`, `subtitle`, `href`). These come from your `docsIntegration({ sections: [...] })` call.
+- `docsConfig.summaries`: plain object keyed by section id, containing the same metadata when you need it separately.
 - `getGlobRegistry()`: returns literal `import.meta.glob` maps per branch id (both content and `_toc.ts`). The engine selects globs by branch id, so docs can live outside `/docs`.
 - `docsConfig.basePath`: deployment base (defaults to `import.meta.env.BASE_URL`), used to build absolute URLs in links and nav.
 
@@ -77,6 +78,7 @@ listSectionPageParams()
   - `contentRoot`: filesystem root for the section (e.g., '/docs/basics') from docs config
 - Purpose: Build a section-specific API used by the route — enumerates content, resolves modules, and builds navigation.
 - Why it stays: Keeps all section logic encapsulated and testable; the route uses a tiny, predictable surface.
+- Landing metadata: when the integration supplies `title`/`subtitle`/`href`, these flow through `docsConfig.branches` so the landing page can render cards automatically.
 
 ### `.base`
 
@@ -262,5 +264,9 @@ const result = resolveOrNext(api, segment)
 const Page = api.resolver()(segment)?.default
 const { prev, next } = getPrevNext(result.nav, result.kind === 'ok' ? `/${section}/${segment}` : result.kind === 'redirect' ? result.url : '')
 ```
+
+### Landing Page Integration
+
+The landing page (`src/pages/index.astro`) can now render section cards automatically using metadata from `docsIntegration`. Each section may define `title`, `subtitle`, and an optional custom `href`; these values are available on `docsConfig.branches` (and also via `docsConfig.summaries`). This keeps the homepage in sync with the integration configuration.
 
 This organization keeps the page minimal while the docs engine remains explicit and predictable: `_toc.ts` files control ordering and labels; content stays in `/docs/**`; and resolved MDX components render with consistent navigation and sensible redirects.

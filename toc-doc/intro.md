@@ -21,7 +21,7 @@ The idea is that the user, can drop Markdown or MDX files in subfolders under th
 
 There are two main routes:
 
-- The landing page is handled by the `pages/index.astro` file. Here it's where the users should add links to each section of the `/docs` folder.
+- The landing page is handled by the `pages/index.astro` file. Cards on this page are now generated from the sections you declare in `docsIntegration()` inside `astro.config.mjs`, including optional metadata like `title`, `subtitle`, and `href`.
 - There's also a **dynamic route** in `pages/[section]/[...page].astro` that automatically picks up all the subfolders under the `/docs` directory.
 
 Users can also add their own custom routes, as I did with the `colors.astro`, which is a page where I could render the colors used in my dark and light themes, to see how they looked like.
