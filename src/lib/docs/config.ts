@@ -1,37 +1,75 @@
-// Central docs configuration
-// - basePath: deployment prefix for all docs routes (e.g., '/just-go')
-//   If undefined, falls back to import.meta.env.BASE_URL.
-// - sections: top-level docs folders under /docs to include in routing.
-
-
 export type DocsBranch = {
   id: string
   root: string
+  title?: string
+  subtitle?: string
+  href?: string
 }
 
-// Default to the build-time base (Astro/Vite sets BASE_URL), trimmed of trailing slash
-const defaultBase = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+export type GlobRegistry = Record<string, {
+  content: Record<string, any>
+  toc: Record<string, any>
+}>
 
-// Registry of literal globs keyed by branch id
-export function getGlobRegistry() {
-  return {
-    basics: {
-      content: import.meta.glob('/docs/basics/**/*.{md,mdx}', { eager: true }) as Record<string, any>,
-      toc: import.meta.glob('/docs/basics/**/_toc.ts', { eager: true }) as Record<string, any>,
-    },
-    'toc-doc': {
-      content: import.meta.glob('/toc-doc/**/*.{md,mdx}', { eager: true }) as Record<string, any>,
-      toc: import.meta.glob('/toc-doc/**/_toc.ts', { eager: true }) as Record<string, any>,
-    },
-  } as Record<string, { content: Record<string, any>; toc: Record<string, any> }>
+const fallbackBranches: DocsBranch[] = [
+  { id: 'docs', root: '/docs', title: 'Docs', subtitle: '', href: '/docs' },
+]
+
+type DocsConfigModule = {
+  basePath?: string
+  branches?: DocsBranch[]
+  summaries?: Record<string, { title: string; subtitle?: string; href?: string }>
+}
+
+let resolvedConfig: DocsConfigModule = {}
+let resolvedRegistry: (() => GlobRegistry) | undefined
+let resolvedSummaries: Record<string, { title: string; subtitle?: string; href?: string }> = {}
+
+try {
+  const mod = await import('virtual:docs-config')
+  resolvedConfig = (mod as any).docsConfig ?? {}
+  resolvedRegistry = (mod as any).getGlobRegistry
+  resolvedSummaries = (mod as any).docsSummaries ?? {}
+} catch (err) {
+  resolvedConfig = {}
+  resolvedRegistry = undefined
+  resolvedSummaries = {}
+}
+
+function normalizeBasePath(raw?: string): string {
+  const envBase = typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL
+    ? import.meta.env.BASE_URL
+    : '/'
+  const base = raw ?? envBase
+  const trimmed = base.replace(/\/$/, '')
+  return trimmed === '' ? '/' : trimmed
+}
+
+const fallbackConfig = {
+  basePath: normalizeBasePath(),
+  branches: fallbackBranches,
+}
+
+const fallbackRegistry: GlobRegistry = {
+  docs: {
+    content: import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }),
+    toc: import.meta.glob('/docs/**/_toc.ts', { eager: true }),
+  },
 }
 
 export const docsConfig = {
-  // Override this if you need a custom deployment base; otherwise uses BASE_URL
-  basePath: defaultBase,
-  // Each branch maps a public section id to a filesystem root (absolute from project root)
-  branches: [
-    { id: 'basics',  root: '/docs/basics' },
-    { id: 'toc-doc', root: '/toc-doc' },
-  ] as DocsBranch[],
+  basePath: normalizeBasePath(resolvedConfig?.basePath),
+  branches: ((resolvedConfig?.branches as DocsBranch[] | undefined) ?? fallbackConfig.branches).map((branch) => ({
+    ...branch,
+    title: branch.title ?? resolvedSummaries[branch.id]?.title ?? branch.id,
+    subtitle: branch.subtitle ?? resolvedSummaries[branch.id]?.subtitle ?? '',
+    href: branch.href ?? resolvedSummaries[branch.id]?.href ?? `/${branch.id}`,
+  })),
+  summaries: resolvedSummaries,
+}
+
+export function getGlobRegistry(): GlobRegistry {
+  if (typeof resolvedRegistry === 'function') return resolvedRegistry()
+
+  return fallbackRegistry
 }

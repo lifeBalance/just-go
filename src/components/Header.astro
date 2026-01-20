@@ -4,7 +4,7 @@ import PageFind from '@components/PageFind.astro'
 import { docsConfig } from '@lib/docs/config'
 import gopher from '@assets/gopher.png?url'
 
-const base = docsConfig.basePath ?? import.meta.env.BASE_URL
+const base = docsConfig.basePath
 const homeHref = base.endsWith('/') ? base : base + '/'
 const hidden = Astro.props?.hideSearch === true
 ---

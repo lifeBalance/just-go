@@ -5,11 +5,18 @@ import Hero from '@components/Hero.astro'
 
 import { docsConfig } from '@lib/docs/config'
 
-const base = docsConfig.basePath ?? import.meta.env.BASE_URL
+const base = docsConfig.basePath
 const baseWithTrailingSlash = base.endsWith('/') ? base : base + '/'
 
-const basicsHref = `${baseWithTrailingSlash}basics/introduction/overview`
-const tocHref = `${baseWithTrailingSlash}toc-doc/intro`
+const cards = docsConfig.branches.map((branch) => {
+  const href = branch.href?.startsWith('/') ? branch.href : `${baseWithTrailingSlash}${branch.id}`
+  return {
+    id: branch.id,
+    href,
+    title: branch.title ?? branch.id,
+    subtitle: branch.subtitle ?? '',
+  }
+})
 ---
 
 <MainLayout hideSearch>
@@ -18,18 +25,12 @@ const tocHref = `${baseWithTrailingSlash}toc-doc/intro`
       <Hero rotate="-2deg" />
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-      <Card href={basicsHref} astroPrefetch={false}>
-        <h2 class="text-xl font-semibold">Basics</h2>
-        <p class="text-sm text-sd-muted">
-          Start with the language fundamentals.
-        </p>
-      </Card>
-      <Card href={tocHref} astroPrefetch={false}>
-        <h2 class="text-xl font-semibold">Toc‑Doc</h2>
-        <p class="text-sm text-sd-muted">
-          Build doc sites with different topics.
-        </p>
-      </Card>
+      {cards.map((card) => (
+        <Card href={card.href} astroPrefetch={false}>
+          <h2 class="text-xl font-semibold">{card.title}</h2>
+          {card.subtitle && <p class="text-sm text-sd-muted">{card.subtitle}</p>}
+        </Card>
+      ))}
     </div>
   </section>
 </MainLayout>

@@ -2,10 +2,10 @@ import { parseTocConfig } from './tocParser.js'
 import { docsConfig, getGlobRegistry } from './config.js'
 
 const Path = {
-  normalize: (p: string) => p.replace(/\/$/, ''),
-  trimSlashes: (p: string) => p.replace(/^\/+|\/+$/g, ''),
-  isGroup: (p: string) => /\/$/.test(p),
-  fsToRoute: (fs: string) => {
+  normalize: (p) => p.replace(/\/$/, ''),
+  trimSlashes: (p) => p.replace(/^\/+|\/+$/g, ''),
+  isGroup: (p) => /\/$/.test(p),
+  fsToRoute: (fs) => {
     const branch = docsConfig.branches.find((b) => fs.startsWith(`${b.root.replace(/\/$/, '')}/`))
     if (!branch) return ''
     const rel = fs
@@ -15,11 +15,11 @@ const Path = {
       .replace(/\.(md|mdx)$/, '')
     return `/${branch.id}/${rel}`
   },
-  toRelative: (url: string, base: string) => {
+  toRelative: (url, base) => {
     const esc = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     return url.replace(new RegExp('^' + esc + '/'), '')
   },
-  getParts: (url: string, base: string) => Path.toRelative(url, base).split('/').filter(Boolean),
+  getParts: (url, base) => Path.toRelative(url, base).split('/').filter(Boolean),
 }
 
 const GLOB_REGISTRY = getGlobRegistry()
@@ -35,16 +35,16 @@ const STATIC_TOCS = Object.assign(
 )
 
 class ContentStore {
-  constructor(
-    private mods: Record<string, any>,
-    private tocs: Record<string, any>
-  ) {}
+  constructor(mods, tocs) {
+    this.mods = mods
+    this.tocs = tocs
+  }
 
-  getAllModPaths(): string[] {
+  getAllModPaths() {
     return Object.keys(this.mods)
   }
 
-  getModsForSection(section: string) {
+  getModsForSection(section) {
     const branch = docsConfig.branches.find((b) => b.id === Path.trimSlashes(section))
     if (!branch) return {}
     const prefix = `${branch.root.replace(/\/$/, '')}/`
@@ -53,7 +53,7 @@ class ContentStore {
     )
   }
 
-  getTocForPath(root?: string) {
+  getTocForPath(root) {
     if (!root) return parseTocConfig(null)
     const tocPath = ['.ts', '.js']
       .map((ext) => `${root}/_toc${ext}`)
@@ -64,14 +64,14 @@ class ContentStore {
 
 const store = new ContentStore(STATIC_MODS, STATIC_TOCS)
 
-function capitalize(name: string) {
+function capitalize(name) {
   return name.replace(/(^|\/ )\w/g, (m) => m.toUpperCase())
 }
 
 export function listSectionPageParams() {
   const fsList = store.getAllModPaths()
-  const sections = new Set<string>()
-  const out: Array<{ section: string; page?: string }> = []
+  const sections = new Set()
+  const out = []
 
   for (const fs of fsList) {
     const route = Path.fsToRoute(fs)
@@ -101,11 +101,11 @@ export function getDocStaticPaths() {
   }))
 }
 
-function flattenNav(nav: any[]) {
+function flattenNav(nav) {
   return nav.flatMap((g) => (g.href && !g.items.length ? [{ url: g.href, title: g.label }] : g.items))
 }
 
-export function getPrevNext(nav: any[], currentPath: string) {
+export function getPrevNext(nav, currentPath) {
   const flat = flattenNav(nav)
   const idx = flat.findIndex((i) => Path.normalize(i.url) === Path.normalize(currentPath))
 
@@ -117,12 +117,12 @@ export function getPrevNext(nav: any[], currentPath: string) {
   }
 }
 
-export function resolveOrNext(section: ReturnType<typeof createSection>, segment: string) {
+export function resolveOrNext(section, segment) {
   const resolve = section.resolver()
   const { nav } = section.nav()
 
   if (resolve(segment)) {
-    return { kind: 'ok' as const, segment, nav }
+    return { kind: 'ok', segment, nav }
   }
 
   const parts = (segment || '').split('/').filter(Boolean)
@@ -135,13 +135,13 @@ export function resolveOrNext(section: ReturnType<typeof createSection>, segment
         })()
 
   return fallbackUrl
-    ? { kind: 'redirect' as const, url: fallbackUrl, nav }
-    : { kind: 'not_found' as const, nav }
+    ? { kind: 'redirect', url: fallbackUrl, nav }
+    : { kind: 'not_found', nav }
 }
 
-function categorizeEntries(entries: any[], base: string) {
-  const topDocs = new Map<string, any>()
-  const groupIndex = new Map<string, Map<string, any>>()
+function categorizeEntries(entries, base) {
+  const topDocs = new Map()
+  const groupIndex = new Map()
 
   for (const entry of entries) {
     const parts = Path.getParts(entry.url, base)
@@ -151,14 +151,14 @@ function categorizeEntries(entries: any[], base: string) {
     } else if (parts.length === 2) {
       const [group, slug] = parts
       if (!groupIndex.has(group)) groupIndex.set(group, new Map())
-      groupIndex.get(group)!.set(slug, entry)
+      groupIndex.get(group).set(slug, entry)
     }
   }
 
   return { topDocs, groupIndex }
 }
 
-export function createSection(section: string, basePath?: string, contentRootArg?: string) {
+export function createSection(section, basePath, contentRootArg) {
   const sec = Path.trimSlashes(section)
   const basePrefix = (basePath ?? docsConfig.basePath).replace(/\/$/, '')
   const branch = docsConfig.branches.find((b) => b.id === sec)
@@ -192,7 +192,7 @@ export function createSection(section: string, basePath?: string, contentRootArg
       )
       const baseNorm = Path.normalize(base)
 
-      return (seg: string) => {
+      return (seg) => {
         const target = Path.normalize(baseNorm + (seg ? '/' + seg : ''))
         return routeMap.get(target)
       }
@@ -202,17 +202,17 @@ export function createSection(section: string, basePath?: string, contentRootArg
       const rootSidebar = store.getTocForPath(contentRoot)
       const { topDocs, groupIndex } = categorizeEntries(entries, base)
 
-      function buildGroup(dir: string) {
+      function buildGroup(dir) {
         const groupKey = `${dir}/`
 
-        const itemBySlug = groupIndex.get(dir) ?? new Map<string, any>()
+        const itemBySlug = groupIndex.get(dir) ?? new Map()
         const localSidebar = store.getTocForPath(`${contentRoot}/${dir}`)
 
         const navItems = localSidebar.ordered
-          .map((e: any) => (Path.isGroup(e.path) ? e.path.slice(0, -1) : e.path))
-          .filter((slug: string) => slug && itemBySlug.has(slug))
-          .map((slug: string) => {
-            const entry = itemBySlug.get(slug)!
+          .map((e) => (Path.isGroup(e.path) ? e.path.slice(0, -1) : e.path))
+          .filter((slug) => slug && itemBySlug.has(slug))
+          .map((slug) => {
+            const entry = itemBySlug.get(slug)
             return {
               url: entry.url,
               title: localSidebar.alias.get(slug) || entry.title || capitalize(slug),
@@ -228,7 +228,7 @@ export function createSection(section: string, basePath?: string, contentRootArg
         }
       }
 
-      function buildDoc(slug: string) {
+      function buildDoc(slug) {
         const entry = topDocs.get(slug)
         if (!entry) return null
 
@@ -242,10 +242,10 @@ export function createSection(section: string, basePath?: string, contentRootArg
 
       return {
         nav: rootSidebar.ordered
-          .map((e: any) => e.path)
+          .map((e) => e.path)
           .filter(Boolean)
-          .map((path: string) => (Path.isGroup(path) ? buildGroup(path.slice(0, -1)) : buildDoc(path)))
-          .filter((node): node is any => node !== null),
+          .map((path) => (Path.isGroup(path) ? buildGroup(path.slice(0, -1)) : buildDoc(path)))
+          .filter((node) => node !== null),
       }
     },
   }

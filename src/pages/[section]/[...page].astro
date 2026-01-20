@@ -31,7 +31,7 @@ const { section, page } = Astro.params as {
 const segment = Array.isArray(page) ? page.join('/') : page || ''
 
 import { docsConfig } from '@lib/docs/config'
-const basePrefix = (docsConfig.basePath ?? import.meta.env.BASE_URL).replace(/\/$/, '')
+const basePrefix = docsConfig.basePath.replace(/\/$/, '')
 
 // Build a section-scoped API and decide what to do with the current segment
 // - ok: render the resolved MD/MDX module
