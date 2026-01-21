@@ -1,0 +1,58 @@
+import Admonition from '@components/Admonition.astro'
+
+# Processes
+
+A [process](<https://en.wikipedia.org/wiki/Process_(computing)>) is is the instance of a computer program that is being executed by one or many threads. When we run:
+
+```bash
+sleep 30&
+[1] 8204
+```
+
+Several things are happening:
+
+- We are starting a new process in the background (with `&`) that will sleep for 30 seconds.
+- The second line (`[1] 8204`) indicates that:
+  - This is [job](<https://en.wikipedia.org/wiki/Job_(computing)>) number 1.
+  - And its Process ID (PID) is `8204`.
+
+After those 30 seconds, the process will end and free all its resources:
+
+```bash
+[1]  + 8204 done       sleep 30
+```
+
+## Process Isolation
+
+Each process runs in its own [isolated environment](https://en.wikipedia.org/wiki/Process_isolation). This is done to ensure that processes do not interfere with each other, e.g. to prevent **process A** from writing to **process B**'s memory space.
+
+A process it's sort of an isolated container created by the OS, which all the resources needed:
+
+- [Process ID](https://en.wikipedia.org/wiki/Process_identifier): Each process is assigned a unique identifier, aka `PID`, which the operating system uses to manage and track it.
+- [Memory Space](https://en.wikipedia.org/wiki/Virtual_address_space) is an area of contiguous [virtual memory](https://en.wikipedia.org/wiki/Virtual_memory) locations, which an operating system makes available to a process for executing instructions and storing data.
+- [File Descriptors](https://en.wikipedia.org/wiki/File_descriptor): Each process has its own set of file descriptors, which are just integers that point to an open resource your process can use for reading, writing.
+
+## Inter-Process Communication (IPC)
+
+When processes need to communicate with each other they must share parts of their address spaces or use other forms of inter-process communication (IPC). Some common IPC mechanisms include:
+
+- [Pipes](https://en.wikipedia.org/wiki/Inter-process_communication#Pipes): Allow data to flow in one direction from one process to another.
+- [Message Queues](https://en.wikipedia.org/wiki/Message_queue): Enable processes to send and receive messages asynchronously.
+- [Shared Memory](https://en.wikipedia.org/wiki/Shared_memory): Allows multiple processes to access the same memory space for fast data exchange.
+- [Sockets](https://en.wikipedia.org/wiki/Network_socket): Facilitate communication between processes over a network.
+
+## Processes are Expensive
+
+Creating a new process is an expensive operation. The OS has to allocate memory, set up file descriptors, and initialize various data structures. This can take milliseconds, which is a long time in computing.
+
+## Multitasking
+
+Most modern operating systems support [multitasking](https://en.wikipedia.org/wiki/Computer_multitasking), which allows multiple processes to run seemingly simultaneously on a single CPU core. The OS achieves this by rapidly switching between processes, giving each one a small time slice to execute. This creates the illusion of parallelism, even though only one process is actually running at any given moment on a single core.
+
+<Admonition title="Multitasking does not require parallelism">
+  Multitasking does not require parallel execution of multiple tasks at exactly
+  the same time; instead, it allows more than one task to advance over a given
+  period of time.
+</Admonition>
+
+[Context switching](https://en.wikipedia.org/wiki/Context_switch) between processes is also an expensive operation, as the OS has to save the state of the current process and load the state of the next one. This involves updating various CPU registers, memory mappings, and other data structures, which can take thousands of CPU cycles.

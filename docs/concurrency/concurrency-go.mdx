@@ -1,0 +1,23 @@
+import Admonition from '@components/Admonition.astro'
+
+# Concurrency in Go
+
+Some languages, place the responsability for creating and managing **threads** in the developer (**manual parallelism**). In Go, we use simple primitives to describe concurrent tasks, and a [scheduler](https://go.dev/src/runtime/HACKING) automatically distributes them across processor cores.
+
+<Admonition title="Built-in Concurrency">
+Go has first-class support for concurrency, built into the language itself. The main **primitive** for concurrent programming in Go is the **goroutine**.
+
+Goroutines are "Green Threads" they are managed by the Go language, not the OS. They are cheaper to create (`~2KB` vs `1MB`) and much faster to switch between.
+</Admonition>
+
+To achieve this, Go provides four main primitives:
+
+- [Goroutines](https://go.dev/tour/concurrency/1): The fundamental unit of execution. They are extremely lightweight threads managed by the runtime, not the OS.
+
+- [Channels](https://go.dev/tour/concurrency/2): Pipes that connect Goroutines, allowing them to send data and synchronize safely without using shared memory.
+
+- [Select](https://go.dev/tour/concurrency/5): A control structure that lets a single Goroutine wait on multiple channel operations at once, acting like a switchboard for data.
+
+- [Sync Package](https://pkg.go.dev/sync): Provides traditional low-level synchronization tools, such as `WaitGroup` to wait for tasks to finish, or `Mutex` to lock memory.
+
+Goroutines are cheaper to create and maintain than traditional OS threads, allowing you to spawn thousands or even millions of them in a single program.

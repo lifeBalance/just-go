@@ -16,7 +16,7 @@ These problems are not limited to web servers. Any system that handles multiple 
   other to exchange data or coordinate their actions.
 </Admonition>
 
-In Go, concurrency is a first-class citizen, making it easy to write programs that can perform multiple operations simultaneously.
+In Go, concurrency is a **first-class citizen**, meaning that the language includes some built-in constructs, that make it easy to write programs that can perform multiple operations simultaneously.
 
 ## Concurrency vs. Parallelism
 
@@ -39,52 +39,23 @@ When solving these challenges in a non-sequential way, we can differentiate betw
 
 Go simplifies this by blending both behaviors into a single primitive: the [Goroutine](https://go.dev/tour/concurrency/1).
 
-## Processes vs. Threads
+## Utilizing Multiple CPU Cores
 
-Before understanding how Go handles concurrency, we need to understand how the **Operating System** handles running programs.
+Modern hardware architectures are built with [multiple cores](https://en.wikipedia.org/wiki/Multi-core_processor), so it make sense that programming languages offer a way to fully utilize the capabilities of a machine.
 
-### The Process (The Container)
+![multicore](./img/single-vs-multiple.webp)
 
-A Process is an instance of a computer program that is being executed. Think of it as a fully isolated "container" for your application.
+Using **concurrent programming** we can split our program's workload into tasks, that can run simultaneously in multiple CPU cores. This increases the throughput of our programs, and speeds up their execution.
 
-Resources: It is given its own block of memory (RAM) and resources by the OS.
+## Single Core Benefits
 
-Isolation: Processes are strictly separated. If one process crashes (e.g., your browser freezes), it doesn't crash your music player.
+Even with a **single CPU core**, concurrency offers benefits. Most programs spend only a small proportion of their time executing computations on the processor. The majority of the time, the CPU is waiting on **slow I/O** (disk, network, user input). Instead of letting the core sit idle during those waits, concurrent programs can switch to other tasks that are ready to run, making better use of the CPU time.
 
-Weight: Creating a process is "expensive" for the computer. It involves a lot of setup overhead.
+<Admonition type="info" title="Real-life analogy">
+  Imagine you're baking some muffins. While they are in the oven, you can be
+  doing the dishes, or start another batch. Instead of sitting iddle, just
+  waiting for the muffins to bake, you're using that time to get other things
+  done.
+</Admonition>
 
-Analogy: A Process is like a House. It has its own kitchen, bathroom, and electricity. What happens inside the house stays inside the house.
-
-### The Thread (The Worker)
-
-A Thread is the actual unit of execution inside a process. Every process has at least one thread (the main thread), but it can create more.
-
-Shared Memory: Unlike processes, threads inside the same process share the same memory space. This makes communication between them fast, but dangerous (two threads changing the same variable at once causes bugs).
-
-Weight: Threads are lighter than processes, but they are still not "free." An OS thread typically consumes about 1MB of RAM just to exist.
-
-Analogy: Threads are the People living inside the House. They share the kitchen and the bathroom. If one person sets the kitchen on fire, the whole house (Process) burns down.
-
-### Context Switching (The Hidden Cost)
-
-If you have a 4-core CPU, you can only physically run 4 threads at once. But your computer has hundreds of background threads running. How?
-
-The OS performs Context Switching. It pauses Thread A, saves its state, loads Thread B, and runs it for a tiny slice of time.
-
-The Problem: This switching is expensive. It takes thousands of CPU cycles just to save and load these states.
-
-The Go Solution: This is exactly what Go solves. Goroutines are "Green Threads" they are managed by the Go language, not the OS. They are cheaper to create (~2KB vs 1MB) and much faster to switch between.
-
-## Go's Concurrency Primitives
-
-Some languages, place the responsability for creating and managing **threads** in the developer (**manual parallelism**). In Go, we use simple primitives to describe concurrent tasks, and a [scheduler](https://go.dev/src/runtime/HACKING) automatically distributes them across processor cores.
-
-To achieve this, Go provides four main primitives:
-
-- [Goroutines](https://go.dev/tour/concurrency/1): The fundamental unit of execution. They are extremely lightweight threads managed by the runtime, not the OS.
-
-- [Channels](https://go.dev/tour/concurrency/2): Pipes that connect Goroutines, allowing them to send data and synchronize safely without using shared memory.
-
-- [Select](https://go.dev/tour/concurrency/5): A control structure that lets a single Goroutine wait on multiple channel operations at once, acting like a switchboard for data.
-
-- [Sync Package](https://pkg.go.dev/sync): Provides traditional low-level synchronization tools, such as `WaitGroup` to wait for tasks to finish, or `Mutex` to lock memory.
+JavaScript is a well-known example: the language doesn’t expose primitives for splitting work across multiple CPU cores, yet its event loop and callback mechanism let it juggle many asynchronous tasks without blocking the page.
