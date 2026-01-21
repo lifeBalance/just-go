@@ -3,10 +3,26 @@ import * as pagefind from 'pagefind'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-const DEFAULT_BRANCHES = ['basics', 'toc-doc']
-const branchIds = (process.env.PAGEFIND_BRANCHES?.split(',')
-  .map((id) => id.trim())
-  .filter(Boolean) ?? DEFAULT_BRANCHES)
+const MANIFEST_PATH = path.join(process.cwd(), '.asterism', 'sections.json')
+
+async function readSectionsFromManifest(): Promise<string[]> {
+  try {
+    const raw = await fs.readFile(MANIFEST_PATH, 'utf8')
+    const sections = JSON.parse(raw) as Array<{ id: string }>
+    return sections.map((section) => section.id)
+  } catch (err) {
+    console.warn(`Unable to read ${MANIFEST_PATH}. Falling back to dist directories.`)
+    return []
+  }
+}
+
+async function discoverBranchesByDist(distDir: string): Promise<string[]> {
+  const entries = await fs.readdir(distDir, { withFileTypes: true })
+  return entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => !name.startsWith('pagefind-'))
+}
 
 async function exists(p: string) {
   try {
@@ -70,6 +86,24 @@ async function buildBranchIndex(branchId: string, sectionDist: string, distDir: 
   return pageCount
 }
 
+async function resolveBranchIds(distDir: string): Promise<string[]> {
+  const envBranches = process.env.PAGEFIND_BRANCHES
+    ?.split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+
+  if (envBranches?.length) {
+    return envBranches
+  }
+
+  const manifestBranches = await readSectionsFromManifest()
+  if (manifestBranches.length) {
+    return manifestBranches
+  }
+
+  return await discoverBranchesByDist(distDir)
+}
+
 async function main() {
   const repoRoot = process.cwd()
   const distDir = path.join(repoRoot, 'dist')
@@ -82,6 +116,12 @@ async function main() {
 
   await fs.mkdir(publicDir, { recursive: true })
 
+  const branchIds = await resolveBranchIds(distDir)
+  if (!branchIds.length) {
+    console.warn('No branches discovered for Pagefind indexing.')
+    return
+  }
+
   try {
     for (const branchId of branchIds) {
       const sectionDist = path.join(distDir, branchId)
@@ -93,9 +133,9 @@ async function main() {
       await buildBranchIndex(branchId, sectionDist, distDir, publicDir, repoRoot)
     }
   } finally {
-    if (typeof pagefind.close === 'function') {
+    if (typeof (pagefind as any).close === 'function') {
       try {
-        await pagefind.close()
+        await (pagefind as any).close()
       } catch (err) {
         console.warn('Failed to close Pagefind worker cleanly:', err)
       }
