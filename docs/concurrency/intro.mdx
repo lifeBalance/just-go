@@ -1,0 +1,90 @@
+import Admonition from '@components/Admonition.astro'
+
+# Concurrency
+
+When we build software that serves real users, our systems rarely handle one thing at a time. Consider a **web server**: multiple clients send requests nearly simultaneously, each wants a response quickly, and each request might read from or write to **shared resources** such as in-memory caches, log files, or database connections.
+
+If the server simply handled requests **sequentially** (waiting for one request to complete before starting the next) users would experience slow responses, having to wait inline before previous requests are dispatched. This is exacerbated because accessing shared resources often involves **slow operations** (like disk access or network calls) that would block everyone else.
+
+These problems are not limited to web servers. Any system that handles multiple tasks needs to solve the same problems: keep many tasks making progress, manage access to shared resources, and do whatever it has to be done to respond quickly.
+
+<Admonition title="Concurrency">
+  [Concurrency](https://en.wikipedia.org/wiki/Concurrency_(computer_science)) is
+  the ability of a system to perform multiple tasks at the same time. These
+  tasks can access **shared resources**, such as memory or files, and may need
+  to be synchronized to avoid conflicts. They also can **communicate** with each
+  other to exchange data or coordinate their actions.
+</Admonition>
+
+In Go, concurrency is a first-class citizen, making it easy to write programs that can perform multiple operations simultaneously.
+
+## Concurrency vs. Parallelism
+
+When solving these challenges in a non-sequential way, we can differentiate between two main approaches:
+
+- **Concurrency** solves this issue having **one worker** switching between tasks so fast it looks like they are happening simultaneously.
+
+  For example, the **JavaScript runtime** is single-threaded but highly concurrent via its event loop; it interleaves tasks without parallel execution. The system starts **Task A** (e.g. sending an HTTP request), pauses it to work on **Task B** (e.g. handling a button click), then goes back to Task A. They "overlap" in timeframe, but only one is actually moving forward at any specific nanosecond.
+
+- **Parallelism** solves it by having **multiple workers** doing different tasks at the exact same time.
+
+  For example, in languages like **Go**, you can spawn multiple goroutines that run truly in parallel on different CPU cores. Here, **Task A** and **Task B** can both be actively progressing at the same time, each on its own thread of execution.
+
+<Admonition title="Both Concurrency and Parallelism">
+  Many languages utilize both concepts. For example, JavaScript achieves
+  **concurrency** via the *Event Loop* (handling multiple tasks on a single
+  thread) but opts into **parallelism** using *Worker Threads* (executing code
+  simultaneously on separate CPU cores).
+</Admonition>
+
+Go simplifies this by blending both behaviors into a single primitive: the [Goroutine](https://go.dev/tour/concurrency/1).
+
+## Processes vs. Threads
+
+Before understanding how Go handles concurrency, we need to understand how the **Operating System** handles running programs.
+
+### The Process (The Container)
+
+A Process is an instance of a computer program that is being executed. Think of it as a fully isolated "container" for your application.
+
+Resources: It is given its own block of memory (RAM) and resources by the OS.
+
+Isolation: Processes are strictly separated. If one process crashes (e.g., your browser freezes), it doesn't crash your music player.
+
+Weight: Creating a process is "expensive" for the computer. It involves a lot of setup overhead.
+
+Analogy: A Process is like a House. It has its own kitchen, bathroom, and electricity. What happens inside the house stays inside the house.
+
+### The Thread (The Worker)
+
+A Thread is the actual unit of execution inside a process. Every process has at least one thread (the main thread), but it can create more.
+
+Shared Memory: Unlike processes, threads inside the same process share the same memory space. This makes communication between them fast, but dangerous (two threads changing the same variable at once causes bugs).
+
+Weight: Threads are lighter than processes, but they are still not "free." An OS thread typically consumes about 1MB of RAM just to exist.
+
+Analogy: Threads are the People living inside the House. They share the kitchen and the bathroom. If one person sets the kitchen on fire, the whole house (Process) burns down.
+
+### Context Switching (The Hidden Cost)
+
+If you have a 4-core CPU, you can only physically run 4 threads at once. But your computer has hundreds of background threads running. How?
+
+The OS performs Context Switching. It pauses Thread A, saves its state, loads Thread B, and runs it for a tiny slice of time.
+
+The Problem: This switching is expensive. It takes thousands of CPU cycles just to save and load these states.
+
+The Go Solution: This is exactly what Go solves. Goroutines are "Green Threads" they are managed by the Go language, not the OS. They are cheaper to create (~2KB vs 1MB) and much faster to switch between.
+
+## Go's Concurrency Primitives
+
+Some languages, place the responsability for creating and managing **threads** in the developer (**manual parallelism**). In Go, we use simple primitives to describe concurrent tasks, and a [scheduler](https://go.dev/src/runtime/HACKING) automatically distributes them across processor cores.
+
+To achieve this, Go provides four main primitives:
+
+- [Goroutines](https://go.dev/tour/concurrency/1): The fundamental unit of execution. They are extremely lightweight threads managed by the runtime, not the OS.
+
+- [Channels](https://go.dev/tour/concurrency/2): Pipes that connect Goroutines, allowing them to send data and synchronize safely without using shared memory.
+
+- [Select](https://go.dev/tour/concurrency/5): A control structure that lets a single Goroutine wait on multiple channel operations at once, acting like a switchboard for data.
+
+- [Sync Package](https://pkg.go.dev/sync): Provides traditional low-level synchronization tools, such as `WaitGroup` to wait for tasks to finish, or `Mutex` to lock memory.

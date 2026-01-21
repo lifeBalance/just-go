@@ -9,6 +9,5 @@ export default [
   { path: 'panic/', label: `Don't Panic, it's organic` },
   { path: 'string-manipulation/', label: 'Working with Strings' },
   { path: 'composition/', label: 'Composition' },
-  { path: 'concurrency/', label: 'Concurrency' },
   { path: 'docs/', label: 'Documentation' },
 ]
