@@ -2,7 +2,7 @@ import Admonition from '@components/Admonition.astro'
 
 # Processes
 
-A [process](<https://en.wikipedia.org/wiki/Process_(computing)>) is is the instance of a computer program that is being executed by one or many threads. When we run:
+A [process](<https://en.wikipedia.org/wiki/Process_(computing)>) is the instance of a computer program that is being executed. For example, [sleep](<https://en.wikipedia.org/wiki/Sleep_(command)>) is a command that as soon as it starts, suspends execution for the amount of time we pass as argument. So when we run:
 
 ```bash
 sleep 30&
@@ -11,10 +11,16 @@ sleep 30&
 
 Several things are happening:
 
-- We are starting a new process in the background (with `&`) that will sleep for 30 seconds.
+- We are starting a new **process** in the background (with `&`) that will sleep for 30 seconds.
 - The second line (`[1] 8204`) indicates that:
   - This is [job](<https://en.wikipedia.org/wiki/Job_(computing)>) number 1.
   - And its Process ID (PID) is `8204`.
+
+<Admonition title="Jobs vs Processes">
+  A [job](https://en.wikipedia.org/wiki/Job_control_(Unix)) is a higher-level
+  concept that represents a group of one or more processes. Jobs are managed by
+  the shell, while processes are managed by the operating system.
+</Admonition>
 
 After those 30 seconds, the process will end and free all its resources:
 
