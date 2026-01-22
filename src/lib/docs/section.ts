@@ -1,5 +1,5 @@
-import { parseTocConfig } from './tocParser.js'
-import { docsConfig, getGlobRegistry } from './config.js'
+import { parseTocConfig } from './tocParser'
+import { docsConfig, getGlobRegistry } from './config'
 
 const Path = {
   normalize: (p: string) => p.replace(/\/$/, ''),

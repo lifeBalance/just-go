@@ -1,0 +1,16 @@
+[
+  {
+    "id": "basics",
+    "root": "/docs/basics",
+    "title": "Basics",
+    "subtitle": "Language fundamentals",
+    "href": "/basics/introduction/overview"
+  },
+  {
+    "id": "concurrency",
+    "root": "/docs/concurrency",
+    "title": "Concurrency",
+    "subtitle": "Manage multiple tasks running simultaneously",
+    "href": "/concurrency/intro"
+  }
+]

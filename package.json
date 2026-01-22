@@ -11,7 +11,7 @@
   },
   "exports": {
     ".": "./src/lib/docs/index.js",
-    "./config": "./src/lib/docs/config.js",
+    "./config": "./src/lib/docs/config.ts",
     "./integration": "./src/lib/docs/integration.js"
   },
   "typesVersions": {
