@@ -18,9 +18,34 @@ const fallbackConfig = {
   branches: fallbackBranches,
 }
 
+function ensureLeadingSlash(path) {
+  return path.startsWith('/') ? path : `/${path}`
+}
+
+function resolveBranchHref(branch, basePath) {
+  const sourceHref = branch.href ?? `/${branch.id}`
+
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(sourceHref)) {
+    return sourceHref
+  }
+
+  const normalizedBase = normalizeBasePath(basePath)
+  const base = normalizedBase === '/' ? '' : normalizedBase
+
+  if (base && sourceHref.startsWith(base)) {
+    return sourceHref
+  }
+
+  const normalizedHref = ensureLeadingSlash(sourceHref)
+  return `${base}${normalizedHref}` || '/'
+}
+
 export const docsConfig = {
   basePath: normalizeBasePath(resolvedConfig && resolvedConfig.basePath),
-  branches: (resolvedConfig && resolvedConfig.branches) || fallbackConfig.branches,
+  branches: ((resolvedConfig && resolvedConfig.branches) || fallbackConfig.branches).map((branch) => ({
+    ...branch,
+    href: resolveBranchHref(branch, resolvedConfig && resolvedConfig.basePath),
+  })),
 }
 
 const fallbackRegistry = {

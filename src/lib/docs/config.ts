@@ -50,6 +50,28 @@ const fallbackConfig = {
   branches: fallbackBranches,
 }
 
+function ensureLeadingSlash(path: string): string {
+  return path.startsWith('/') ? path : `/${path}`
+}
+
+function resolveBranchHref(branch: DocsBranch, basePath?: string): string {
+  const sourceHref = branch.href ?? resolvedSummaries[branch.id]?.href ?? `/${branch.id}`
+
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(sourceHref)) {
+    return sourceHref
+  }
+
+  const normalizedBase = normalizeBasePath(basePath)
+  const base = normalizedBase === '/' ? '' : normalizedBase
+
+  if (base && sourceHref.startsWith(base)) {
+    return sourceHref
+  }
+
+  const normalizedHref = ensureLeadingSlash(sourceHref)
+  return `${base}${normalizedHref}` || '/'
+}
+
 const fallbackRegistry: GlobRegistry = {
   docs: {
     content: import.meta.glob('/docs/**/*.{md,mdx}', { eager: true }),
@@ -63,7 +85,7 @@ export const docsConfig = {
     ...branch,
     title: branch.title ?? resolvedSummaries[branch.id]?.title ?? branch.id,
     subtitle: branch.subtitle ?? resolvedSummaries[branch.id]?.subtitle ?? '',
-    href: branch.href ?? resolvedSummaries[branch.id]?.href ?? `/${branch.id}`,
+    href: resolveBranchHref(branch, resolvedConfig?.basePath ?? undefined),
   })),
   summaries: resolvedSummaries,
 }
