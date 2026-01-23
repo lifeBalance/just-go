@@ -1,0 +1,118 @@
+import Admonition from '@components/Admonition.astro'
+
+# Inter-Thread Communication
+
+In the section about [processes](/concurrency/basic-concepts/process) can communicate with each other using [inter-process communication (IPC)](https://en.wikipedia.org/wiki/Inter-process_communication). Sometimes, **threads** working together to solve a problem need to interchange information. There are two ways of doing this:
+
+- Memory sharing.
+- Message passing.
+
+Most real systems mix both approaches: they keep **shared memory** for fast in-process updates guarded by locks or atomics, and they layer **message passing** when they need clear ownership boundaries or when threads span different components.
+
+## Sharing Memory
+
+As we mentioned before, threads share the **memory space** of the process where they run.
+
+```
+┌───────────────────────────────────────────────────────┐
+│                  Process PID 8204                     │
+│ ┌────────────── Shared Memory Space ────────────────┐ │
+│ │ ┌───────────────┐  ┌───────────────┐              │ │
+│ │ │File Descript. │  │ Memory Space  │◄───────┐     │ │
+│ │ └───────────────┘  └───────────────┘        │     │ │
+│ │                                             │     │ │
+│ │ ┌───────────── Thread T1 ────────────────┐  │     │ │
+│ │ │ Stack        Registers     Program Ctr │  │     │ │
+│ │ └────────────────────────────────────────┘  │     │ │
+│ │ ┌───────────── Thread T2 ────────────────┐  │     │ │
+│ │ │ Stack        Registers     Program Ctr │  │     │ │
+│ │ └────────────────────────────────────────┘  │     │ │
+│ │      both threads read/write shared memory ─┘     │ │
+│ └───────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────┘
+```
+
+That means one thread can update data structures that another thread reads a moment later—but that convenience comes with hazards. Without coordination, two threads writing the same variable can trample each other’s updates, leading to several issues such as:
+
+- [Race conditions](https://en.wikipedia.org/wiki/Race_condition).
+- [Deadlocks](<https://en.wikipedia.org/wiki/Deadlock_(computer_science)>).
+- [Thread starvation](<https://en.wikipedia.org/wiki/Starvation_(computer_science)>).
+
+Operating systems and runtimes provide synchronization solutions to protect critical sections and ensure memory visibility across cores.Some examples:
+
+— [Mutexes](<https://en.wikipedia.org/wiki/Lock_(computer_science)>) (aka locks).
+
+- [Semaphores](<https://en.wikipedia.org/wiki/Semaphore_(programming)>).
+- [Atomic operations](https://en.wikipedia.org/wiki/Linearizability).
+
+The hardware and operating system architecture on which we run our multithreaded application needs to enable this type of memory sharing between threads belonging to the same process.
+
+### Single Processor architecture
+
+If our system has only a **single processor**, the architecture can be simple.
+All kernel threads in the process have access to the same memory space; the scheduler context-switches between threads (on the same core), allowing them to access memory as they please.
+
+```
+        THREAD 1   THREAD 2   THREAD 3
+┌─────────────────────────────────────────────┐
+│                 CPU Core                    │
+└─────────────────────────────────────────────┘
+                    │
+                System Bus
+                    │
+            ┌──────────────┐
+            │  Main Memory │
+            │ (Process A)  │
+            └──────────────┘
+```
+
+### Multiple Processor architecture
+
+Whenever we have a system with **multiple processors** (or a multicore system), the CPUs use a **system bus** when it needs to read or write from **main memory**. To reduce the load on the bus, each CPU uses a **cache**, and reads all the required data from there, instead of querying the memory.
+
+```
+    THREAD 1        THREAD 2
+┌───────────────┬───────────────┐
+│    CPU Core 0 │    CPU Core 1 │
+│ ┌───────────┐ │ ┌───────────┐ │
+│ │  L1 Cache │ │ │  L1 Cache │ │
+│ └───────────┘ │ └───────────┘ │
+│        │      │        │      │
+│ ┌───────────┐ │ ┌───────────┐ │
+│ │  L2 Cache │ │ │  L2 Cache │ │
+│ └───────────┘ │ └───────────┘ │
+└───────────────┴───────────────┘
+          │             │
+─────────────────────────────────
+             System Bus
+─────────────────────────────────
+                  │
+           ┌──────────────┐
+           │  Main Memory │
+           │ (Process A)  │
+           └──────────────┘
+```
+
+In the diagram above, we have two threads running in parallel that want to communicate via **memory sharing**. Let's imagine the following scenarios:
+
+1.  If **thread 1** tries to **read** a variable from **main memory**, the system will bring the contents of the variable, into a cache closer to the CPU (via the bus). That way, next time that **thread 1** needs to access that variable, it will be able to do so faster using the **cache**, without having to overload the **system bus** by trying to access the variable from the main memory again.
+
+2.  If **thread 1** updates the value of this variable, it will do by accessing its cache. But what if **thread 2** wants to read this value and grab it from the **main memory**? It'll end up with an **outdated value**.
+
+This is an issue of [cache coherence](https://en.wikipedia.org/wiki/Cache_coherence); not good. Let's think of some solution:
+
+- Using a **cache write-through**, when **thread 1** updates the variable in its **cache**, we mirror the update back to the **main memory**. However, if **thread 2** has an outdated copy of the same memory block in its **cache**, still gets an outdated value.
+- Using a [cache coherency protocol](https://en.wikipedia.org/wiki/List_of_cache_coherency_protocols), we make **caches** listen to bus memory **update messages**. When a cache receives such a message, can perform one of these:
+  - Either updates the value of the variable in its cache space.
+  - Either invalidates the variable in its cache. The next time the thread requires the variable, it will have to fetch it from memory, obtaining an updated copy.
+
+<Admonition title="Cache Coherency Wall">
+  The **Cache Coherency Wall** refers to the performance and **scalability
+  bottleneck** encountered in multi-core and heterogeneous computing systems
+  (CPUs and GPUs) when the overhead of keeping data consistent across multiple,
+  distributed caches outweighs the performance benefits of having those caches.
+</Admonition>
+
+## Message Passing
+
+Message passing sidesteps shared-state pitfalls by copying data (or handing off ownership) through explicit queues. Threads exchange messages via channels, mailboxes, or lock-free queues so that only one thread at a time touches the payload. Go’s chan type is the canonical example, but similar patterns exist in many runtimes (e.g., CSP pipelines, actor mailboxes, blocking queues).
