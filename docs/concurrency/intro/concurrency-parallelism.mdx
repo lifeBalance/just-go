@@ -8,15 +8,7 @@ Concurrency and parallelism both exist to tackle the same fundamental set of pro
 
 At a high level, they aim to solve:
 
-1. Efficient Use of Resources. Modern systems have:
-
-- Multiple CPU cores
-- Slow I/O compared to CPU speed
-- Many independent tasks happening at once
-
-Concurrency and parallelism help ensure the system isn’t sitting idle while work could be happening elsewhere—whether that’s overlapping computation with I/O or spreading work across cores.
-
-Both concurrency and parallelism exist to make programs faster, more responsive, and better at using modern hardware by structuring work so multiple tasks can make progress efficiently.
+1. Efficient Use of Resources. Modern systems have **multiple CPU cores** able of performing several operations simultaneously.
 
 2. Responsiveness. Programs often need to:
 
@@ -28,17 +20,9 @@ Concurrency allows a program to stay responsive by structuring work so that long
 
 3. Throughput. Both aim to increase how much work gets done over time:
 
-- Concurrency improves throughput by overlapping tasks
-- Parallelism improves throughput by executing tasks simultaneously
+- Concurrency improves throughput by **overlapping tasks**.
+- Parallelism improves throughput by **executing tasks simultaneously**.
 - The goal in both cases is to process more work in less time.
-
-4. Scalability. As hardware evolves:
-
-- More cores
-- More simultaneous connections
-- Larger workloads
-
-Concurrency and parallelism help software scale with these changes instead of being limited by a single execution path.
 
 5. Decomposing Complex Problems
 
@@ -50,9 +34,23 @@ Large problems are often easier to reason about when split into smaller, indepen
 
 This improves both performance and maintainability.
 
-6. Latency Hiding
+6. Latency Hiding. Many operations, especially I/O are slow. Concurrency and parallelism help hide that latency by ensuring other useful work can proceed while something is waiting.
 
-Many operations are slow relative to the CPU (network, disk, timers). Concurrency and parallelism help hide that latency by ensuring other useful work can proceed while something is waiting.
+## The Difference
+
+Many developers use the terms **concurrency** and **parallelism** interchangeably, however they're not the same thing!
+
+1. **Concurrency** is when we write our programs by grouping instructions into separate tasks. Some task examples could be:
+
+- Handle HTTP requests.
+- Searching for files.
+- Render a frame in a videogame.
+
+Depending on the available hardware, these tasks may or may not execute **in parallel** (for parallel execution we need multiple CPU cores). Even on a single CPU, if our code is written in a concurrent way, the system will interleave the tasks, giving the impression that is performing more that one task at a time. 
+
+2. Parallelism requires multiple CPU cores in order to perform each task simultaneously on each core. But only **concurrent** programs can execute code in parallel. In that sense, we can say that **parallelism** is a subset of concurrency.
+
+**Concurrency** is about planning how to do many tasks at the same time (interleaving or in parallel). **Parallelism** is about performing many tasks at the same time.
 
 ## Concurrency
 
