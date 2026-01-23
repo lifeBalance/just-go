@@ -1,0 +1,113 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import goroutines1 from './code/goroutines1/main.go?raw'
+import sequential from './code/sequential/main.go?raw'
+
+# Goroutines
+
+A [goroutine](https://go.dev/tour/concurrency/1) is the main primitive in Go for concurrent programming. Compared to a thread, a goroutine is cheaper to create and maintain (`~2KB` vs `1MB`), allowing you to spawn thousands or even millions of them in a single program.
+
+<Admonition title="Go Runtime">
+  Go is a compiled language, so when we run `go build`, this command compiles
+  source code into a native machine-code executable. This executable includes a
+  [runtime](https://go.dev/doc/faq#runtime) system that’s embedded directly into
+  the final binary during linking. This runtime is not a separate process or
+  library you install—it’s compiled in, adding **~2-5 MB** to the binary size
+  depending on features.
+</Admonition>
+
+**Threads** are managed by the **OS**, while goroutines are managed by the [Go scheduler](https://go.dev/src/runtime/HACKING), which is included in the **Go runtime**. The scheduler handles the multiplexing of goroutines onto OS threads, allowing for efficient execution and context switching.
+
+## Sequential Execution
+
+Imagine we have a function that performs some work:
+
+<Code code={sequential} lang="go" title="sequential/main.go" />
+
+If we run this program, it will execute `doWork` five times **sequentially**, taking approximately 5 seconds to complete since each call to `doWork` sleeps for 1 second:
+
+```sh
+go run main.go
+Work 0 started at 21:54:53
+Work 0 finished at 21:54:54
+--------------------------
+Work 1 started at 21:54:54
+Work 1 finished at 21:54:55
+--------------------------
+Work 2 started at 21:54:55
+Work 2 finished at 21:54:56
+--------------------------
+Work 3 started at 21:54:56
+Work 3 finished at 21:54:57
+--------------------------
+Work 4 started at 21:54:57
+Work 4 finished at 21:54:58
+--------------------------
+Main function took 5.005313042s
+```
+
+Here `doWork` is a function that sleeps for 1 second to simulate work being done. In reality, this work could be anything, like processing data, making network requests, etc.
+
+## Creating Goroutines
+
+Wouldn't it be great if we could run multiple `doWork` calls **concurrently** instead of sequentially? For example:
+
+<Code
+  code={goroutines1}
+  lang="go"
+  title="goroutines1/main.go"
+  mark={[11, 13]}
+/>
+
+To create a goroutine, use the [go](https://go.dev/ref/spec#Go_statements) statement followed by a function call. This starts the function in a new goroutine, allowing it to run concurrently with other goroutines. This is the output:
+
+```sh
+go run main.go
+Work 4 started at 22:01:35
+Work 1 started at 22:01:35
+Work 3 started at 22:01:35
+Work 2 started at 22:01:35
+Work 0 started at 22:01:35
+Work 1 finished at 22:01:36
+--------------------------
+Work 3 finished at 22:01:36
+--------------------------
+Work 4 finished at 22:01:36
+--------------------------
+Work 2 finished at 22:01:36
+--------------------------
+Work 0 finished at 22:01:36
+--------------------------
+Main function took 2.000087834s
+```
+
+As you can see, all `doWork` calls started almost simultaneously, and the total execution time is around 2 seconds instead of 5 seconds. This is because the goroutines are running concurrently, allowing multiple `doWork` calls to be in progress at the same time.
+
+<Admonition title="Order not Guaranteed">
+  The execution order of concurrent goroutines cannot be guaranteed. When the
+  `main()` function launches five goroutines, the **Go runtime scheduler** may
+  execute them in a different sequence than they were created.
+</Admonition>
+
+You may be wondering why did we even have to wait **1 second** at the end of the loop? If you comment out the `time.Sleep(1 * time.Second)` line and run the program again:
+
+```sh
+go run main.go
+Main function took 17.125µs
+```
+
+The program exists almost immediately, here's the flow:
+
+1. `main` starts, and the `for` loop launches 5 goroutines.
+2. Loop finishes instantly (launching goroutines is super fast).
+3. `main` prints `Main function took ...`.
+4. `main` exits, killing the entire program and all goroutines.
+
+Why `main` didn't wait for the goroutines to finish their job? That's a Go design decision motivated by a few factors:
+
+- A goroutine can spawn thousands of goroutines.
+- If `main` had to wait for all goroutines to finish, a simple forgotten goroutine could cause a program to hang indefinitely.
+- For `main` to finish after all goroutines do, the language would require **tracking all of them**, adding overhead.
+
+Go forces you to be **explicit** about orchestrating goroutines,
+using several available mechanisms that we'll explore in the following sections.

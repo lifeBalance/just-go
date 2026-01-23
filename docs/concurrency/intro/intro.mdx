@@ -1,0 +1,19 @@
+import Admonition from '@components/Admonition.astro'
+
+# Concurrency
+
+When we build software that serves real users, our systems rarely handle one thing at a time. Consider a **web server**: multiple clients send requests nearly simultaneously, each wants a response quickly, and each request might read from or write to **shared resources** such as in-memory caches, log files, or database connections.
+
+If the server simply handled requests **sequentially** (waiting for one request to complete before starting the next) users would experience slow responses, having to wait inline before previous requests are dispatched. This is exacerbated because accessing shared resources often involves **slow operations** (like disk access or network calls) that would block everyone else.
+
+These problems are not limited to web servers. Any system that handles multiple tasks needs to solve the same problems: keep many tasks making progress, manage access to shared resources, and do whatever it has to be done to respond quickly.
+
+<Admonition title="Concurrency">
+  [Concurrency](https://en.wikipedia.org/wiki/Concurrency_(computer_science)) is
+  the ability of a system to perform multiple tasks at the same time. These
+  tasks can access **shared resources**, such as memory or files, and may need
+  to be synchronized to avoid conflicts. They also can **communicate** with each
+  other to exchange data or coordinate their actions.
+</Admonition>
+
+In Go, concurrency is a **first-class citizen**, meaning that the language includes some built-in constructs, that make it easy to write programs that can perform multiple operations simultaneously.

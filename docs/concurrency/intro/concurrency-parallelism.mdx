@@ -1,0 +1,97 @@
+import Admonition from '@components/Admonition.astro'
+
+# Concurrency vs Parallelism
+
+Concurrency and parallelism both exist to tackle the same fundamental set of problems, even though they approach them differently.
+
+## The Problems 
+
+At a high level, they aim to solve:
+
+1. Efficient Use of Resources. Modern systems have:
+
+- Multiple CPU cores
+- Slow I/O compared to CPU speed
+- Many independent tasks happening at once
+
+Concurrency and parallelism help ensure the system isn’t sitting idle while work could be happening elsewhere—whether that’s overlapping computation with I/O or spreading work across cores.
+
+Both concurrency and parallelism exist to make programs faster, more responsive, and better at using modern hardware by structuring work so multiple tasks can make progress efficiently.
+
+2. Responsiveness. Programs often need to:
+
+- Handle multiple users
+- React to events
+- Continue doing useful work while waiting (e.g., network or disk I/O)
+
+Concurrency allows a program to stay responsive by structuring work so that long or blocking operations don’t freeze the entire system.
+
+3. Throughput. Both aim to increase how much work gets done over time:
+
+- Concurrency improves throughput by overlapping tasks
+- Parallelism improves throughput by executing tasks simultaneously
+- The goal in both cases is to process more work in less time.
+
+4. Scalability. As hardware evolves:
+
+- More cores
+- More simultaneous connections
+- Larger workloads
+
+Concurrency and parallelism help software scale with these changes instead of being limited by a single execution path.
+
+5. Decomposing Complex Problems
+
+Large problems are often easier to reason about when split into smaller, independent pieces. Both models encourage breaking work into units that can be:
+
+- Executed independently
+- Coordinated safely
+- Combined into a final result
+
+This improves both performance and maintainability.
+
+6. Latency Hiding
+
+Many operations are slow relative to the CPU (network, disk, timers). Concurrency and parallelism help hide that latency by ensuring other useful work can proceed while something is waiting.
+
+## Concurrency
+
+**Concurrency** solves this issue having **one worker** switching between tasks so fast it looks like they are happening simultaneously.
+
+For example, the **JavaScript runtime** is single-threaded but highly concurrent via its event loop; it interleaves tasks without parallel execution. The system starts **Task A** (e.g. sending an HTTP request), pauses it to work on **Task B** (e.g. handling a button click), then goes back to Task A. They "overlap" in timeframe, but only one is actually moving forward at any specific nanosecond.
+
+## Parallelism
+
+**Parallelism** solves it by having **multiple workers** doing different tasks at the exact same time.
+
+For example, in languages like **Go**, you can spawn multiple goroutines that run truly in parallel on different CPU cores. Here, **Task A** and **Task B** can both be actively progressing at the same time, each on its own thread of execution.
+
+<Admonition title="Both Concurrency and Parallelism">
+  Many languages utilize both concepts. For example, JavaScript achieves
+  **concurrency** via the *Event Loop* (handling multiple tasks on a single
+  thread) but opts into **parallelism** using *Worker Threads* (executing code
+  simultaneously on separate CPU cores).
+</Admonition>
+
+Go simplifies this by blending both behaviors into a single primitive: the [Goroutine](https://go.dev/tour/concurrency/1).
+
+## Utilizing Multiple CPU Cores
+
+Modern hardware architectures are built with [multiple cores](https://en.wikipedia.org/wiki/Multi-core_processor), so it make sense that programming languages offer a way to fully utilize the capabilities of a machine.
+
+![multicore](../img/single-vs-multiple.webp)
+
+Using **concurrent programming** we can split our program's workload into tasks, that can run simultaneously in multiple CPU cores. This increases the throughput of our programs, and speeds up their execution.
+
+## Single Core Benefits
+
+Even with a **single CPU core**, concurrency offers benefits. Most programs spend only a small proportion of their time executing computations on the processor. The majority of the time, the CPU is waiting on **slow I/O** (disk, network, user input). Instead of letting the core sit idle during those waits, concurrent programs can switch to other tasks that are ready to run, making better use of the CPU time.
+
+<Admonition type="info" title="Real-life analogy">
+  Imagine you're baking some muffins. While they are in the oven, you can be
+  doing the dishes, or start another batch. Instead of sitting iddle, just
+  waiting for the muffins to bake, you're using that time to get other things
+  done.
+</Admonition>
+
+JavaScript is a well-known example: the language doesn’t expose primitives for splitting work across multiple CPU cores, yet its event loop and callback mechanism let it juggle many asynchronous tasks without blocking the page.

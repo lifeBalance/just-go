@@ -39,7 +39,7 @@ export default defineConfig({
           root: '/docs/concurrency',
           title: 'Concurrency',
           subtitle: 'Manage multiple tasks running simultaneously',
-          href: '/concurrency/intro',
+          href: '/concurrency/intro/intro',
         },
       ],
     }),
