@@ -1,44 +1,59 @@
 import Admonition from '@components/Admonition.astro'
-import { Code } from 'astro-expressive-code/components'
-import gomaxprocs from './code/gomaxprocs/main.go?raw'
 
 # Threads
 
-A [thread](<https://en.wikipedia.org/wiki/Thread_(computing)>) is the actual unit of execution inside a process. Every process has at least one thread (the main thread), but it can create more.
+A [thread](<https://en.wikipedia.org/wiki/Thread_(computing)>) is the actual unit of execution inside a process. Every process has at least one thread (the **main thread**), but it can create more.
 
-**Shared Memory**: Unlike processes, threads inside the same process share the same memory space. This makes communication between them fast, but dangerous (two threads changing the same variable at once causes bugs).
+```
+┌──────────────────────────────┐
+│        Process PID 8204      │
+│ ┌─────────── Memory ───────┐ │
+│ │ Globals   Heap           │ │
+│ └──────────────────────────┘ │
+│ ┌────────── Threads ───────┐ │
+│ │ Main Thread (T0)         │ │
+│ │ Worker Thread (T1)       │ │
+│ │ Worker Thread (T2)       │ │
+│ └──────────────────────────┘ │
+└──────────────────────────────┘
+```
 
-**Weight**: Threads are lighter than processes, but they are still **not free**. An OS thread typically consumes about `1MB` of RAM just to exist.
+Unlike processes, threads inside the same process **share the same memory space**. This makes communication between them fast, but dangerous (two threads changing the same variable at once causes bugs).
+
+<Admonition title="Threads are lighter than Processes">
+Threads are lighter than processes, but they are still **not free**. An OS thread typically consumes about `1MB` of RAM just to exist.
+</Admonition>
 
 ## Multithreading
 
-When a process needs to perform multiple tasks at once, a common approach is to split those tasks across threads. Each thread represents a separate path of execution inside the same process:
+When a **process** needs to perform **multiple tasks** at once, a common approach is to split those tasks across **threads**.  Many high-performance applications rely on threads to keep the UI responsive, overlap I/O with computation, and utilize all available CPU cores.
 
-- Threads share the process’s resources—memory space, open files, sockets, etc.—so they can collaborate more easily than separate processes.
-- Every thread has its own stack, registers, and program counter. That means each can be at a different point in the code.
-- Threads are scheduled by the operating system; the scheduler performs context switches between them, saving one thread’s state and restoring another’s.
-- Because all threads have access to the same memory, thread-based concurrency tends to be more lightweight than inter-process communication, but it also introduces the classic synchronization problems: race conditions, deadlocks, and so on.
+```
+┌───────────────────────────────────────────────────────┐
+│                  Process PID 8204                     │
+│ ┌────────────── Shared Memory Space ────────────────┐ │
+│ │ ┌───────────────┐  ┌───────────────┐              │ │
+│ │ │   Global Data │  │     Heap      │◄───────┐     │ │
+│ │ └───────────────┘  └───────────────┘        │     │ │
+│ │                                             │     │ │
+│ │ ┌───────────── Thread T1 ────────────────┐  │     │ │
+│ │ │ Stack        Registers     Program Ctr │  │     │ │
+│ │ └────────────────────────────────────────┘  │     │ │
+│ │ ┌───────────── Thread T2 ────────────────┐  │     │ │
+│ │ │ Stack        Registers     Program Ctr │  │     │ │
+│ │ └────────────────────────────────────────┘  │     │ │
+│ │      both threads read/write shared memory ─┘     │ │
+│ └───────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────┘
+```
 
-In essence, multi-threading is the **OS-level mechanism** that lets a single process run multiple “strands” of execution concurrently (and in parallel, if there are multiple CPU cores). Many high-performance applications rely on threads to keep the UI responsive, overlap I/O with computation, and utilize all available CPU cores.
+Each thread represents a separate path of execution inside the same process. Each thread has its own own stack, registers, and program counter. That means each can be at a different point in the code.
 
-## Scheduler
-
-The scheduler is the part of the operating system (or runtime) that decides which thread or process runs at any given moment. Because the CPU can only execute one instruction stream per core at a time, the scheduler slices time among all runnable tasks—starting, stopping, and resuming them so everyone gets a fair shot at progress.
-
-## Context Switching
-
-Each time the CPU stops running one task and starts another, it performs a [context switch](https://en.wikipedia.org/wiki/Context_switch). During a context switch the scheduler saves the outgoing task’s state—its registers, stack pointer, program counter, and other bits—then loads the incoming task’s saved state before letting it run.
-
-<Admonition title="A Context Switch">
-  A context switch is the process of **storing** the state of a **process** or
-  **thread**, so that it can be restored and resume execution at a later point,
-  and then **restoring** a different, previously saved, state.
+<Admonition title="Multithreading">
+In essence, [multi-threading](https://en.wikipedia.org/wiki/Multithreading_(computer_architecture)) is the **OS-level mechanism** that lets a single process run multiple “strands” of execution concurrently (and in parallel, if there are multiple CPU cores). 
 </Admonition>
 
-Context switches are **expensive operations** because they involve multiple steps: saving and loading CPU registers, updating memory mappings, and flushing caches.
-
-- For **processes**, context switches include swapping address-space information (page tables, etc.)
-- For **threads** within the same process there’s no address-space swap, but the register and stack state still changes. These switches happen quickly, but they’re not free, so minimizing unnecessary context switching helps performance.
+Threads share the process’s memory space, file descriptors, etc, so they can collaborate more easily than separate processes. For this reason, thread-based concurrency tends to be more lightweight than inter-process communication, but it also introduces the classic synchronization problems: race conditions, deadlocks, and so on.
 
 ## Kernel Level Threads
 
@@ -46,7 +61,7 @@ Kernel-level threads are threads managed directly by the **operating system**. T
 
 The operating system maintains each thread’s **execution context** (registers, stack, and state) and uses this information when scheduling threads to run. Because the OS is aware of all threads, it decides when and whether each thread executes.
 
-During a context switch, the operating system steps in to save the current thread’s context and selects the next thread to execute.
+During a **context switch**, the operating system steps in to save the current thread’s context and selects the next thread to execute.
 
 ## User Level Threads
 
@@ -76,49 +91,3 @@ User-level threads are more performant, because context-switching at this level 
 A way to avoid this issue is to use **non-blocking** IO operations, but not all devices support them.
 
 2. Since the OS only sees the external process, the internal threads only have access to a processor's **single core** at a time. In other words, the **user-level threads** contained in that **kernel-level thread** will not be able to run in parallel.
-
-## The M:N Threading Model
-
-Go’s concurrency model delivers the benefits of **user-level threads** without most of their drawbacks. It achieves this by running goroutines on a **pool of kernel-level threads**, where each thread manages a queue of goroutines. This design allows programs to fully utilize multiple CPU cores, enabling **true parallel execution**.
-
-<Admonition title="Threading Models">
-There are [multiple threading models](https://en.wikipedia.org/wiki/Thread_(computing)). In the **M:N threading model** (aka hybrid threading), multiple user-level threads (goroutines) are multiplexed over a smaller or equal set of kernel-level threads.
-
-This approach differs from traditional **user-level threading** (N:1), which typically maps **multiple user-level threads** onto a **single kernel thread**.
-
-Supporting an **M:N model** requires a significantly more sophisticated runtime, as it must efficiently schedule, migrate, and balance user-level threads across multiple kernel-level threads.
-
-</Admonition>
-
-Go’s runtime decides how many kernel-level threads can run simultaneously based on the number of logical processors available. This behavior is controlled by the [GOMAXPROCS](https://pkg.go.dev/runtime#GOMAXPROCS) environment variable.
-
-If `GOMAXPROCS` is not explicitly set, Go automatically determines its value by querying the operating system for the number of available CPU cores. Let's see this in action:
-
-<Code code={gomaxprocs} lang="go" title="gomaxprocs/main.go" />
-
-If you run the code above, the output would be along these lines:
-
-```sh
-$ go run gocprocs/main.go
-Number of CPUs: 14
-GOMAXPROCS: 14
-```
-
-The number of processors will depend on your machine.
-
-## Run Queues
-
-The Go's runtime maintains two queues:
-
-- A **local run queue** is assigned to each of the available **kernel-level threads**.
-- A **global run queue** to store goroutines that Go hasn’t yet assigned to a kernel-level thread.
-
-We mentioned before that the **OS scheduler** may decide to deschedule the whole process if one of its threads is running a **blocking IO** operation. The Go runtime can detect when a kernel-level thread is about to be paused by the operating system. When this occurs, the runtime either spawns a new kernel-level thread or reuses one from an idle pool, transfers the affected goroutine queue to it, and continues execution. The original thread, now waiting on I/O, is then suspended by the OS.
-
-<Admonition title="Work Stealing">
-The process of of moving goroutines from one queue to another is known in Go as **work stealing**. This happens in two situations:
-
-- When a goroutine makes a **blocking** call. This mechanism ensures that a goroutine performing a blocking operation does not halt the progress of other goroutines in the same **local run queue**, allowing the system to maintain concurrency and throughput.
-- To keep the run queues balanced. When a **local run queue** (LRQ) becomes empty and its associated **kernel-level thread** has no goroutines left to run, it can steal goroutines from the run queue of another thread. This prevents cores from sitting idle while there is still work available.
-
-</Admonition>

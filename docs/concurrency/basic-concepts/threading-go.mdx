@@ -1,0 +1,50 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+import gomaxprocs from './code/gomaxprocs/main.go?raw'
+
+
+# The Go Threading Model (M:N)
+
+Go’s concurrency model delivers the benefits of **user-level threads** without most of their drawbacks. It achieves this by running goroutines on a **pool of kernel-level threads**, where each thread manages a queue of goroutines. This design allows programs to fully utilize multiple CPU cores, enabling **true parallel execution**.
+
+<Admonition title="Threading Models">
+There are [multiple threading models](https://en.wikipedia.org/wiki/Thread_(computing)). In the **M:N threading model** (aka hybrid threading), multiple user-level threads (goroutines) are multiplexed over a smaller or equal set of kernel-level threads.
+
+This approach differs from traditional **user-level threading** (N:1), which typically maps **multiple user-level threads** onto a **single kernel thread**.
+
+Supporting an **M:N model** requires a significantly more sophisticated runtime, as it must efficiently schedule, migrate, and balance user-level threads across multiple kernel-level threads.
+
+</Admonition>
+
+Go’s runtime decides how many kernel-level threads can run simultaneously based on the number of logical processors available. This behavior is controlled by the [GOMAXPROCS](https://pkg.go.dev/runtime#GOMAXPROCS) environment variable.
+
+If `GOMAXPROCS` is not explicitly set, Go automatically determines its value by querying the operating system for the number of available CPU cores. Let's see this in action:
+
+<Code code={gomaxprocs} lang="go" title="gomaxprocs/main.go" />
+
+If you run the code above, the output would be along these lines:
+
+```sh
+$ go run gocprocs/main.go
+Number of CPUs: 14
+GOMAXPROCS: 14
+```
+
+The number of processors will depend on your machine.
+
+## Run Queues
+
+The Go's runtime maintains two queues:
+
+- A **local run queue** is assigned to each of the available **kernel-level threads**.
+- A **global run queue** to store goroutines that Go hasn’t yet assigned to a kernel-level thread.
+
+We mentioned before that the **OS scheduler** may decide to deschedule the whole process if one of its threads is running a **blocking IO** operation. The Go runtime can detect when a kernel-level thread is about to be paused by the operating system. When this occurs, the runtime either spawns a new kernel-level thread or reuses one from an idle pool, transfers the affected goroutine queue to it, and continues execution. The original thread, now waiting on I/O, is then suspended by the OS.
+
+<Admonition title="Work Stealing">
+The process of of moving goroutines from one queue to another is known in Go as **work stealing**. This happens in two situations:
+
+- When a goroutine makes a **blocking** call. This mechanism ensures that a goroutine performing a blocking operation does not halt the progress of other goroutines in the same **local run queue**, allowing the system to maintain concurrency and throughput.
+- To keep the run queues balanced. When a **local run queue** (LRQ) becomes empty and its associated **kernel-level thread** has no goroutines left to run, it can steal goroutines from the run queue of another thread. This prevents cores from sitting idle while there is still work available.
+
+</Admonition>

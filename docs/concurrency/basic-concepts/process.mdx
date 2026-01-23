@@ -32,6 +32,21 @@ After those 30 seconds, the process will end and free all its resources:
 
 Each process runs in its own [isolated environment](https://en.wikipedia.org/wiki/Process_isolation). This is done to ensure that processes do not interfere with each other, e.g. to prevent **process A** from writing to **process B**'s memory space.
 
+```
+┌────────────────────────┐        ┌────────────────────────┐
+│        Process A       │        │        Process B       │
+│ PID: 5102              │        │ PID: 6127              │
+│ ┌──── Memory Space ───┐│        │ ┌──── Memory Space ───┐│
+│ │  Stack  │ Heap      ││        │ │  Stack  │ Heap      ││
+│ │  Data   │ Text      ││        │ │  Data   │ Text      ││
+│ └─────────────────────┘│        │ └─────────────────────┘│
+│ ┌── File Descriptors ─┐│        │ ┌── File Descriptors ─┐│
+│ │ 0 stdin  1 stdout   ││        │ │ 0 stdin  1 stdout   ││
+│ │ 2 stderr 3 socket#17││        │ │ 2 stderr 4 pipe#42  ││
+│ └─────────────────────┘│        │ └─────────────────────┘│
+└────────────────────────┘        └────────────────────────┘
+```
+
 A process it's sort of an isolated container created by the OS, which all the resources needed:
 
 - [Process ID](https://en.wikipedia.org/wiki/Process_identifier): Each process is assigned a unique identifier, aka `PID`, which the operating system uses to manage and track it.
@@ -40,7 +55,28 @@ A process it's sort of an isolated container created by the OS, which all the re
 
 ## Inter-Process Communication (IPC)
 
-When processes need to communicate with each other they must share parts of their address spaces or use other forms of inter-process communication (IPC). Some common IPC mechanisms include:
+When processes need to communicate with each other they must share parts of their address spaces or use other forms of [inter-process communication (IPC)](https://en.wikipedia.org/wiki/Inter-process_communication). 
+
+```
+┌─────────────┐                        ┌─────────────┐
+│ Process A   │                        │ Process B   │
+│ PID 5102    │                        │ PID 6127    │
+│ ┌─────────┐ │                        │ ┌─────────┐ │
+│ │ stdout  │─┼─── Pipe ───────────────┼─│ stdin   │ │
+│ └─────────┘ │                        │ └─────────┘ │
+│ ┌─────────┐ │                        │ ┌─────────┐ │
+│ │ msg send│─┼── Message Queue ───────┼─│ msg recv│ │
+│ └─────────┘ │                        │ └─────────┘ │
+│ ┌─────────┐ │                        │ ┌─────────┐ │
+│ │ shm map │─┼── Shared Memory ───────┼─│ shm map │ │
+│ └─────────┘ │                        │ └─────────┘ │
+│ ┌─────────┐ │                        │ ┌─────────┐ │
+│ │ socket  │─┼─── Network Socket ─────┼─│ socket  │ │
+│ └─────────┘ │                        │ └─────────┘ │
+└─────────────┘                        └─────────────┘
+```
+
+Some common IPC mechanisms include:
 
 - [Pipes](https://en.wikipedia.org/wiki/Inter-process_communication#Pipes): Allow data to flow in one direction from one process to another.
 - [Message Queues](https://en.wikipedia.org/wiki/Message_queue): Enable processes to send and receive messages asynchronously.
@@ -51,6 +87,8 @@ When processes need to communicate with each other they must share parts of thei
 
 Creating a new process is an expensive operation. The OS has to allocate memory, set up file descriptors, and initialize various data structures. This can take milliseconds, which is a long time in computing.
 
+[Context switching](https://en.wikipedia.org/wiki/Context_switch) between processes is also an expensive operation, as the OS has to save the state of the current process and load the state of the next one. This involves updating various CPU registers, memory mappings, and other data structures, which can take thousands of CPU cycles.
+
 ## Multitasking
 
 Most modern operating systems support [multitasking](https://en.wikipedia.org/wiki/Computer_multitasking), which allows multiple processes to run seemingly simultaneously on a single CPU core. The OS achieves this by rapidly switching between processes, giving each one a small time slice to execute. This creates the illusion of parallelism, even though only one process is actually running at any given moment on a single core.
@@ -60,5 +98,3 @@ Most modern operating systems support [multitasking](https://en.wikipedia.org/wi
   the same time; instead, it allows more than one task to advance over a given
   period of time.
 </Admonition>
-
-[Context switching](https://en.wikipedia.org/wiki/Context_switch) between processes is also an expensive operation, as the OS has to save the state of the current process and load the state of the next one. This involves updating various CPU registers, memory mappings, and other data structures, which can take thousands of CPU cycles.
