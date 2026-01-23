@@ -45,3 +45,12 @@ Finished
 ```
 
 Without the yield (or another synchronization), `main` would exit before the goroutine gets a chance to run and finish. The task (`main`) remains runnable and will rejoin the queue, but it pauses itself to let other work proceed.
+
+### `Gosched` Is Not Synchronization
+
+Running `runtime.Gosched()` only makes the function where is run, to give up (yield) its spot in the **queuerun** to another runnable goroutine.  After `Gosched` returns two things can happen:
+
+1. The scheduler picks up `sayHello` from the queue and we see `Hello` in stdout. Then `main` resumes to print `Finished`.
+2. The scheduler immediately picks `main` again, `sayHello` never runs, and the program exits after printing `Finished`.
+
+Because the **Go scheduler** offers no guarantees, you must not rely on `Gosched` (or any apparent execution order) to ensure a goroutine completes; for that we must use real synchronization.
