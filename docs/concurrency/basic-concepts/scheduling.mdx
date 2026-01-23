@@ -1,6 +1,8 @@
+import Admonition from '@components/Admonition.astro'
+
 # Scheduling
 
-Most of the time, a computer has more runnable work than CPU cores. The operating system uses [scheduling](https://en.wikipedia.org/wiki/Scheduling_(computing)) to decide which **process** or **thread** should run next.
+Most of the time, a computer has more runnable work than CPU cores. The operating system uses [scheduling](<https://en.wikipedia.org/wiki/Scheduling_(computing)>) to decide which **process** or **thread** should run next.
 
 ## Types of Schedulers
 
@@ -8,3 +10,63 @@ Depending on their scope, schedulers can be:
 
 - **OS kernel schedulers** juggle processes and threads.
 - **Runtime or language schedulers** manage **user-level threads**, or in the case of Go, goroutines on top of OS threads.
+
+## Run Queues
+
+Schedulers keep track of the runnable work using [run queues](https://en.wikipedia.org/wiki/Run_queue). There are two types of queues:
+
+- **Local run queue** (LRQ), one per core, hold the runnable threads that most recently executed on that core.
+- **Global run queue** (GRQ) keeps catching overflow and newly awakened work.
+  (or sets of lists) containing every process or thread that’s ready to execute.
+
+```
+┌─────────────── CPU Core 0 ───────────────┐
+│ Running: Thread A                        │
+│ ┌──────────── Local Run Queue ─────────┐ │
+│ │ [B] → [C] → [D]                      │ │
+│ └──────────────────────────────────────┘ │
+└──────────────────────────────────────────┘
+┌─────────────── CPU Core 1 ───────────────┐
+│ Running: Thread E                        │
+│ ┌──────────── Local Run Queue ─────────┐ │
+│ │ [F] → [G]                            │ │
+│ └──────────────────────────────────────┘ │
+└──────────────────────────────────────────┘
+┌────────────── Global Run Queue ───────────┐
+│ [H] → [I] → [J]                           │
+└───────────────────────────────────────────┘
+┌────────────── Blocked / Wait List ────────┐
+│ [K] → [L]                                 │
+└───────────────────────────────────────────┘
+```
+
+There are several scenarios for the scheduler managing these tasks:
+
+- When a **new task** has been created, the scheduler inserts it into a run queue.
+- When a **task finishes** (CPU core becomes free), the scheduler pops the next entry from its **local run queue** and dispatches it to the CPU.
+- If some task is **blocking execution**, the scheduler removes it from the run queue and parks it on a resource-specific **wait list**; when the event completes, the task returns to a run queue.
+
+<Admonition title="Work Stealing">
+  When a core’s local run queue runs dry, the scheduler can **steal** tasks from
+  another core’s queue (or the **global queue**) to keep the CPU busy. Work
+  stealing balances load across cores without migrating every runnable task
+  through a single shared queue.
+</Admonition>
+
+## Preemptive Scheduling
+
+[Preemptive scheduling](<https://en.wikipedia.org/wiki/Preemption_(computing)>) lets the scheduler interrupt a running task and hand the CPU to another one, even if the running task hasn’t blocked or yielded. The reason for this could be:
+
+- A **higher-priority** task becomes runnable.
+- A **time slice expires**, so the scheduler runs and picks the next task.
+
+<Admonition title="Time Slicing">
+  A [time
+  slice](https://en.wikipedia.org/wiki/Preemption_(computing)#Time_slice) (or
+  quantum) is the **fixed chunk of CPU time** the scheduler grants to a runnable
+  task before it preempts it. When the timer interrupt fires at the end of the
+  slice, the scheduler can switch to another task, ensuring every runnable task
+  gets a turn and preventing any single thread from monopolizing the CPU. The
+  slice length balances responsiveness (short slices) against overhead (longer
+  slices mean fewer context switches).
+</Admonition>

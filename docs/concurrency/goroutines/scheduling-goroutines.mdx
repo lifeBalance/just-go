@@ -1,0 +1,47 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import goroutines2 from './code/goroutines2/main.go?raw'
+import goscheduler1 from './code/goscheduler1/main.go?raw'
+
+
+# Scheduling Goroutines
+
+We saw in a previous section how **kernel-level threads** are interrupted via ([Preemptive scheduling](/concurrency/basic-concepts/scheduling)). This [interrupt signals](https://en.wikipedia.org/wiki/Interrupt) only affect the **OS scheduler**, but not the **Go scheduler**, which runs in user space.
+
+<Admonition title="User Space">
+  The term [user space](https://en.wikipedia.org/wiki/User_space_and_kernel_space) (or
+  userland) refers to all code that runs outside the operating system's kernel.
+</Admonition>
+
+The Go scheduler needs **user-level events** to control goroutine scheduling:
+
+- Starting a new goroutine (using the `go` statement).
+- Making a [system call](https://en.wikipedia.org/wiki/System_call) (using the [sys](https://pkg.go.dev/golang.org/x/sys) or [syscall](https://pkg.go.dev/syscall) packages).
+- Synchronizing goroutine with the [sync](https://pkg.go.dev/sync) package.
+- We can also interact directly with the Go runtime using the [runtime](https://pkg.go.dev/runtime) package.
+
+## Calling the Go Scheduler
+
+Remember the example of the previous section, where we had a `time.Sleep(1 * time.Second)` call at the end of the loop? Let's take another example:
+
+<Code code={goroutines2} lang="go" title="goroutines2/main.go" />
+
+If we try to run the code above:
+
+```sh
+go run goroutines2/main.go
+```
+
+We get **no output** at all. If you read the previous section you'll find out why. In Go, we can interact directly with the **Go scheduler**:
+
+<Code code={goscheduler1} lang="go" title="goscheduler1/main.go" />
+
+In the code above we're using the [runtime.Gosched](https://pkg.go.dev/runtime#Gosched) function, which makes `main` voluntarily give up (yield) so the scheduler can run `sayHello` before `main` continues to print `Finished`. Check the **output** of the code above:
+
+```
+Hello
+Finished
+```
+
+Without the yield (or another synchronization), `main` would exit before the goroutine gets a chance to run and finish. The task (`main`) remains runnable and will rejoin the queue, but it pauses itself to let other work proceed.

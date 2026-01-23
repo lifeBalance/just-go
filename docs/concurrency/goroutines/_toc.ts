@@ -1,3 +1,4 @@
 export default [
-  { path: 'goroutines/', label: 'Goroutines' },
+  { path: 'overview', label: 'Overview' },
+  { path: 'scheduling-goroutines', label: 'Scheduling Goroutines' },
 ]
