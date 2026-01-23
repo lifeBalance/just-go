@@ -1,0 +1,36 @@
+import Admonition from '@components/Admonition.astro'
+
+# Context Switching
+
+Each time the scheduler stops running one task and starts another, it performs a [context switch](https://en.wikipedia.org/wiki/Context_switch):
+
+1. Saves the outgoing task’s state—its registers, stack pointer, program counter, and other bits.
+2. Then loads the incoming task’s context before letting it run.
+
+<Admonition title="A Context Switch">
+  A context switch is the process of **storing** the state of a **process** or
+  **thread**, so that it can be restored and resume execution at a later point,
+  and then **restoring** a different, previously saved, state.
+</Admonition>
+
+Context switching is common to both **processes**, **threads** and **light threads**.
+
+## Switching Processes
+
+Regarding processes, context switches are **expensive operations** because it involves  saving and restoring each process’s:
+- Registers.
+- Stack pointer.
+- Program counter.
+- And address-space info.
+
+They involve multiple steps: saving and loading CPU registers, updating memory mappings, and flushing caches.
+
+For **processes**, context switches include swapping address-space information (page tables, etc.)
+
+## Switching Threads (Kernel Level)
+
+Kernel-level threads are managed directly by the **OS scheduler**. When the OS switches between threads in the same process it still saves registers and the stack pointer, but it does not need to change the address space. These switches are **lighter** than process switches, yet still carry cost, so minimizing unnecessary thread switching helps performance.
+
+## Switching Lightweight Threads (User level)
+
+Language runtimes can schedule their own lightweight threads (goroutines, green threads, fibers) in user space. Switching between them involves saving and restoring user-managed stacks and metadata without entering the kernel, which is cheaper than an OS thread switch. We cover Go’s implementation in `docs/concurrency/basic-concepts/threading-go.mdx`.

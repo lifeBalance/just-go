@@ -2,8 +2,22 @@ import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 import gomaxprocs from './code/gomaxprocs/main.go?raw'
 
+# Threading in Go
 
-# The Go Threading Model (M:N)
+In a previous section we talked about **kernel threads** and **user-level threads**. The latter ones are **lightweight threads** that are scheduled by a runtime library or virtual machine (VM). Depending on the language they have different names:
+
+- [Green threads](https://en.wikipedia.org/wiki/Green_thread) is the name of the original thread library for Java.
+- [Greenlets](https://pypi.org/project/greenlet/) are lightweight coroutines for in-process concurrent programming (Python library).
+- [Goroutines]() are Go’s lightweight user threads multiplexed onto kernel threads by the runtime.
+
+All these have in common several things:
+
+- They’re scheduled in **user space** by a **runtime** (Go) or **library** rather than the **OS scheduler**. 
+- They start with a **small context** (a few kilobytes) that can grow on demand, so you can spawn thousands of them cheaply.  
+- **Context switches** between them are far faster than switching OS threads.
+
+
+## The Go Threading Model (M:N)
 
 Go’s concurrency model delivers the benefits of **user-level threads** without most of their drawbacks. It achieves this by running goroutines on a **pool of kernel-level threads**, where each thread manages a queue of goroutines. This design allows programs to fully utilize multiple CPU cores, enabling **true parallel execution**.
 

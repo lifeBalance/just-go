@@ -1,0 +1,10 @@
+# Scheduling
+
+Most of the time, a computer has more runnable work than CPU cores. The operating system uses [scheduling](https://en.wikipedia.org/wiki/Scheduling_(computing)) to decide which **process** or **thread** should run next.
+
+## Types of Schedulers
+
+Depending on their scope, schedulers can be:
+
+- **OS kernel schedulers** juggle processes and threads.
+- **Runtime or language schedulers** manage **user-level threads**, or in the case of Go, goroutines on top of OS threads.

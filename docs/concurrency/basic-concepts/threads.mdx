@@ -2,14 +2,20 @@ import Admonition from '@components/Admonition.astro'
 
 # Threads
 
-A [thread](<https://en.wikipedia.org/wiki/Thread_(computing)>) is the actual unit of execution inside a process. Every process has at least one thread (the **main thread**), but it can create more.
+Many high-performance applications rely on threads to keep the UI responsive, overlap I/O with computation, and utilize all available CPU cores. When a **process** needs to perform **multiple tasks** at once, a common approach is to split those tasks across **threads**.  
 
 ```
 ┌──────────────────────────────┐
-│        Process PID 8204      │
-│ ┌─────────── Memory ───────┐ │
-│ │ Globals   Heap           │ │
-│ └──────────────────────────┘ │
+│        Process A             │
+│ PID: 5102                    │  
+│   ┌──── Memory Space ───┐    │       
+│   │  Stack  │ Heap      │    │       
+│   │  Data   │ Text      │    │       
+│   └─────────────────────┘    │       
+│   ┌── File Descriptors ─┐    │       
+│   │ 0 stdin  1 stdout   │    │       
+│   │ 2 stderr 3 socket#17│    │       
+│   └─────────────────────┘    │  
 │ ┌────────── Threads ───────┐ │
 │ │ Main Thread (T0)         │ │
 │ │ Worker Thread (T1)       │ │
@@ -18,22 +24,22 @@ A [thread](<https://en.wikipedia.org/wiki/Thread_(computing)>) is the actual uni
 └──────────────────────────────┘
 ```
 
-Unlike processes, threads inside the same process **share the same memory space**. This makes communication between them fast, but dangerous (two threads changing the same variable at once causes bugs).
+A [thread](<https://en.wikipedia.org/wiki/Thread_(computing)>) is the actual unit of execution inside a process. Every process has at least one thread (the **main thread**), but it can create more.
 
 <Admonition title="Threads are lighter than Processes">
 Threads are lighter than processes, but they are still **not free**. An OS thread typically consumes about `1MB` of RAM just to exist.
 </Admonition>
 
-## Multithreading
+## Sharing is Caring
 
-When a **process** needs to perform **multiple tasks** at once, a common approach is to split those tasks across **threads**.  Many high-performance applications rely on threads to keep the UI responsive, overlap I/O with computation, and utilize all available CPU cores.
+Unlike processes, threads inside the same process **share the same memory space**. This makes communication between them fast, but dangerous (two threads changing the same variable at once causes bugs).
 
 ```
 ┌───────────────────────────────────────────────────────┐
 │                  Process PID 8204                     │
 │ ┌────────────── Shared Memory Space ────────────────┐ │
 │ │ ┌───────────────┐  ┌───────────────┐              │ │
-│ │ │   Global Data │  │     Heap      │◄───────┐     │ │
+│ │ │File Descript. │  │ Memory Space  │◄───────┐     │ │
 │ │ └───────────────┘  └───────────────┘        │     │ │
 │ │                                             │     │ │
 │ │ ┌───────────── Thread T1 ────────────────┐  │     │ │
@@ -47,21 +53,16 @@ When a **process** needs to perform **multiple tasks** at once, a common approac
 └───────────────────────────────────────────────────────┘
 ```
 
-Each thread represents a separate path of execution inside the same process. Each thread has its own own stack, registers, and program counter. That means each can be at a different point in the code.
+Threads share the process’s memory space, file descriptors, etc, so they can collaborate more easily than separate processes. For this reason, **thread-based concurrency** tends to be more lightweight than **inter-process communication**, but it also introduces the classic synchronization problems: race conditions, deadlocks, and so on.
 
-<Admonition title="Multithreading">
-In essence, [multi-threading](https://en.wikipedia.org/wiki/Multithreading_(computer_architecture)) is the **OS-level mechanism** that lets a single process run multiple “strands” of execution concurrently (and in parallel, if there are multiple CPU cores). 
-</Admonition>
+## Multithreading
 
-Threads share the process’s memory space, file descriptors, etc, so they can collaborate more easily than separate processes. For this reason, thread-based concurrency tends to be more lightweight than inter-process communication, but it also introduces the classic synchronization problems: race conditions, deadlocks, and so on.
+[Multithreading](https://en.wikipedia.org/wiki/Multithreading_(computer_architecture)) allows a **single process** run multiple strands of execution **concurrently**. On multicore hardware those threads may run **in parallel**. Multithreading can be implemented at two different levels:
 
-## Kernel Level Threads
+1. **Kernel-level threads**, where the operating system schedules and manages each thread directly.
+2. **User-level threads**, where a runtime or library multiplexes **lightweight threads** inside the process on top of one or more **kernel threads**.
 
-Kernel-level threads are threads managed directly by the **operating system**. They execute within **processes**, but their scheduling and lifecycle are fully controlled by the OS.
-
-The operating system maintains each thread’s **execution context** (registers, stack, and state) and uses this information when scheduling threads to run. Because the OS is aware of all threads, it decides when and whether each thread executes.
-
-During a **context switch**, the operating system steps in to save the current thread’s context and selects the next thread to execute.
+Each thread represents a **separate path of execution** inside the same process. Each thread has its own own stack, registers, and program counter. That means each can be at a different point in the code.
 
 ## User Level Threads
 
@@ -91,3 +92,4 @@ User-level threads are more performant, because context-switching at this level 
 A way to avoid this issue is to use **non-blocking** IO operations, but not all devices support them.
 
 2. Since the OS only sees the external process, the internal threads only have access to a processor's **single core** at a time. In other words, the **user-level threads** contained in that **kernel-level thread** will not be able to run in parallel.
+
