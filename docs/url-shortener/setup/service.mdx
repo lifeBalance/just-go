@@ -1,0 +1,116 @@
+import Admonition from '@components/Admonition.astro'
+
+# The Shortener Service
+
+We'll create a new file for our service:
+
+```sh
+urlshortener/
+├── cmd/
+│   └── server/
+│       └── main.go
+├── ui/
+│   └── index.html
+└── internal/
+    ├── api/
+    │   └── router.go
+    └── service/
+        └── shortener.go     # Our service
+```
+
+Everytime the user submits a URL, this is the code that will shorten it.
+
+```go
+package service
+
+type ShortenRequest struct {
+	URL string
+}
+
+type ShortenResponse struct {
+	ShortCode   string
+	OriginalURL string
+}
+
+type Shortener struct{}
+
+func NewShortener() *Shortener {
+	return &Shortener{}
+}
+
+func (s *Shortener) Shorten(req ShortenRequest) (ShortenResponse, error) {
+	return ShortenResponse{
+		ShortCode:   "stub123",
+		OriginalURL: req.URL,
+	}, nil
+}
+```
+
+<Admonition title="Mock Response">
+
+</Admonition>
+
+## Dependency Injection
+
+With our new `Shorten` service in place, we'll use [dependency injection]() to wire it into the HTTP layer. This keeps `main` responsible for assembling dependencies while the `api` package stays focused on request handling:
+
+```go
+func main() {
+	shortener := service.NewShortener()   // 🔧 init services
+	appRouter := api.NewRouter(shortener) // 💉 inject here
+}
+```
+
+Of course, `NewRouter` has to accept the dependency:
+
+```go
+func NewRouter(shortener *service.Shortener) http.Handler {
+    // more code...
+	chi.Post("/api/shorten", shortenHandler(shortener))
+    // more code...
+}
+```
+
+Note how we pass the service to a new `shortenHandler` function:
+
+```go
+func shortenHandler(shortener *service.Shortener) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", http.MethodPost)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		defer r.Body.Close()
+
+		var req struct {
+			URL string `json:"url"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid json payload", http.StatusBadRequest)
+			return
+		}
+		if req.URL == "" {
+			http.Error(w, "url is required", http.StatusBadRequest)
+			return
+		}
+
+		resp, err := shortener.Shorten(service.ShortenRequest{URL: req.URL})
+		if err != nil {
+			http.Error(w, "failed to shorten url", http.StatusInternalServerError)
+			return
+		}
+
+		payload := map[string]string{
+			"short_code":   resp.ShortCode,
+			"original_url": resp.OriginalURL,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(payload); err != nil {
+			http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		}
+	}
+}
+```
