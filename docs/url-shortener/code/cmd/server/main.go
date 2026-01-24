@@ -7,15 +7,18 @@ import (
 	"os"
 
 	"urlshortener/internal/api"
-	"urlshortener/internal/service"
+	shortenerpkg "urlshortener/internal/services/shortener"
 )
 
 func main() {
-	shortener := service.NewShortener()   // 🔧 init services
-	appRouter := api.NewRouter(shortener) // 💉 inject service
-	addr := fmt.Sprintf(":%s", port())    // 🚀 start HTTP server
-	log.Printf("🚀 listening on %s 🚀", addr)
-	if err := http.ListenAndServe(addr, appRouter); err != nil {
+	codeGenerator := shortenerpkg.NewRandomCodeGenerator(6)
+	shortenerSvc := shortenerpkg.NewShortener(codeGenerator)
+	appRouter := api.NewRouter(shortenerSvc)
+
+	addr := fmt.Sprintf(":%s", port())
+	log.Printf("🚀 listening on %s 🚀", addr)     // 🪵 log message
+	err := http.ListenAndServe(addr, appRouter) // 🚀 start HTTP server
+	if err != nil {
 		log.Fatalf("server stopped: %v", err)
 	}
 }

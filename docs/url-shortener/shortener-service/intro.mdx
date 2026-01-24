@@ -1,0 +1,21 @@
+# Shortener Service Overview
+
+In the previous **Setup Section**, we added the service, and wire it up in the **entry point** of the app, using **DI**. But if you check the code, we're just returning a hardcoded shortcode:
+
+```go
+return ShortenResponse{
+    ShortCode:   "stub123",
+    OriginalURL: req.URL,
+}, nil
+```
+
+In this section we'll add the code responsible for turning **long URLs** into unique **short codes**.
+
+## What the Service Does
+
+- Accepts a **long URL** and returns a **short code** plus **metadata**.
+- **Validates input** (non-empty, well-formed URLs) before delegating to storage.
+- Coordinates with supporting components (random code generator, store, validator workers) via dependency injection.
+
+## Generating Short Codes
+

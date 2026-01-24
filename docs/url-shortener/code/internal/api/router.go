@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"urlshortener/internal/service"
+	shortenerpkg "urlshortener/internal/services/shortener"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func NewRouter(shortener *service.Shortener) http.Handler {
+func NewRouter(shortsvc *shortenerpkg.Shortener) http.Handler {
 	chi := chi.NewRouter()
 
 	chi.Get("/healthz", healthHandler)
 	chi.Get("/", rootHandler)
 	chi.Handle("/static/*", staticFilesHandler())
 
-	chi.Post("/api/shorten", shortenHandler(shortener))
+	chi.Post("/api/shorten", shortenHandler(shortsvc))
 
 	return chi
 }
@@ -30,7 +30,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "ui/index.html")
 }
 
-func shortenHandler(shortener *service.Shortener) http.HandlerFunc {
+func shortenHandler(shortsvc *shortenerpkg.Shortener) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", http.MethodPost)
@@ -52,7 +52,7 @@ func shortenHandler(shortener *service.Shortener) http.HandlerFunc {
 			return
 		}
 
-		resp, err := shortener.Shorten(service.ShortenRequest{URL: req.URL})
+		resp, err := shortsvc.Shorten(r.Context(), shortenerpkg.ShortenRequest{URL: req.URL})
 		if err != nil {
 			http.Error(w, "failed to shorten url", http.StatusInternalServerError)
 			return
