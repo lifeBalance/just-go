@@ -1,6 +1,8 @@
-# Shortener Service Overview
+import Admonition from '@components/Admonition.astro'
 
-In the previous **Setup Section**, we added the service, and wire it up in the **entry point** of the app, using **DI**. But if you check the code, we're just returning a hardcoded shortcode:
+# Overview
+
+In the previous **Setup** section, we implemented the shortener service, and wire it up in the **entry point** of the app, using **DI**. But if you check the code, we're just returning a hardcoded shortcode:
 
 ```go
 return ShortenResponse{
@@ -19,3 +21,109 @@ In this section we'll add the code responsible for turning **long URLs** into un
 
 ## Generating Short Codes
 
+At the `shortener` service, we need a function for generating short codes:
+
+```go
+func (g *RandomCodeGenerator) Generate(_ context.Context) (string, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	code := make([]rune, g.length)
+	for i := range code {
+		code[i] = g.alphabet[g.rnd.Intn(len(g.alphabet))]
+	}
+	return string(code), nil
+}
+```
+
+`Generate` is a `RandomCodeGenerator` method, which produces a random short code in a **thread-safe way**:
+
+- Locks the generator (`g.mu.Lock()`) so concurrent goroutines don’t race the shared `rnd` field.
+- Prepares a rune slice of the configured length (`g.length`).
+- Fills each position with a **random rune** from the allowed **alphabet**.
+- Returns the slice as a string.
+
+### Injecting the Generator
+
+In `cmd/server/main.go` we now construct the service in two steps:
+
+```go
+generator := shortenerpkg.NewRandomCodeGenerator(6)
+shortenerSvc := shortenerpkg.NewShortener(generator)
+appRouter := api.NewRouter(shortenerSvc)
+```
+
+The `NewShortener` depends on something that satisfies the `CodeGenerator` interface, i.e. a type with a `Generate` function that we can call to produce the short code:
+
+```go
+type CodeGenerator interface {
+	Generate(ctx context.Context) (string, error)
+}
+```
+
+So we instantiate `NewRandomCodeGenerator(6)`, which produces six-character alphanumeric codes. 
+
+<Admonition type="DI">
+Injecting that generator into `NewShortener`, keeps the service independent of any specific generation strategy; later we can plug in a **deterministic generator** for tests or a **store-aware version** that handles collisions without touching the HTTP layer.
+</Admonition>
+
+## Building the Service
+
+We just saw, how we need to initialize the **shortener service** with an injected `CodeGenerator`. This is the function that does that:
+
+```go
+func NewShortener(gen CodeGenerator) *Shortener {
+    return &Shortener{generator: gen}
+}
+```
+
+`NewShortener` is the **constructor** that wires in the **dependency**: you pass it any `CodeGenerator`, and it returns a `Shortener` that will use that generator when Shorten runs.
+
+
+<Admonition type="DI">
+ That’s the essence of **dependency injection**; `main` decides the concrete generator, while the service just depends on the interface. It’s useful for swapping in different strategies or test doubles without editing the service implementation.
+</Admonition>
+
+## The Shorten Method
+
+The `Shorten` method starts with some **validation**, that checks for:
+
+- An **empty URL**.
+- A **valid URL**.
+- A `nil` generator.
+
+```go
+func (s *Shortener) Shorten(
+	ctx context.Context,
+	req ShortenRequest,
+) (ShortenResponse, error) {
+	if req.URL == "" {
+		return ShortenResponse{}, ErrEmptyURL
+	}
+	if _, err := url.ParseRequestURI(req.URL); err != nil {
+		return ShortenResponse{}, ErrInvalidURL
+	}
+	if s.generator == nil {
+		return ShortenResponse{}, ErrNoGenerator
+	}
+	code, err := s.generator.Generate(ctx)
+	if err != nil {
+		return ShortenResponse{}, err
+	}
+	return ShortenResponse{
+		ShortCode:   code,
+		OriginalURL: req.URL,
+	}, nil
+}
+```
+
+If **validation** succeeds, the `Generate` method is called. Note how this method needs two things:
+
+- A **context**, which is passed by the HTTP handler from the **incoming request** (`r.Context()`). 
+- A **request** structure (`ShortenRequest`) that carries the long `URL` payload.
+
+The **context** will be passed down to the `Generate` method. That will let us react if:
+
+- The **client** disconnects or times out.
+- If the generator (or anything it calls later—like a store or background validator) blocks on network/file operations.
+
+In any of these cases, we can call `ctx.Done()` and abort early instead of burning CPU on a request that’s already gone.

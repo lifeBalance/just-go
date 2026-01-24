@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net/url"
 	"sync"
-	"time"
 )
 
 var (
@@ -35,7 +34,10 @@ func NewShortener(gen CodeGenerator) *Shortener {
 	return &Shortener{generator: gen}
 }
 
-func (s *Shortener) Shorten(ctx context.Context, req ShortenRequest) (ShortenResponse, error) {
+func (s *Shortener) Shorten(
+	ctx context.Context,
+	req ShortenRequest,
+) (ShortenResponse, error) {
 	if req.URL == "" {
 		return ShortenResponse{}, ErrEmptyURL
 	}
@@ -63,13 +65,16 @@ type RandomCodeGenerator struct {
 	length   int
 }
 
+var defaultAlphabet = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
 func NewRandomCodeGenerator(length int) *RandomCodeGenerator {
 	return &RandomCodeGenerator{
-		rnd:      rand.New(rand.NewSource(time.Now().UnixNano())),
-		alphabet: []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"),
+		rnd:      rand.New(rand.NewSource(rand.Int63())),
+		alphabet: defaultAlphabet,
 		length:   length,
 	}
 }
+
 func (g *RandomCodeGenerator) Generate(_ context.Context) (string, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
