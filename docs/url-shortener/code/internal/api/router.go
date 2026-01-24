@@ -1,8 +1,6 @@
 package api
 
-import (
-	"net/http"
-)
+import "net/http"
 
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
@@ -17,6 +15,5 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("urlshortener api coming soon"))
+	http.ServeFile(w, r, "ui/index.html")
 }

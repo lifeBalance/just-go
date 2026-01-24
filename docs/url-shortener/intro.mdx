@@ -30,6 +30,8 @@ urlshortener/
 │   │   └── worker.go        # Background validation workers
 │   └── types/
 │       └── types.go         # Domain types
+├── ui/
+│   └── index.html
 ├── pkg/
 │   ├── errors/
 │   │   └── errors.go        # Custom error types
@@ -37,30 +39,7 @@ urlshortener/
 │       └── random.go        # Utility functions
 ├── test/
 │   └── integration_test.go  # Integration tests
-├── go.mod
-├── go.sum
-├── Makefile
-└── README.md
-```
-
-## 🚀 Quickstart
-
-Set up locally:
-
-```sh
-# Clone the repository
-git clone https://github.com/yourusername/urlshortener.git
-cd urlshortener
-
-# Install dependencies
-go mod download
-
-# Run tests
-go test -race ./...
-
-# Build and run
-go build -o shortener ./cmd/server
-./shortener
+└── go.mod
 ```
 
 ## ⚙️ Configuration Options

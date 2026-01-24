@@ -6,9 +6,9 @@ Let's create our project root folder under `docs/url-shortener/code`. This keeps
 
 - Initialize a Go module: `go mod init urlshortener`.
 
-## HTTP Entrypoint
+## Bootstrapping the Server
 
-Let's start simple:
+We'll structure our HTTP server in a couple different files:
 
 ```sh
 urlshortener/
@@ -20,7 +20,9 @@ urlshortener/
         └── router.go        # Router with handlers
 ```
 
-- The entrypoint of our application is in `cmd/server/main.go`, focused on configuration and server startup:
+The rationale for this is, that having all the handlers in `main.go`, becomes a mess once you keep adding more endpoints.
+
+1. This is `cmd/server/main.go`:
 
 ```go
 func main() {
@@ -31,18 +33,9 @@ func main() {
 		log.Fatalf("server stopped: %v", err)
 	}
 }
-
-// 🌡️ read PORT env, default 8080
-func port() string {
-	p := os.Getenv("PORT")
-	if p == "" {
-		return "8080"
-	}
-	return p
-}
 ```
 
-- Route registration lives in `internal/api/router.go` via a `NewRouter()` constructor that returns the mux used by `main`:
+2. And this is `internal/api/router.go`:
 
 ```go
 func NewRouter() http.Handler {
@@ -52,22 +45,20 @@ func NewRouter() http.Handler {
 	return mux
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("ok"))
-}
-
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("urlshortener api coming soon"))
+	http.ServeFile(w, r, "ui/index.html")
 }
 ```
+
+## Running the Setup
 
 If we start the server:
 
 ```sh
 go run ./cmd/server
 ```
+
+The root route now serves `ui/index.html`, keeping a simple front-end starter page separate from Go internals.
 
 We can test this out with `curl`
 
@@ -80,4 +71,28 @@ Content-Length: 2
 Content-Type: text/plain; charset=utf-8
 
 ok
+```
+
+## Adding a UI
+
+In our `internal/api/router.go`, let's refactor our `rootHandler`:
+
+```go
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "ui/index.html")
+}
+```
+
+We're serving the following file:
+
+```sh
+urlshortener/
+├── cmd/
+│   └── server/
+│       └── main.go
+├── ui/
+│   └── index.html      # Serving an HTML file
+└── internal/
+    └── api/
+        └── router.go        # Router with handlers
 ```
