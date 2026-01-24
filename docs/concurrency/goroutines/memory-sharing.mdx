@@ -1,9 +1,134 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
-
+import sharevar from './code/sharevar/main.go?raw'
+import sharevarseq from './code/sharevarseq/main.go?raw'
+import seqcountletters from './code/seqcountletters/main.go?raw'
+import gocountletters from './code/gocountletters/main.go?raw'
 
 # Memory Sharing with Goroutines
 
-In a [previous section](/concurrency/basic-concepts/interthread-communication) we explained **Inter-thread communication** using  **memory sharing**. Let's take a look at how goroutines communicate with each other by sharing memory.
+In a [previous section](/concurrency/basic-concepts/interthread-communication) we explained **Inter-thread communication** using **memory sharing**. Consider the following **sequential code**:
+
+<Code code={sharevarseq} lang="go" title="sharevarseq/main.go" />
+
+In this code, we do a few things:
+
+- Create a `count` variable, with a value of `5`. That variable lives in the stack of `main`.
+- Call `countdown`, passing the address of `count`. Since the code is sequential, `countdown` will finish, leaving `count` with a value of `0`.
+- Then, back in `main`, the loop checks the value of `count`, and since it's `0`, we don't even enter the loop, and the program exits.
+
+Bottom line, nothing will print to `stdout`.
+
+```
++-----------------------------------------+
+| main process                            |
+|   stack frame                           |
+|  ┌────► [count = 5 → 4 → 3 → 2 → 1 → 0] | ◄── shared memory
+|  |      call → countdown                |
+|  |      +---------------------------+   |
+|  |      | countdown frame           |   |
+|  └──────── seconds: *int            |   |
+|         |   loop: sleep; *seconds-- |   |
+|         +---------------------------+   |
++-----------------------------------------+
+```
+
+Let's take a look at how goroutines communicate with each other by sharing memory.
 
 ## Example 1: Sharing a variable
+
+Let's write a program where one goroutine **updates** the contents of a variable, and another thread **reads** its contents.
+
+<Code code={sharevar} lang="go" title="sharevar/main.go" />
+
+In this code we have two goroutines:
+
+- `main` reads the shared variable every **half second** and outputs it.
+- `countdown` updates the shared variable every **1 second**, decreasing its value by `1` until it’s `0`.
+
+If we run `go run sharevar/main.go`, we get the following **output**:
+
+```
+5
+4
+4
+4
+3
+2
+2
+1
+1
+0
+```
+
+Some numbers are printed several times, due to the fact that each loop iteration sleeps for just `500ms`, and `countdown` updates the variable every `1000ms`.
+
+<Admonition title="main is also a goroutine">
+  If you were wondering, yes, `main` is also a goroutine. There are several
+  mentions of it in the docs, e.g.
+  [runtime.Goexit](https://pkg.go.dev/runtime#Goexit)
+</Admonition>
+
+In this example, `countdown` is running in its own goroutine and uses `count`, a variable from another function's scope, that variable can't stay on the original function's stack. Go's compiler detects this sharing and automatically moves the variable to the **heap** instead.
+
+<Admonition title="Independent Lifecycles">
+  Goroutines have independent lifecycles, so they can't access another
+  goroutine's stack memory. That would be unsafe.
+</Admonition>
+
+## Escape to the Heap
+
+When we declare a variable that looks like it belongs to the local function’s stack but instead is allocated in the **heap memory**, we say that the variable has **escaped to the heap**.
+
+```
++----------------------+    +--------------------------+
+| main goroutine       |    | countdown goroutine      |
+|   countPtr ──┐       |    |   secondsPtr ──┐         |
++----------------------+    +--------------------------+
+               │                             │
+               ▼                             ▼
++-----------------------------------------------+
+|                    heap                       |
+|   count (escaped int): 5 → 4 → 3 → 2 → 1 → 0  |
+|   shared mutable state for both goroutines    |
++-----------------------------------------------+
+```
+
+There are many instances where a variable escapes to the heap. Anytime a variable is **shared** outside the scope of a function’s stack frame, the variable is allocated on the heap. Sharing a **variable’s reference** between goroutines is one such example.
+
+<Admonition title="Heap Additional Cost">
+
+When a variable is placed on a function stack, this memory is reclaimed when the function finishes. But when it's placed in the **heap**, Go's garbage collector goes through the heap, checking for objects that are no longer referenced by any goroutine, and mark the space as **free**, so it can be reused.
+
+</Admonition>
+
+We can verify that a variable has been moved to the heap by using the [-m](https://pkg.go.dev/cmd/compile), which prints optimization decisions. We need to use the [compiler](https://pkg.go.dev/cmd/compile), i.e. `go tool compile`.
+
+## Example 2: Updating a variable from Multiple Goroutines
+
+Let's take a look at a program where we count the frequency of the letters in a given string, using a function named `countLetters`:
+
+<Code code={seqcountletters} lang="go" title="seqcountletters/main.go" />
+
+From `main` we call `countLetters` for each string in `sampleTexts`, passing a random delay, that `countLetters` will use for simulating a **slow operation**. Let's `go run seqcountletters/main.go `:
+
+```sh
+Completed sample of length: 100
+Completed sample of length: 112
+Completed sample of length: 116
+a-18 b-2 c-10 d-11 e-32 f-1 g-8 h-8 i-22 j-0
+k-3 l-12 m-4 n-30 o-27 p-6 q-1 r-24 s-30
+t-18 u-7 v-4 w-6 x-0 y-4 z-1 
+```
+
+This program runs sequentially, so we have to wait for each call to `countLetters` to finish, before calling again. Let's write this program using **concurrency**:
+
+<Code code={gocountletters} lang="go" title="gocountletters/main.go" />
+
+We just had to add a `go` statement before calling `countLetters`, so that each call run in a goroutine. Additionally, we added a `time.Sleep` at the end of the loop, otherwise, the `main` goroutine would reach the end of the file, and exit. Using a `time.Sleep` is a **temporary hack**, to keep code simple.
+
+<Admonition>
+If you run the **concurrent code** above several times, you'll notice the string samples are processed in different order each time. Eventually, we'll get a different character count (I got two different counts for `e`, `31` and `32`). In the **sequential version**, the character count will always be the same.
+</Admonition>
+
+Due to all goroutines (`main` and all three `countLetters`) having access to the `frequency` slice, this variable will be **escaped to the heap**. When we create the goroutines, we pass them all the **same reference**, so all of them will be reading and writing from and to the same location in memory. That's what a [race condition](https://en.wikipedia.org/wiki/Race_condition) is: multiple threads (or processes, or goroutines) **sharing memory**, without any synchronization whatsoever; at some point they'll step over each other, giving unexpected results.
