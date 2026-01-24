@@ -1,0 +1,83 @@
+# Setup
+
+Let's create our project root folder under `docs/url-shortener/code`. This keeps the playground isolated from other samples while letting us run `go test -race` and other tooling in a clean environment.
+
+## Module Initialization
+
+- Initialize a Go module: `go mod init urlshortener`.
+
+## HTTP Entrypoint
+
+Let's start simple:
+
+```sh
+urlshortener/
+├── cmd/
+│   └── server/
+│       └── main.go          # Application entry point
+└── internal/
+    └── api/
+        └── router.go        # Router with handlers
+```
+
+- The entrypoint of our application is in `cmd/server/main.go`, focused on configuration and server startup:
+
+```go
+func main() {
+	appRouter := api.NewRouter()        // 🔧 assemble router
+	addr := fmt.Sprintf(":%s", port())  // 🚀 start HTTP server
+	log.Printf("listening on %s", addr) // 🪵 log some message
+	if err := http.ListenAndServe(addr, appRouter); err != nil {
+		log.Fatalf("server stopped: %v", err)
+	}
+}
+
+// 🌡️ read PORT env, default 8080
+func port() string {
+	p := os.Getenv("PORT")
+	if p == "" {
+		return "8080"
+	}
+	return p
+}
+```
+
+- Route registration lives in `internal/api/router.go` via a `NewRouter()` constructor that returns the mux used by `main`:
+
+```go
+func NewRouter() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", healthHandler)
+	mux.HandleFunc("/", rootHandler)
+	return mux
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok"))
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("urlshortener api coming soon"))
+}
+```
+
+If we start the server:
+
+```sh
+go run ./cmd/server
+```
+
+We can test this out with `curl`
+
+```
+curl -i localhost:8080/healthz
+
+HTTP/1.1 200 OK
+Date: Sat, 24 Jan 2026 12:00:00 GMT
+Content-Length: 2
+Content-Type: text/plain; charset=utf-8
+
+ok
+```
