@@ -1,0 +1,36 @@
+# Add a New Router
+
+We'll replace the standard mux with [chi](https://github.com/go-chi/chi) to get expressive routing (URL params, middlewares) without heavy framework overhead. Let's install it:
+
+```sh
+go get github.com/go-chi/chi/v5
+```
+
+## Wire chi into the router
+
+To use the new router, in `internal/api/router.go` we just have to swap `mux` with `chi`:
+
+```diff
+-mux := http.NewServeMux()
++chi := chi.NewRouter()
+```
+
+And use the `chi` handler functions:
+
+```go
+chi.Get("/healthz", healthHandler)
+chi.Get("/", rootHandler)
+```
+
+No need to touch the **handlers** themselves (`healthHandler`, and `healthHandler`) which stay the same. At the end, we have to return the new router:
+
+```go
+func NewRouter(shortener *service.Shortener) http.Handler {
+    chi := chi.NewRouter()
+
+    chi.Get("/healthz", healthHandler)
+    chi.Get("/", rootHandler)
+    
+    return chi
+}
+```
