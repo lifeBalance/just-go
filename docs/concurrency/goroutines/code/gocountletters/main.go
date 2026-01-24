@@ -20,7 +20,7 @@ func main() {
 	for _, text := range sampleTexts {
 		randomInt := 500 + rand.Intn(1001) // range 500-1500 inclusive
 		randomDelay := time.Duration(randomInt) * time.Millisecond
-		go countLetters(text, randomDelay, frequency)
+		go countLetters(text, randomDelay, frequency) // 🚀 launch goroutine
 	}
 	time.Sleep(3 * time.Second) // ⚠️ temporary hack
 	for i, c := range allLetters {
