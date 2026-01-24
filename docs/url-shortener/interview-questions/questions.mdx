@@ -1,0 +1,44 @@
+## Question 1: Goroutine Orquestration
+
+What are some ways to orchestrate goroutines? Let’s say you have two goroutines doing some task simultaneously, what are some ways you could wait for both of them to finish? Walk us through: 
+
+- which approach you’d choose
+- why you prefer it over alternatives
+- any gotchas you’ve encountered
+- how would you do error handling
+
+# Question 2
+
+Once the main goroutine starts a background goroutine, what are some ways to cancel the background task? Walk us through:
+
+- a real scenario where you needed cancellation
+- how you signaled the goroutine to stop
+- how you verified the goroutine actually exited
+
+# Question 3
+
+Let’s say a caller calls a function that returns an error. How would you differentiate between different kinds of errors and take action depending on the type? Walk us through: 
+
+- the approaches available in Go
+- which you prefer and why
+- a real example where this mattered
+
+## Question 4: OS threads vs goroutines 
+
+- what’s the difference? 
+- Is goroutine scheduling preemptive or cooperative? 
+
+Walk us through: 
+- the key differences (memory, creation cost, scheduling)
+- how the Go scheduler works at a high level
+- any practical implications you’ve encountered
+
+# Question 5
+
+Tell us about a time you improved test coverage or caught a bug through better test design. Walk us through: 
+
+- what was undertested or what bug slipped through
+- how you restructured the tests (table-driven, subtests, mocking, etc.)
+- what edge cases you added 
+- how this prevented future regressions 
+- how to catch data race *

@@ -1,0 +1,278 @@
+# Go URL Shortener with Background Validation
+
+A production-ready URL shortener API that demonstrates advanced Go concurrency patterns, context propagation, and error handling. This is more than a simple key-value store—it includes background validation, worker pools, and robust error management.
+
+## ✨ Features
+
+- 🔗 Smart URL Shortening: Generate short codes for URLs with customizable lengths
+- ✅ Background Validation: Asynchronous URL reachability checks with timeout handling
+- ⚡ Concurrent Processing: Worker pool pattern for efficient background validation
+- 🛡️ Context-Aware Operations: Full context propagation for graceful cancellation
+- 🧪 Comprehensive Testing: Table-driven tests with race condition detection
+- 📊 Metadata Capture: Optional metadata collection during validation
+- 🎯 Precise Error Handling: Wrapped errors with proper HTTP status codes
+
+## 🏗️ Project Structure
+
+```sh
+urlshortener/
+├── cmd/
+│   └── server/
+│       └── main.go          # Application entry point
+├── internal/
+│   ├── api/
+│   │   └── handlers.go      # HTTP handlers
+│   ├── service/
+│   │   └── shortener.go     # Business logic
+│   ├── store/
+│   │   └── memory.go        # In-memory storage
+│   ├── validator/
+│   │   └── worker.go        # Background validation workers
+│   └── types/
+│       └── types.go         # Domain types
+├── pkg/
+│   ├── errors/
+│   │   └── errors.go        # Custom error types
+│   └── utils/
+│       └── random.go        # Utility functions
+├── test/
+│   └── integration_test.go  # Integration tests
+├── go.mod
+├── go.sum
+├── Makefile
+└── README.md
+```
+
+## 🚀 Quickstart
+
+Set up locally:
+
+```sh
+# Clone the repository
+git clone https://github.com/yourusername/urlshortener.git
+cd urlshortener
+
+# Install dependencies
+go mod download
+
+# Run tests
+go test -race ./...
+
+# Build and run
+go build -o shortener ./cmd/server
+./shortener
+```
+
+## ⚙️ Configuration Options
+
+| Environment Variable   | Default                | Description                    |
+| ---------------------- | ---------------------- | ------------------------------ |
+| PORT                   | 8080                   | HTTP server port               |
+| WORKER_POOL_SIZE       | 5                      | Number of validation workers   |
+| VALIDATION_TIMEOUT 30s | URL validation timeout |
+| CODE_LENGTH            | 6                      | Short code length              |
+| MAX_VALIDATION_WORKERS | 10                     | Maximum concurrent validations |
+| CLEANUP_INTERVAL       | 5m                     | Expired URL cleanup interval   |
+| MAX_URL_LENGTH         | 2048                   | Maximum URL length             |
+
+Create `.env` file:
+
+```
+PORT=8080
+WORKER_POOL_SIZE=5
+VALIDATION_TIMEOUT=5s
+CODE_LENGTH=6
+MAX_VALIDATION_WORKERS=10
+```
+
+## 📖 API Reference
+
+## Create a new short URL with background validation
+
+- Endpoint: `POST /api/shorten`
+
+- Request body:
+
+```json
+{
+  "url": "https://example.com",
+  "custom_code": "optional",
+  "metadata": {
+    "source": "mobile-app",
+    "user_id": "12345"
+  }
+}
+```
+
+- Response body:
+
+```json
+{
+  "short_code": "abc123",
+  "short_url": "http://localhost:8080/abc123",
+  "original_url": "https://example.com",
+  "status": "pending_validation",
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+## Redirect to the original URL.
+
+- Endpoint: `GET /{code}`
+
+- Response codes:
+  - 302 Found - Redirects to original URL
+  - 404 Not Found - Code doesn't exist
+  - 400 Bad Request - URL failed validation
+
+## Get URL information and validation status.
+
+- Endpoint: `GET /api/info/{code}`
+
+- Response body:
+
+```json
+{
+  "code": "abc123",
+  "original_url": "https://example.com",
+  "short_url": "http://localhost:8080/abc123",
+  "created_at": "2024-01-15T10:30:00Z",
+  "validated_at": "2024-01-15T10:30:05Z",
+  "is_valid": true,
+  "metadata": {
+    "source": "mobile-app"
+  },
+  "clicks": 42
+}
+```
+
+## Delete a short URL.
+
+- Endpoint: `DELETE /api/{code}`
+
+- Response codes:
+  - 204 No Content - Successfully deleted
+  - 404 Not Found - Code doesn't exist
+
+## 🎯 Concurrency Patterns
+
+### Worker Pool for Validation
+
+```go
+type ValidatorPool struct {
+    workers   int
+    jobChan   chan validationJob
+    ctx       context.Context
+    waitGroup sync.WaitGroup
+}
+```
+
+- Fixed-size worker pool prevents resource exhaustion
+- Buffered channel for job distribution
+- Graceful shutdown with context cancellation
+- WaitGroup ensures all jobs complete on shutdown
+
+### Context Propagation
+
+- HTTP request context flows to background workers
+- Timeout and cancellation propagate automatically
+- No wasted cycles if client disconnects early
+
+```go
+func (s *Service) Shorten(ctx context.Context, req ShortenRequest) (*ShortenResponse, error) {
+    // Pass parent context to validation goroutines
+    vCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+    defer cancel()
+
+    go s.validator.ValidateAsync(vCtx, req.URL, req.Metadata)
+    // ...
+}
+```
+
+### Error Handling
+
+- Errors.As/Is for precise HTTP status codes
+- Structured error wrapping maintains context
+- Clean separation between business and transport errors
+
+```go
+// Custom error types
+var (
+    ErrURLNotFound     = errors.New("URL not found")
+    ErrInvalidURL      = errors.New("invalid URL")
+    ErrValidationFailed = errors.New("validation failed")
+)
+
+// Wrapped errors with context
+func validateURL(ctx context.Context, url string) error {
+    if err := checkReachability(ctx, url); err != nil {
+        return fmt.Errorf("failed to validate %s: %w", url, err)
+    }
+    return nil
+}
+```
+
+## 🧪 Testing
+
+### Run All Tests
+
+```sh
+# Run with race detector
+go test -race ./...
+
+# Run with coverage
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+
+# Run integration tests
+go test -tags=integration ./test/...
+```
+
+### Test Structure
+
+```go
+func TestShorten(t *testing.T) {
+    tests := []struct {
+        name        string
+        request     ShortenRequest
+        wantErr     bool
+        errType     error
+        setup       func(*testing.T) *Service
+    }{
+        {
+            name: "valid url",
+            request: ShortenRequest{URL: "https://google.com"},
+            wantErr: false,
+        },
+        {
+            name: "invalid url",
+            request: ShortenRequest{URL: "not-a-url"},
+            wantErr: true,
+            errType: ErrInvalidURL,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // Test implementation
+        })
+    }
+}
+```
+
+### Cancellation Tests
+
+```go
+func TestShorten_Cancellation(t *testing.T) {
+    ctx, cancel := context.WithCancel(context.Background())
+    cancel() // Immediate cancellation
+
+    _, err := service.Shorten(ctx, ShortenRequest{
+        URL: "https://example.com",
+    })
+
+    if !errors.Is(err, context.Canceled) {
+        t.Errorf("expected context.Canceled, got %v", err)
+    }
+}
+```

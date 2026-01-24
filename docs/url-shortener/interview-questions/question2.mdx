@@ -1,0 +1,11 @@
+# Question 2
+
+Once the main goroutine starts a background goroutine, what are some ways to cancel the background task? Walk us through:
+
+- a real scenario where you needed cancellation
+- how you signaled the goroutine to stop
+- how you verified the goroutine actually exited
+
+## Answers
+
+The primary and idiomatic way in modern Go is using context.Context. You pass a cancellable context (from the HTTP request, or created manually) to the background goroutine. The goroutine then periodically checks if the context has been cancelled.

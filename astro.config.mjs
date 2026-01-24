@@ -41,6 +41,13 @@ export default defineConfig({
           subtitle: 'Manage multiple tasks running simultaneously',
           href: '/concurrency/intro/intro',
         },
+        {
+          id: 'url-shortener',
+          root: '/docs/url-shortener',
+          title: 'Project: URL Shortener',
+          subtitle: 'Shorten URLs and generate short links',
+          href: '/url-shortener/intro',
+        },
       ],
     }),
   ],
