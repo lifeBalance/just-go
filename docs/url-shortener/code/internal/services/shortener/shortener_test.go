@@ -106,3 +106,94 @@ func TestRandomCodeGeneratorGenerate(t *testing.T) {
 		}
 	}
 }
+
+// LOOKUP
+func TestLookupSuccess(t *testing.T) {}
+func TestLookupEmptyCode(t *testing.T) {
+	want := ErrEmptyCode
+	svc := NewShortener(nil, nil)
+	ctx := context.Background()
+
+	_, err := svc.Lookup(ctx, "")
+	if !errors.Is(err, want) {
+		t.Fatalf("expected %v, got %v", want, err)
+	}
+}
+
+func TestLookupNotFound(t *testing.T) {
+	want := storage.ErrNotFound
+	ctx := context.Background()
+
+	store := storage.NewInMemoryStore()
+	gen := NewRandomCodeGenerator(8)
+	svc := NewShortener(gen, store)
+
+	// we need a valid code (alphabet-wise)
+	code, err := gen.Generate(ctx)
+	if err != nil {
+		t.Fatalf("Generate returned error: %v", err)
+	}
+
+	_, err = svc.Lookup(ctx, code)
+	if !errors.Is(err, want) {
+		t.Fatalf("expected %v, got %v", want, err)
+	}
+}
+func TestLookupIncrementError(t *testing.T) {
+	ctx := context.Background()
+	expectedError := errors.New("increment failed")
+	// Create a stubbed store
+	stubbedStore := newFailingIncrementStore(expectedError)
+	// Create a Shortener service
+	svc := NewShortener(stubGenerator{code: "stub123"}, stubbedStore)
+	// Save an entry in the stubbed store (ignore the error)
+	_ = stubbedStore.Save(ctx, storage.Entry{
+		ShortCode:   "stub123",
+		OriginalURL: "https://example.com",
+	})
+	// Lookup the entry we just saved (someone used our short-url, yay!)
+	entry, err := svc.Lookup(ctx, "stub123")
+	if !errors.Is(err, expectedError) {
+		t.Fatalf("expected %v, got %v", expectedError, err)
+	}
+	if entry.OriginalURL != "https://example.com" {
+		t.Fatalf("expected original url to match, got %s", entry.OriginalURL)
+	}
+}
+
+// ////////////////////
+// Stub Storage Service
+// ////////////////////
+type stubbedIncrementStore struct {
+	store  *storage.InMemoryStore // real store
+	incErr error
+}
+
+func (s *stubbedIncrementStore) Save(
+	ctx context.Context,
+	entry storage.Entry,
+) error {
+	return s.store.Save(ctx, entry)
+}
+
+func (s *stubbedIncrementStore) Find(
+	ctx context.Context,
+	shortCode string,
+) (storage.Entry, error) {
+	return s.store.Find(ctx, shortCode)
+}
+
+// ❌ faulty method (needed to reproduce error)
+func (s *stubbedIncrementStore) IncrementHits(
+	ctx context.Context,
+	shortCode string,
+) (storage.Entry, error) {
+	return storage.Entry{}, s.incErr
+}
+
+func newFailingIncrementStore(err error) *stubbedIncrementStore {
+	return &stubbedIncrementStore{
+		store:  storage.NewInMemoryStore(),
+		incErr: err,
+	}
+}

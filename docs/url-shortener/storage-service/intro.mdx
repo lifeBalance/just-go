@@ -1,9 +1,17 @@
+import Admonition from '@components/Admonition.astro'
+
 # Storage Service
 
 When a user submits a `POST` request containing a **long URL** to our app, two things need to happen:
 
 1. We generate a **short code** for this **long URL**, and the pair is stored.
 2. Whenever our app receives a `GET` request to `http://<our-domain>/<short-code>`, we can look up the `short-code` in our storage, and send back to the user a **redirect to the original URL**.
+
+<Admonition title="Owners">
+  Eventually, only **authenticated** users, will be able of making `POST`
+  requests to our application. These users will be able of managing their own
+  short-codes, and reviewing metadata.
+</Admonition>
 
 In this section we’ll outline a few things:
 

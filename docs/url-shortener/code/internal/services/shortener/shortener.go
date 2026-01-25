@@ -14,6 +14,7 @@ var (
 	ErrEmptyURL    = errors.New("url is required")
 	ErrInvalidURL  = errors.New("url is invalid")
 	ErrNoGenerator = errors.New("code generator unavailable")
+	ErrEmptyCode   = errors.New("short-code is empty")
 )
 
 type ShortenRequest struct {
@@ -72,6 +73,25 @@ func (s *Shortener) Shorten(
 		ShortCode:   code,
 		OriginalURL: req.URL,
 	}, nil
+}
+
+func (s *Shortener) Lookup(
+	ctx context.Context,
+	shortCode string,
+) (storage.Entry, error) {
+	if shortCode == "" {
+		return storage.Entry{}, ErrEmptyCode
+	}
+	entry, err := s.store.Find(ctx, shortCode)
+	if err != nil {
+		return storage.Entry{}, err
+	}
+	updated, incErr := s.store.IncrementHits(ctx, shortCode)
+	if incErr == nil {
+		return updated, nil
+	}
+	// If increment fails, surface the original entry so callers can still redirect.
+	return entry, incErr
 }
 
 // RandomCodeGenerator produces random alphanumeric codes of fixed length.

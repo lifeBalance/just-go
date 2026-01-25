@@ -1,0 +1,78 @@
+import Admonition from '@components/Admonition.astro'
+
+# Lookup and Redirect
+
+When a user submits a `GET` request to `http://<our-domain>/<short-code>`, our backend should extract the **short-code**, and look it up in our storage. Should we find it, the response will redirect the user to the **original URL**.
+
+## Request Lifecycle
+
+Let's go over the step by step lifecycle of such a request:
+
+- **Parse** the incoming path to grab the short code, i.e. extract `abc123` from `http://<our-domain>/abc123`.
+- **Validate** it’s non-empty and matches whatever character set you support; otherwise respond with `400`.
+- Lookup the short-code in our `store`, using the `Find` method.
+  - If it returns `ErrNotFound`, emit a `404` page explaining the short code doesn’t exist (or has **expired**).
+  - For any other **error**, log it and respond with `500`.
+  - On **success**, you have the stored `Entry`. Use its `OriginalURL` to craft the redirect response.
+- After issuing the redirect, trigger `store.IncrementHits` so the `HitCount` climbs with each visit. You can do it **synchronously** before responding or **asynchronously** in a goroutine, depending on how critical exact hit counts are.
+- Optionally, enrich logging/metrics with Entry.CreatedBy so owners can see usage patterns.
+
+<Admonition title="Statistics">
+  Eventually, when we implement **authentication**, will be able of filling the
+  `Entry.CreatedBy` field, so that owners can see usage patterns through some
+  **dashboard**.
+</Admonition>
+
+## Adding a Lookup Method
+
+Let's start by adding a `Lookup` method to our `Shortener` service:
+
+```go
+func (s *Shortener) Lookup(
+    ctx context.Context,
+    shortCode string,
+) (storage.Entry, error) {
+    if shortCode == "" {
+        return storage.Entry{}, ErrEmptyCode
+    }
+    entry, err := s.store.Find(ctx, shortCode)
+    if err != nil {
+        return storage.Entry{}, err
+    }
+    updated, incErr := s.store.IncrementHits(ctx, shortCode)
+    if incErr == nil {
+        return updated, nil
+    }
+    // If increment fails, surface the original entry so callers can still redirect.
+    return entry, incErr
+}
+```
+
+We could put all this logic in the HTTP handler, but adding it as a **method** has several advantages:
+
+- **Testing**: You can unit-test **lookup** and **hit counting** without spinning up HTTP machinery.
+- **Reuse**: We may want to reuse this logic somewhere else, in the future.
+- **Separation of concerns**: Handlers manage **HTTP specifics** whereas **services** manage domain rules (validation, persistence, hit tracking). This keeps each layer simpler and more maintainable.
+
+## Adding an Endpoint
+
+Next, registering a new endpoint for `GET` requests to the `/{shortCode}` path. So in the `/internal/api/router.go` we'll add:
+
+```go
+func NewRouter(shortsvc *shortenerpkg.Shortener) http.Handler {
+    // more code...
+	chi.Get("/{shortCode}", shortCodeHandler(shortsvc))
+    // more code...
+}
+```
+
+Note how we're injecting the `Shortener` service in the `shortCodeHandler`, which strictly speaking is more of a **factory handler** (or higher-order handler) than just a **handler**. This way, we can perform **DI** any dependencies or services we need, while keeping the chi handler **signature clean**. When you later need more dependencies (logger, metrics, feature flags), you add parameters to the constructor without changing its registration site.
+
+## Unit Tests
+
+Let's add some tests before shipping our new stuff:
+
+- `TestLookupSuccess` for the **happy path**: `Find` succeeds, `IncrementHits` succeeds, verify returned entry has incremented count.
+- `TestLookupEmptyCode` for when `Lookup` receives an **empty code**; expect `ErrEmptyCode`.
+- `TestLookupNotFound` for when `Lookup` receives a **non-existing code**; expect `ErrEmptyCode`.
+- `TestLookupIncrementError` when `IncrementHits` errors after a successful `Find`, the service should return the **original entry** plus the **increment error**.
