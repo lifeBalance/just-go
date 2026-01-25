@@ -1,0 +1,73 @@
+# Persisting Short-Codes
+
+When a user submits a `POST` request containing a **long URL** to our app, we need to generate a **short-code** for this long URL, and the **pair** must be stored. The `storage` package exposes a `Store` interface with methods like `Save`, `Find`, and `IncrementHits`. Here we focus on how the **shortener service** uses `Save` to persist fresh entries as soon as a code is minted.
+
+Right after `Shorten` validates the input and asks the `generator` for a **short-code**, it assembles a `storage.Entry`:
+
+- `ShortCode` carries the generated token.
+- `OriginalURL` mirrors the request payload.
+- `CreatedAt` defaults to `time.Now().UTC()` if the caller hasn’t provided a timestamp.
+- `CreatedBy` can capture the user or API client issuing the request (optional for now).
+- `HitCount` starts at `0` because no one has clicked the link yet.
+
+With that struct populated, `Shorten` invokes `store.Save(ctx, entry)`:
+
+- If `Save` returns `nil`, persistence succeeded and the response goes back to the client. 
+- If the store reports `ErrConflict`, the service can generate a new code and retry (or bubble the error).
+- Any other failure surfaces to the caller so we don’t acknowledge a short link that wasn’t stored.
+
+In our `/internal/services/shortener/shortener.go`, we'll add something like this:
+
+```go
+// Instantiate a storage.Entry with the actual values
+entry := storage.Entry{
+    ShortCode:   code,
+    OriginalURL: req.URL,
+    CreatedAt:   time.Now().UTC(),
+    CreatedBy:   "TODO: coming soon",
+    HitCount:    0,
+}
+// Save and handle errors
+err = s.store.Save(ctx, entry)
+if err != nil {
+    if errors.Is(err, storage.ErrConflict) {
+        return ShortenResponse{}, storage.ErrConflict // or retry a new code
+    }
+    return ShortenResponse{}, err
+}
+```
+
+## Update Shorten Service Unit Test
+
+In the previous section, we implemented **persistence** in our `Shorten` method. Now, it's a good idea to test it, so in our `/internal/services/shortener_test.go`, we'll augment our **happy path** test, to assert that the **in-memory store** contains the saved entry (checks lookup, URL, hit count, and timestamp):
+
+```go
+// Remember, the entry already has been stored with the stubs:
+// original-url:    https://example.com
+// short-code:      stub123
+stored, err := store.Find(context.Background(), "stub123")
+if err != nil {
+    // the store must contain the freshly saved entry
+    t.Fatalf("expected entry to be stored, got error: %v", err)
+}
+if stored.OriginalURL != "https://example.com" {
+    // verify we persisted the same long URL we received
+    t.Fatalf("stored original url mismatch: %s", stored.OriginalURL)
+}
+if stored.HitCount != 0 {
+    // new entries should start with zero visits
+    t.Fatalf("expected hit count 0, got %d", stored.HitCount)
+}
+if stored.CreatedAt.IsZero() {
+    // CreatedAt should be auto-populated so analytics can rely on it
+    t.Fatalf("expected CreatedAt to be set")
+}
+```
+
+This test is getting fat, but it's still a **unit test**, since we’re still exercising a **single method** (`Shorten`) in isolation, just asserting an **extra side effect** (the saved entry) now that `Shorten` owns **persistence**.
+
+Run it:
+
+```sh
+go test ./internal/services/shortener
+```

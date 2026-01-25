@@ -34,6 +34,20 @@ func TestShortenSuccess(t *testing.T) {
 	if resp.OriginalURL != "https://example.com" {
 		t.Fatalf("unexpected original url: %s", resp.OriginalURL)
 	}
+
+	stored, err := store.Find(context.Background(), "stub123")
+	if err != nil {
+		t.Fatalf("expected entry to be stored, got error: %v", err)
+	}
+	if stored.OriginalURL != "https://example.com" {
+		t.Fatalf("stored original url mismatch: %s", stored.OriginalURL)
+	}
+	if stored.HitCount != 0 {
+		t.Fatalf("expected hit count 0, got %d", stored.HitCount)
+	}
+	if stored.CreatedAt.IsZero() {
+		t.Fatalf("expected CreatedAt to be set")
+	}
 }
 
 func TestShortenValidation(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/url"
 	"sync"
+	"time"
 	"urlshortener/internal/services/storage"
 )
 
@@ -51,6 +52,20 @@ func (s *Shortener) Shorten(
 	}
 	code, err := s.generator.Generate(ctx)
 	if err != nil {
+		return ShortenResponse{}, err
+	}
+	entry := storage.Entry{
+		ShortCode:   code,
+		OriginalURL: req.URL,
+		CreatedAt:   time.Now().UTC(),
+		CreatedBy:   "coming soon",
+		HitCount:    0,
+	}
+	err = s.store.Save(ctx, entry)
+	if err != nil {
+		if errors.Is(err, storage.ErrConflict) {
+			return ShortenResponse{}, storage.ErrConflict // or retry a new code
+		}
 		return ShortenResponse{}, err
 	}
 	return ShortenResponse{
