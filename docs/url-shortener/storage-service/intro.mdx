@@ -1,0 +1,80 @@
+# Storage Service
+
+When a user submits a `POST` request containing a **long URL** to our app, two things need to happen:
+
+1. We generate a **short code** for this **long URL**, and the pair is stored.
+2. Whenever our app receives a `GET` request to `http://<our-domain>/<short-code>`, we can look up the `short-code` in our storage, and send back to the user a **redirect to the original URL**.
+
+In this section we’ll outline a few things:
+
+1. How the service persists new **short codes**, and what data we store alongside them.
+2. How we do the **short-code lookup** whenever we receive a request
+3. How **owners** can retrieve statistics or manage those entries.
+
+## Service Overview
+
+In our `/internal/services` we'll create a new `storage` package, i.e. a `storage/storage.go`, where we'll define:
+
+- An `Entry` type, whicg is the **record** we persist for each shortened link: it bundles the short code itself, the original destination, and all the metadata we need for lookups and reporting.
+  - `ShortCode` is the compact identifier used as the **primary key** in storage.
+  - `OriginalURL` the full destination we redirect to, once the code lookup is resolved.
+  - `CreatedAt` is a timestamp marking when the short link was created, useful for expiration or sorting.
+  - `CreatedBy` is who generated the link (user id, team name, API token); it ties entries back to their owner.
+  - `HitCount` tracks how many times the short code has been used so we can surface click stats or detect spikes.
+
+- We introduce two **sentinel errors** to keep consumers informed:
+  - `ErrNotFound` — returned when a short code doesn’t exist in storage, letting callers translate that into a `404` redirect or similar user-facing message.
+  - `ErrConflict` — returned when a short code already exists, so the service can either retry with a **new code** or report the **collision** back to the caller.
+
+- `Store` is an interface with three methods:
+  - `Save(ctx, entry)` — persists a brand-new short-code record; callers use it right after generating a code.
+  - `Find(ctx, shortCode)` — fetches the stored entry for a given code; the redirect handler relies on this method to obtain the original URL.
+  - `IncrementHits(ctx, shortCode)` — atomically bumps the `HitCount` and returns the updated entry, letting us track usage each time a visitor follows the shortened link.
+
+- `InMemoryStore` is a lightweight implementation of `Store` that keeps entries in a Go `map`. The `sync.RWMutex` protects that `map` so **concurrent** tests or handlers can **read** and **write** safely.
+
+- `NewInMemoryStore` just allocates the `map` and returns a ready-to-use instance, making it ideal for unit and integration tests where you don’t want to spin up a real database.
+
+## Setup
+
+With the `Storage` service in place, we can proceed to:
+
+- Instantiate it in the **entry point** of our app.
+- Inject it in the **shortener service**.
+
+So in the `/cmd/server/main.go` file:
+
+```go
+func main() {
+	store := storage.NewInMemoryStore()                     // Instantiate
+	codeGenerator := shortenerpkg.NewRandomCodeGenerator(6)
+	shortenerSvc := shortenerpkg.NewShortener(codeGenerator, store) // Inject
+    // more code...
+}
+```
+
+Of course we have to refactor our **shortener service** in two ways:
+
+- The `Shortener` type needs to include a `store` field.
+- The **constructor** has to accept a `store` so that we can **inject** it from `main`, our tests, etc:
+
+```go
+type Shortener struct {
+    generator CodeGenerator
+    store     storage.Store
+}
+
+func NewShortener(gen CodeGenerator, store storage.Store) *Shortener {
+    return &Shortener{
+        generator: gen,
+        store:     store,
+    }
+}
+```
+
+## Fixing Our Tests
+
+Because the `NewShortener` constructor now requires both a `generator` and a `store`, every test that constructs the service has to provide the new dependency. We'll fix:
+
+- The **unit tests** in `/services/shorter/shortener_test.go`
+- The **integration tests** in `/api/router_test.go`

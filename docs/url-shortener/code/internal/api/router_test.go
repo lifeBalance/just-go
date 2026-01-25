@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	shortenerpkg "urlshortener/internal/services/shortener"
+	"urlshortener/internal/services/storage"
 )
 
 type stubGenerator struct {
@@ -24,7 +25,8 @@ func (s stubGenerator) Generate(context.Context) (string, error) {
 }
 
 func TestShortenHandlerSuccess(t *testing.T) {
-	shortener := shortenerpkg.NewShortener(stubGenerator{code: "stub123"})
+	store := storage.NewInMemoryStore()
+	shortener := shortenerpkg.NewShortener(stubGenerator{code: "stub123"}, store)
 	router := NewRouter(shortener)
 
 	body := map[string]string{"url": "https://example.com"}

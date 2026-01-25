@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/url"
 	"sync"
+	"urlshortener/internal/services/storage"
 )
 
 var (
@@ -28,10 +29,11 @@ type CodeGenerator interface {
 }
 type Shortener struct {
 	generator CodeGenerator
+	store     storage.Store
 }
 
-func NewShortener(gen CodeGenerator) *Shortener {
-	return &Shortener{generator: gen}
+func NewShortener(gen CodeGenerator, store storage.Store) *Shortener {
+	return &Shortener{generator: gen, store: store}
 }
 
 func (s *Shortener) Shorten(

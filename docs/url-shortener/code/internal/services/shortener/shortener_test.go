@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"urlshortener/internal/services/storage"
 )
 
 type stubGenerator struct {
@@ -20,7 +21,8 @@ func (s stubGenerator) Generate(context.Context) (string, error) {
 
 func TestShortenSuccess(t *testing.T) {
 	gen := stubGenerator{code: "stub123"}
-	svc := NewShortener(gen)
+	store := storage.NewInMemoryStore()
+	svc := NewShortener(gen, store)
 
 	resp, err := svc.Shorten(context.Background(), ShortenRequest{URL: "https://example.com"})
 	if err != nil {
@@ -35,7 +37,7 @@ func TestShortenSuccess(t *testing.T) {
 }
 
 func TestShortenValidation(t *testing.T) {
-	svc := NewShortener(stubGenerator{code: "unused"})
+	svc := NewShortener(stubGenerator{code: "unused"}, nil)
 
 	_, err := svc.Shorten(context.Background(), ShortenRequest{})
 	if err != ErrEmptyURL {
@@ -49,7 +51,7 @@ func TestShortenValidation(t *testing.T) {
 }
 
 func TestShortenNoGenerator(t *testing.T) {
-	svc := NewShortener(nil)
+	svc := NewShortener(nil, nil)
 
 	_, err := svc.Shorten(context.Background(), ShortenRequest{URL: "https://example.com"})
 	if err != ErrNoGenerator {
@@ -59,7 +61,7 @@ func TestShortenNoGenerator(t *testing.T) {
 
 func TestShortenGeneratorError(t *testing.T) {
 	want := errors.New("boom")
-	svc := NewShortener(stubGenerator{err: want})
+	svc := NewShortener(stubGenerator{err: want}, nil)
 
 	_, err := svc.Shorten(context.Background(), ShortenRequest{URL: "https://example.com"})
 	if err != want {

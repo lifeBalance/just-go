@@ -8,11 +8,13 @@ import (
 
 	"urlshortener/internal/api"
 	shortenerpkg "urlshortener/internal/services/shortener"
+	"urlshortener/internal/services/storage"
 )
 
 func main() {
+	store := storage.NewInMemoryStore()
 	codeGenerator := shortenerpkg.NewRandomCodeGenerator(6)
-	shortenerSvc := shortenerpkg.NewShortener(codeGenerator)
+	shortenerSvc := shortenerpkg.NewShortener(codeGenerator, store)
 	appRouter := api.NewRouter(shortenerSvc)
 
 	addr := fmt.Sprintf(":%s", port())
