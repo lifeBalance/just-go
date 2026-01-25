@@ -1,8 +1,35 @@
 # Go URL Shortener with Background Validation
 
-A production-ready URL shortener API that demonstrates advanced Go concurrency patterns, context propagation, and error handling. This is more than a simple key-value store—it includes background validation, worker pools, and robust error management.
+A [URL shortener](https://en.wikipedia.org/wiki/URL_shortening) is a web app, that offers a way to turn a long, messy link into something short and tidy that you can share without breaking layouts or overwhelming people. 
+
+Typical users are social media managers fitting links into post character limits, marketers tracking campaign traffic, support teams sending cleaner links to customers, event planners printing QR codes, or anyone who just wants an easy-to-type URL.
+
+## How to Use It
+
+Using it is simple: 
+
+1. User copy the original long URL.
+2. User paste it into the shortener’s input field. 
+3. Submit to generate a **short link**.
+4. Share the new short link wherever you need it.
+
+## How It Works
+
+A **short link** would look something like this: 
+
+```
+https://sho.rt/abc123
+```
+
+When the user clicks on it, it's taken to the **shortener website**, i.e. `https://sho.rt`. There the service:
+
+1. Parses the request, looks up `abc123` in its storage (database, cache, etc.).
+2. When it finds the matching **original URL**, immediately replies with an [HTTP redirect](https://en.wikipedia.org/wiki/URL_redirection).
+3. When the user's browser receives the response, it automatically redirects the user to the original URL, without noticing the handoff.
 
 ## ✨ Features
+
+A production-ready URL shortener API that demonstrates advanced Go concurrency patterns, context propagation, and error handling. This is more than a simple key-value store—it includes background validation, worker pools, and robust error management.
 
 - 🔗 Smart URL Shortening: Generate short codes for URLs with customizable lengths
 - ✅ Background Validation: Asynchronous URL reachability checks with timeout handling

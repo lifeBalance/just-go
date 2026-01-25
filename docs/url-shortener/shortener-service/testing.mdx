@@ -1,0 +1,49 @@
+import Admonition from '@components/Admonition.astro'
+
+# Testing the Shortener Service
+
+The shortener service converts long URLs into unique short codes through the `Shorten` method defined in `docs/url-shortener/code/internal/services/shortener/shortener.go`. The automated tests in `docs/url-shortener/code/internal/services/shortener/shortener_test.go` cover both the service logic and the random code generator.
+
+To run the tests for this service:
+
+```sh
+go test ./internal/services/shortener
+```
+
+<Admonition type="Run All Tests">
+  To run the suite (aka, all the tests), execute `go test ./...` from the **root** of the project.
+  The `...` means **all the tests**.
+</Admonition>
+
+## Happy Path
+
+We need to test the normal success scenario, i.e. the flow where everything is valid, dependencies behave, and the code returns its intended result without triggering error handling. The `TestShortenSuccess` works like this:
+
+- We create a **stub generator** that always emits the same **hardcoded short code**, so assertions can be precise.
+- We pass a **valid URL**, guaranteeing the service runs its **success branch** instead of a validation error.
+- The test then calls `Shorten`, expects no error, and checks that both the original URL and the short code in the response match the inputs and stub output
+
+## Negative Tests
+
+Negative tests are the ones that deliberately feed **invalid input** or **broken dependencies** into the code so we can confirm it fails in the expected way — returning the **right errors**, short-circuiting early. Here we are testing several things:
+
+### URL Validation
+
+`TestShortenValidation` tests that **empty** or **malformed URLs** trigger `ErrEmptyURL` and `ErrInvalidURL`, ensuring we reject bad requests before touching the generator.
+
+### Generator Injection
+
+`TestShortenNoGenerator` tests that instantiating the service without a generator returns `ErrNoGenerator`, and any error returned by the generator bubbles up unchanged.
+
+### Generator Error
+
+`TestShortenGeneratorError` swaps in a **stub generator** that always returns `errors.New("boom")`. A **valid URL** is sent through `Shorten`, the call is expected to **fail**, and the assertion checks that the very same error value bubbles back to the caller.
+
+### Random Code Generator
+
+`TestRandomCodeGeneratorGenerate` creates a generator with `NewRandomCodeGenerator(8)`, calls its `Generate` method, and then asserts two things:
+
+- The resulting string has exactly **eight characters**
+- Every rune belongs to the **allowed alphanumeric alphabet**.
+
+This test picks up `RandomCodeGenerator` and checks its behavior in isolation, it’s a **pure unit test**.
