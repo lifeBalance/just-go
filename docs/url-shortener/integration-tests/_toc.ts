@@ -1,4 +1,3 @@
 export default [
   { path: 'intro', label: 'Introduction' },
-  { path: 'unit-tests', label: 'Unit Tests' },
 ]
