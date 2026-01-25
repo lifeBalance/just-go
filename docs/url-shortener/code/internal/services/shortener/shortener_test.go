@@ -107,8 +107,31 @@ func TestRandomCodeGeneratorGenerate(t *testing.T) {
 	}
 }
 
+// ////////
 // LOOKUP
-func TestLookupSuccess(t *testing.T) {}
+// ////////
+func TestLookupSuccess(t *testing.T) {
+	ctx := context.Background()
+	store := storage.NewInMemoryStore()
+	svc := NewShortener(stubGenerator{code: "stub123"}, store)
+	_ = store.Save(ctx, storage.Entry{
+		ShortCode:   "stub123",
+		OriginalURL: "https://example.com",
+	})
+	entry, err := svc.Lookup(ctx, "stub123")
+	if err != nil {
+		t.Fatalf("Lookup returned error: %v", err)
+	}
+	if entry.ShortCode != "stub123" {
+		t.Fatalf("expected short code stub123, got %s", entry.ShortCode)
+	}
+	if entry.OriginalURL != "https://example.com" {
+		t.Fatalf("expected original url to match, got %s", entry.OriginalURL)
+	}
+	if entry.HitCount != 1 {
+		t.Fatalf("expected hit count 1, got %d", entry.HitCount)
+	}
+}
 func TestLookupEmptyCode(t *testing.T) {
 	want := ErrEmptyCode
 	svc := NewShortener(nil, nil)

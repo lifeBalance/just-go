@@ -76,3 +76,5 @@ Let's add some tests before shipping our new stuff:
 - `TestLookupEmptyCode` for when `Lookup` receives an **empty code**; expect `ErrEmptyCode`.
 - `TestLookupNotFound` for when `Lookup` receives a **non-existing code**; expect `ErrEmptyCode`.
 - `TestLookupIncrementError` when `IncrementHits` errors after a successful `Find`, the service should return the **original entry** plus the **increment error**.
+
+The most interesting test here is the `TestLookupIncrementError`, since I had to stub the `Storage` so I could add an `IncrementHits` method that returns an error (otherwise it couldn't be hard to test this).

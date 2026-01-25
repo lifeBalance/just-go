@@ -47,3 +47,26 @@ Negative tests are the ones that deliberately feed **invalid input** or **broken
 - Every rune belongs to the **allowed alphanumeric alphabet**.
 
 This test picks up `RandomCodeGenerator` and checks its behavior in isolation, it’s a **pure unit test**.
+
+### The Stub Generator
+
+In all the tests above, we needed to create a [stub](https://en.wikipedia.org/wiki/Test_stub) of the `CodeGenerator`:
+
+```go
+type stubGenerator struct {
+	code string
+	err  error
+}
+
+func (s stubGenerator) Generate(context.Context) (string, error) {
+	if s.err != nil {
+		return "", s.err
+	}
+	return s.code, nil
+}
+```
+
+We added a `Generate` method, so satisfy the original `CodeGenerator` interface, so I could use the **stub** anywhere where this interface is used. To this `stubGenerator` we added a `code` to store a code of our choice. In unit tests we don't want **randomnes**, we need a generator that behaves in a **deterministic** way:
+
+- It always returns the `code` we configure, so assertions can be exact.
+- It lets us **inject** an `err` to hit failure branches without relying on random behavior.
