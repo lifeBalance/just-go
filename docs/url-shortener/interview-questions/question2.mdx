@@ -8,4 +8,196 @@ Once the main goroutine starts a background goroutine, what are some ways to can
 
 ## Answers
 
-The primary and idiomatic way in modern Go is using context.Context. You pass a cancellable context (from the HTTP request, or created manually) to the background goroutine. The goroutine then periodically checks if the context has been cancelled.
+### 1. Real Scenario: A Web Service with a Long-Running Report Generator
+
+Imagine a web service endpoint POST /generate-report that kicks off a complex, data-intensive report (taking minutes). The user might close their browser or cancel the request. If we don't propagate this cancellation, the backend goroutine will continue consuming CPU, memory, and database connections long after the client is gone, wasting resources and potentially causing system strain.
+
+The Need: We must cancel the background report generation when the HTTP client disconnects.
+
+### 2. How to Signal the Goroutine to Stop
+
+The primary and idiomatic way in modern Go is using [context.Context](https://pkg.go.dev/context).
+
+Mechanism: You pass a cancellable context (from the HTTP request, or created manually) to the background goroutine. The goroutine then periodically checks if the context has been cancelled.
+
+```go
+func handler(w http.ResponseWriter, r *http.Request) {
+    // 1. Get the request context, which cancels if the client disconnects.
+    ctx := r.Context()
+
+    // 2. Create a channel to receive the final result (or error).
+    resultCh := make(chan *Report, 1)
+
+    // 3. Start the background goroutine, passing the context.
+    go generateReport(ctx, reportID, resultCh)
+
+    // 4. Wait for either the result or context cancellation.
+    select {
+    case report := <-resultCh:
+        json.NewEncoder(w).Encode(report)
+    case <-ctx.Done(): // Triggers if client disconnects
+        http.Error(w, "Request cancelled", 499) // 499 = Client Closed Request
+        // The context is now cancelled, signalling generateReport to stop.
+    }
+}
+
+func generateReport(ctx context.Context, id string, out chan<- *Report) {
+    // Simulate a long, multi-step process.
+    report := &Report{}
+
+    // Step 1: Fetch data (should be cancellable)
+    if err := fetchData(ctx, id, report); err != nil {
+        out <- nil; return
+    }
+
+    // Step 2: Process data (must check ctx in loops)
+    for _, item := range report.RawItems {
+        // **CRITICAL CHECK**: Exit if cancelled.
+        if ctx.Err() != nil {
+            return // Goroutine exits cleanly
+        }
+        report.ProcessedItems = append(report.ProcessedItems, process(item))
+    }
+
+    // Step 3: Write to DB (should use ctx-aware DB driver)
+    if err := db.Write(ctx, report); err != nil {
+        out <- nil; return
+    }
+
+    out <- report
+}
+```
+
+Key Points for Signaling:
+
+- The parent (HTTP handler) cancels the context by either:
+  - The client disconnecting (automatic).
+  - Calling the cancel function from context.WithCancel() manually.
+
+- The child goroutine (must):
+  - Accept a context.Context as its first parameter.
+  - Pass that context to any downstream blocking calls (DB queries, HTTP requests, channel ops with select).
+  - Periodically check [ctx.Done()]() or [ctx.Err()]() in long-running loops.
+
+Alternative Signaling (for simple cases): A `done` channel `(<-chan struct{}`). However, context is now standard because it can carry deadlines, values, and composes well.
+
+### 3. How to Verify the Goroutine Actually Exited
+
+Verification is essential because signalling cancellation doesn't guarantee the goroutine stops. You need proof it terminated to prevent resource leaks. Let's take a look at **three alternative approaches** to verify that:
+
+**Key point:** Verification proves the goroutine actually terminated after receiving the cancellation signal.
+
+#### 1. WaitGroup - For Direct Control
+
+Use when you launch goroutines and want to wait for them explicitly.
+
+```go
+var wg sync.WaitGroup
+
+func handler(w http.ResponseWriter, r *http.Request) {
+    ctx := r.Context()
+    wg.Add(1)
+    go func() {
+        defer wg.Done() // GUARANTEES we mark done on exit
+        generateReport(ctx, id)
+    }()
+}
+
+// During graceful shutdown:
+func gracefulShutdown() {
+    fmt.Println("Waiting for goroutines to finish...")
+    wg.Wait() // Blocks until all goroutines call Done()
+    fmt.Println("All goroutines exited.") // VERIFIED
+}
+```
+
+#### 2. Exit Channel - For Specific Goroutine Confirmation
+
+Use when you need direct confirmation from one particular goroutine.
+
+```go
+stoppedCh := make(chan struct{})
+go func() {
+    defer close(stoppedCh) // Signal exit by closing channel
+    generateReport(ctx, id)
+}()
+
+// Non-blocking verification with timeout:
+select {
+case <-stoppedCh:
+    fmt.Println("Verified: goroutine exited.")
+case <-time.After(2 * time.Second):
+    fmt.Println("WARNING: Goroutine may have leaked!")
+}
+```
+
+#### 3. Observability - For Production Systems
+
+Use when you need monitoring, metrics, and runtime verification.
+
+```go
+// Structured logging
+defer func() {
+    log.Printf("[%s] Report goroutine exiting", reqID)
+}()
+
+// Metrics tracking
+activeReports.Inc()
+defer activeReports.Dec() // Decrement on exit
+
+// Integration test verification
+func TestGoroutineExit(t *testing.T) {
+    initial := runtime.NumGoroutine()
+    // ... run and cancel goroutine ...
+    time.Sleep(50 * time.Millisecond) // Allow cleanup
+    final := runtime.NumGoroutine()
+    if final > initial {
+        t.Errorf("Goroutine leak detected!")
+    }
+}
+```
+
+---
+
+### The pattern Signal → Cooperate → Verify
+
+This pattern is the blueprint for handling goroutine cancellation properly. It consists of 3 steps:
+
+| Step          | Purpose                   | Implementation                                          |
+| ------------- | ------------------------- | ------------------------------------------------------- |
+| **Signal**    | Propagate cancellation    | `context.Context` with cancel/timeout                   |
+| **Cooperate** | Make goroutine responsive | Check `ctx.Done()`, use context-aware APIs              |
+| **Verify**    | Confirm goroutine stopped | Choose one: `WaitGroup`, Exit Channel, or Observability |
+
+Let's take a look at an example:
+
+```go
+// 1. SIGNAL: Create cancellable context
+ctx, cancel := context.WithCancel(context.Background())
+
+// 2. COOPERATE: Launch goroutine that checks ctx.Done()
+var wg sync.WaitGroup
+wg.Add(1)
+go func() {
+    defer wg.Done() // 3a. VERIFICATION: WaitGroup method
+    for {
+        select {
+        case <-ctx.Done(): // 2. Cooperating with signal
+            log.Println("Received cancellation, exiting")
+            return // Goroutine stops here
+        case <-time.After(time.Second):
+            // Normal work
+        }
+    }
+}()
+
+// Trigger cancellation
+cancel()
+
+// 3b. VERIFICATION: Wait with timeout
+if waitTimeout(&wg, 2*time.Second) {
+    fmt.Println("✓ Goroutine verified exited")
+} else {
+    fmt.Println("✗ Goroutine may be stuck")
+}
+```

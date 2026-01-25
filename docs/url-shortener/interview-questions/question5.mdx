@@ -1,8 +1,65 @@
 # Question 5
 
-Tell us about a time you improved test coverage or caught a bug through better test design. Walk us through: 
+Tell us about a time you improved test coverage or caught a bug through better test design. Walk us through:
 
 - what was undertested or what bug slipped through - how you restructured the tests (table-driven, subtests, mocking, etc.)
-- what edge cases you added 
-- how this prevented future regressions 
-- how to catch data race *
+- what edge cases you added
+- how this prevented future regressions
+- how to catch data race
+
+## Answers
+
+**The Setup & Bug**: In a simple API handler I was building (think user login endpoint), the code checked passwords but had a sneaky off-by-one bug in the hash comparison— it'd pass weak passwords if they were *almost* right (e.g., "passw0rd" vs. "password"). Tests were basic: one happy-path unit test per function, coverage `~70%`. No edge cases for bad inputs, so the bug hid until a security audit flagged it. Sequential tests meant no concurrency checks either, but that wasn't the killer here.
+
+**How I Restructured**: Switched to **table-driven tests** for the password function; one loop over a slice of input/output pairs to cover multiples without copy-paste. Added **subtests** with `t.Run` to group 'em (e.g., valid vs. invalid). For isolation, mocked the DB with a simple struct implementing the interface—no fancy libs. Threw in a quick concurrent test with goroutines + `sync.WaitGroup` to stress it lightly, since logins could hit from multiple users.
+
+Quick code peek (the test refactor):
+
+```go
+func TestValidatePassword(t *testing.T) {
+    tests := []struct {
+        name     string
+        input    string
+        expected bool
+        err      error
+    }{
+        {"valid strong", "StrongPass123!", true, nil},
+        {"too short", "short", false, ErrWeakPassword},
+        {"mismatch bug case", "passw0rd", false, nil}, // Catches the off-by-one
+        // More rows...
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got, err := ValidatePassword(tt.input)
+            if err != tt.err {
+                t.Errorf("err mismatch: got %v, want %v", err, tt.err)
+            }
+            if got != tt.expected {
+                t.Errorf("validation failed: got %t, want %t", got, tt.expected)
+            }
+        })
+    }
+
+    // Light concurrency: 50 goroutines hashing same bad pass
+    t.Run("concurrent", func(t *testing.T) {
+        var wg sync.WaitGroup
+        for i := 0; i < 50; i++ {
+            wg.Add(1)
+            go func() {
+                defer wg.Done()
+                _, _ = ValidatePassword("weakpass") // Should fail consistently
+            }()
+        }
+        wg.Wait()
+    })
+}
+```
+
+**Edge Cases Added**: Focused on the weak spots—passwords under 8 chars, all lowercase, special char overflows, and that mismatch scenario. Also nil/empty strings, and max-length blowups. For concurrency, added a race-prone shared counter (fixed with mutex) to test sync.
+
+**Preventing Regressions**: Table format makes it easy to add cases (e.g., new policy? Just append rows). Subtests give clear failure messages like "TestValidatePassword/too_short". Hooked into CI with `go test -coverprofile` and a 85% gate—now PRs fail if coverage dips. Caught a similar bug in a refactor months later, no prod escape.
+
+**Catching Data Races**: Easiest way? Slap `-race` on your `go test` command: `go test -race ./...`. It instruments the binary to watch shared vars—flags races with stack traces like "Write at 0x... by goroutine 7". Run it in CI always; for dev, use on hot paths. Pro tip: Channels over mutexes where possible to dodge 'em upfront.
+
+This clocks in at "confident junior who reads the docs"—shows patterns without overkill. Better balance? Or wanna tweak for Q4/Q3? No beef, just building. What's next?

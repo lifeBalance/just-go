@@ -2,12 +2,356 @@
 
 What are some ways to orchestrate goroutines? Let’s say you have two goroutines doing some task simultaneously, what are some ways you could wait for both of them to finish? Walk us through: 
 
-- which approach you’d choose
-- why you prefer it over alternatives
-- any gotchas you’ve encountered
-- how would you do error handling
+- which approach you’d choose.
+- why you prefer it over alternatives.
+- any gotchas you’ve encountered.
+- how would you do error handling.
 
 ## Answers
 
+### Tldr
+
+There are several approaches:
+
+1. sync.WaitGroup
+2. Channels
+3. errgroup.Group
+4. Context with manual coordination
+
 time.Sleep("JUST KIDDING")
-errgroup.Group for most scenarios
+
+`errgroup.Group` for most scenarios
+
+```
+Need timeout or cancellation?
+├─ Yes → errgroup.WithContext or manual context + WaitGroup
+└─ No
+   ├─ Need to collect results?
+   │  ├─ Yes → errgroup with result slice OR channels
+   │  └─ No → WaitGroup + error channel
+   │
+   └─ Complex pipeline/streaming?
+      └─ Yes → Channels with select
+```
+
+### 1. sync.WaitGroup
+
+My go-to for simple fan-out/fan-in:
+
+```go
+func processItems(items []string) error {
+    var wg sync.WaitGroup
+    errChan := make(chan error, len(items))
+    
+    for _, item := range items {
+        wg.Add(1)
+        go func(item string) {
+            defer wg.Done()
+            if err := doWork(item); err != nil {
+                errChan <- err
+            }
+        }(item)
+    }
+    
+    wg.Wait()
+    close(errChan)
+    
+    // Collect errors
+    var errs []error
+    for err := range errChan {
+        errs = append(errs, err)
+    }
+    
+    if len(errs) > 0 {
+        return fmt.Errorf("encountered %d errors: %v", len(errs), errs)
+    }
+    return nil
+}
+```
+
+Why I prefer it:
+
+- Simple and straightforward for "start N tasks, wait for all to finish"
+- Minimal boilerplate
+- Clear intent - you're literally counting tasks
+
+Gotchas:
+
+- MUST call `wg.Add()` BEFORE launching the goroutine - doing it inside causes race conditions
+- Easy to forget `defer wg.Done()` - program hangs forever
+- No built-in error handling - need separate channel
+- No timeout mechanism - could wait forever if a goroutine hangs
+
+### 2. Channels
+
+When you need results or sequential processing.
+
+```go
+func processItemsWithChannels(items []string) ([]Result, error) {
+    resultChan := make(chan Result, len(items))
+    errChan := make(chan error, len(items))
+    
+    for _, item := range items {
+        go func(item string) {
+            result, err := doWork(item)
+            if err != nil {
+                errChan <- err
+                return
+            }
+            resultChan <- result
+        }(item)
+    }
+    
+    // Collect results
+    var results []Result
+    var errs []error
+    
+    for i := 0; i < len(items); i++ {
+        select {
+        case result := <-resultChan:
+            results = append(results, result)
+        case err := <-errChan:
+            errs = append(errs, err)
+        }
+    }
+    
+    if len(errs) > 0 {
+        return nil, fmt.Errorf("errors: %v", errs)
+    }
+    return results, nil
+}
+```
+
+Why I prefer it for certain cases:
+
+- Natural when you need to collect results
+- Good for producer-consumer patterns
+- Enables pipeline architectures
+
+Gotchas:
+
+- Buffered vs unbuffered - unbuffered channels block, can cause deadlocks
+- Easy to create deadlocks if you're not careful
+- Must consume all values or goroutines leak
+- Range over channels requires explicit `close()` or it hangs
+
+### 3. errgroup.Group
+
+My favorite for most real-world code.
+
+```go
+import "golang.org/x/sync/errgroup"
+
+func processItemsWithErrgroup(ctx context.Context, items []string) error {
+    g, ctx := errgroup.WithContext(ctx)
+    
+    for _, item := range items {
+        item := item // Capture loop variable (Go < 1.22)
+        g.Go(func() error {
+            return doWork(ctx, item)
+        })
+    }
+    
+    // Returns first error encountered, cancels context for others
+    return g.Wait()
+}
+```
+
+Why I prefer it:
+
+- Built-in **error handling** (returns **first** error)
+- Automatic context cancellation - when one fails, others get canceled via context
+- Cleaner than WaitGroup + error channels
+- Part of the official extended library
+
+Gotchas:
+
+- Stops at **first error** (sometimes you want **all errors**)
+- Need to respect context cancellation in your workers.
+- Can't easily collect results (need external slice with mutex)
+
+To **collect results**, we could use something like this:
+
+```go
+func processWithResults(ctx context.Context, items []string) ([]Result, error) {
+    g, ctx := errgroup.WithContext(ctx)
+    
+    results := make([]Result, len(items))
+    
+    for i, item := range items {
+        i, item := i, item
+        g.Go(func() error {
+            result, err := doWork(ctx, item)
+            if err != nil {
+                return err
+            }
+            results[i] = result // Safe - each goroutine writes to different index
+            return nil
+        })
+    }
+    
+    if err := g.Wait(); err != nil {
+        return nil, err
+    }
+    return results, nil
+}
+```
+
+## 4. Context with manual coordination 
+
+For complex orchestration, we could use the following approach:
+
+```go
+func processWithTimeout(items []string) error {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    
+    var wg sync.WaitGroup
+    errChan := make(chan error, len(items))
+    
+    for _, item := range items {
+        wg.Add(1)
+        go func(item string) {
+            defer wg.Done()
+            select {
+            case <-ctx.Done():
+                errChan <- ctx.Err()
+                return
+            default:
+                if err := doWork(ctx, item); err != nil {
+                    errChan <- err
+                    cancel() // Cancel others on first error
+                }
+            }
+        }(item)
+    }
+    
+    wg.Wait()
+    close(errChan)
+    
+    for err := range errChan {
+        if err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+Why use it:
+
+- Need timeouts
+- Need cancellation propagation
+- Complex coordination requirements
+
+Gotchas:
+- More verbose
+- Easy to forget to call `cancel()` - causes goroutine leaks
+- Context cancellation is cooperative - workers must check it
+
+## Real-World Example: API Rate-Limited Fetcher
+
+```go
+import (
+    "context"
+    "golang.org/x/sync/errgroup"
+    "golang.org/x/time/rate"
+)
+
+func fetchURLs(ctx context.Context, urls []string) ([]Response, error) {
+    g, ctx := errgroup.WithContext(ctx)
+    g.SetLimit(10) // Max 10 concurrent goroutines
+    
+    limiter := rate.NewLimiter(rate.Limit(5), 1) // 5 requests/sec
+    responses := make([]Response, len(urls))
+    
+    for i, url := range urls {
+        i, url := i, url
+        g.Go(func() error {
+            // Wait for rate limiter
+            if err := limiter.Wait(ctx); err != nil {
+                return err
+            }
+            
+            resp, err := fetchURL(ctx, url)
+            if err != nil {
+                return fmt.Errorf("fetching %s: %w", url, err)
+            }
+            
+            responses[i] = resp
+            return nil
+        })
+    }
+    
+    if err := g.Wait(); err != nil {
+        return nil, err
+    }
+    return responses, nil
+}
+```
+
+## Common Gotchas
+
+1. Loop variable capture (pre-Go 1.22):
+
+```go
+// ❌ Wrong
+for i := range items {
+    go func() {
+        process(items[i]) // All goroutines see last value
+    }()
+}
+
+// ✅ Correct
+for i := range items {
+    i := i // Capture
+    go func() {
+        process(items[i])
+    }()
+}
+
+// ✅ Alternatively: pass the value as an argument to the goroutine’s lambda 👍
+for i := range items {
+    go func(i int) {
+        process(items[i])
+    }(i)
+}
+```
+
+Starting with **Go 1.22** the `for range` loop allocates fresh loop variables on each iteration, so the classic capture bug disappears for slices, arrays, maps, and strings.
+
+2. Buffered channel sizing:
+
+```go
+// ❌ Can deadlock if more errors than buffer
+errChan := make(chan error, 1)
+
+// ✅ Size to max possible errors
+errChan := make(chan error, len(items))
+```
+
+3. Forgetting to close channels:
+
+```go
+// ❌ Range will block forever
+for result := range resultChan { }
+
+// ✅ Close after all senders done
+close(resultChan)
+```
+
+4. WaitGroup counter mismatch:
+
+```go
+// ❌ Race condition
+go func() {
+    wg.Add(1) // Might run after wg.Wait()
+    defer wg.Done()
+}()
+
+// ✅ Add before goroutine
+wg.Add(1)
+go func() {
+    defer wg.Done()
+}()
+```
