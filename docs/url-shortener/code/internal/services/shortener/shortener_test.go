@@ -220,3 +220,84 @@ func newFailingIncrementStore(err error) *stubbedIncrementStore {
 		incErr: err,
 	}
 }
+
+// Use a small sequence-based generator:
+type sequenceGenerator struct {
+	codes []string
+	idx   int
+}
+
+func (g *sequenceGenerator) Generate(context.Context) (string, error) {
+	code := g.codes[g.idx]
+	g.idx++
+	return code, nil
+}
+
+func TestShortenRetriesOnCollision(t *testing.T) {
+	ctx := context.Background()
+
+	// Seed the generator
+	codes := []string{"dup123", "fresh456"}
+	seqGen := &sequenceGenerator{codes: codes}
+	store := storage.NewInMemoryStore()
+	_ = store.Save(ctx, storage.Entry{
+		ShortCode:   codes[0],
+		OriginalURL: "existing",
+	})
+
+	svc := NewShortener(seqGen, store)
+
+	req := ShortenRequest{URL: "https://example.com"}
+	_, err := svc.Shorten(ctx, req)
+	if err != nil {
+		t.Fatalf("expected %v after retry, got %v", nil, err)
+	}
+}
+
+func TestShortenTooManyCollisions(t *testing.T) {
+	want := ErrTooManyCollisions
+	ctx := context.Background()
+	stubCode := "stub123"
+
+	store := storage.NewInMemoryStore()
+	_ = store.Save(ctx, storage.Entry{ShortCode: stubCode, OriginalURL: "existing"})
+
+	svc := NewShortener(stubGenerator{code: stubCode}, store) // ❌ Faulty generator
+	req := ShortenRequest{URL: "https://example.com"}
+	_, err := svc.Shorten(ctx, req)
+	if err != want {
+		t.Fatalf("expected %v, got %v", want, err)
+	}
+}
+
+func TestShortenSaveErrorBubblesUp(t *testing.T) {
+	ctx := context.Background()
+	stubStore := &otherErrorStore{
+		err: errors.New("boom"),
+	}
+	want := stubStore.err
+
+	svc := NewShortener(stubGenerator{code: "stub123"}, stubStore)
+	req := ShortenRequest{URL: "https://example.com"}
+	_, err := svc.Shorten(ctx, req)
+	if err != want {
+		t.Fatalf("expected %v, got %v", want, err)
+	}
+}
+
+// ////////////////////
+// Stub Storage Service
+// ////////////////////
+type otherErrorStore struct {
+	err error
+}
+
+func (s otherErrorStore) Save(context.Context, storage.Entry) error {
+	return s.err
+}
+func (otherErrorStore) Find(context.Context, string) (storage.Entry, error) {
+	return storage.Entry{}, storage.ErrNotFound
+}
+func (otherErrorStore) IncrementHits(context.Context, string) (storage.Entry, error) {
+	return storage.Entry{}, nil
+}

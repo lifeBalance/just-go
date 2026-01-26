@@ -1,0 +1,181 @@
+import Admonition from '@components/Admonition.astro'
+
+# Collision Handling
+
+Imagine the following scenario: a user clicks on a **short-url**, our backend processes the request, but the `Find` method comes up with two short-codes, to which **long URL** should be redirect the user now?
+
+<Admonition title="Short-codes must be unique">
+  It's essential, that the **short-codes** in our storage are **unique**, so
+  that when a user clicks on a **short-url**, and our backend processes the
+  request, the lookup yields unequivocally the **short-code** of the **original
+  url**.
+</Admonition>
+
+When a user submits a `POST` request containing a **long URL** to our app, we need to generate a **short-code** for this long URL, and the **pair** must be stored. At this point, if the **generator** produces a **short-code** that already exists, our code errors with ` ErrConflict`. At this point we have several options:
+
+- Send a **response** to the user with an **error message**: Sorry, collision generating your short-code; Try again.
+- Keep retrying until the generator comes up with a **unique short-code**.
+
+The first option is what we currently do, but truth be told, it's not really helpful. It would be way better, if instead of giving up the first time, we try at least a couple more times to come up with the unique code.
+
+## Retry Logic
+
+We’ll introduce a simple retry loop around the generator + save sequence:
+
+1. Set `maxAttempts` to a small number (three is plenty for random six-character codes).
+2. Generate a code and try `store.Save`:
+   - If it succeeds, return the response immediately.
+   - If `store.Save` errors:
+     - In case of `storage.ErrConflict`, generate a new code and retry (don't return an error yet).
+     - For any other error, bubble it out so the handler can respond with a `500`.
+3. If we exhaust all attempts, return a new `ErrTooManyCollisions` so the caller can tell the user to try again later.
+
+Pseudo-code:
+
+```go
+const maxAttempts = 3
+for i := range maxAttempts {
+    code, err := s.generator.Generate(ctx)
+    if err != nil {
+        return ShortenResponse{}, err
+    }
+    entry.ShortCode = code
+    err = s.store.Save(ctx, entry)
+    if err != nil {
+        if errors.Is(err, storage.ErrConflict) {
+            if i < maxAttempts-1 {
+                continue
+            }
+            return ShortenResponse{}, ErrTooManyCollisions
+        }
+        return ShortenResponse{}, err
+    } else {
+        break
+    }
+}
+return ShortenResponse{
+    ShortCode:   entry.ShortCode,
+    OriginalURL: req.URL,
+}, nil
+```
+
+Once implemented, we’ll update `Shorten` accordingly and extend the tests to cover both the “retry then succeed” and “exhaust attempts” paths.
+
+## Unit Tests
+
+Time to extent our unit tests for the **shortener service**. These seem to me like good things to test:
+
+### Shorten Retries Once on Collision
+
+On the first code, `Save` hits a **collision**, we retry with a fresh code, and `Save` succeeds. Then, we returning a successful `ShortenResponse` after persisting our `Entry` .
+
+Let's add a new test in our `/internal/services/shortener/shortener.go` file:
+
+```go
+type sequenceGenerator struct {
+	codes []string
+	idx   int
+}
+
+func (g *sequenceGenerator) Generate(context.Context) (string, error) {
+	code := g.codes[g.idx]
+	g.idx++
+	return code, nil
+}
+
+func TestShortenRetriesOnCollision(t *testing.T) {
+	ctx := context.Background()
+
+	// Seed the generator
+	codes := []string{"dup123", "fresh456"}
+	seqGen := &sequenceGenerator{codes: codes}
+	store := storage.NewInMemoryStore()
+	_ = store.Save(ctx, storage.Entry{
+		ShortCode:   codes[0],
+		OriginalURL: "existing",
+	})
+
+	svc := NewShortener(seqGen, store)
+
+	req := ShortenRequest{URL: "https://example.com"}
+	_, err := svc.Shorten(ctx, req)
+	if err != nil {
+		t.Fatalf("expected %v after retry, got %v", nil, err)
+	}
+}
+```
+
+The important pieces are:
+
+1. The **stub generator** emits a known sequence so we can force a
+collision on the first attempt.
+2. The store is pre-seeded with `dup123`, which it's the same value the stub generator returns so the first `Save` fails.
+
+The second generated code is fresh, so the retry path
+succeeds and the test can assert there was no error.
+
+### Shorten Fails After Too Many Collision
+
+Every attempt collides, so after the configured limit we surface `ErrTooManyCollisions` and nothing new is stored.
+
+
+```go
+func TestShortenTooManyCollisions(t *testing.T) {
+	want := ErrTooManyCollisions
+	ctx := context.Background()
+	stubCode := "stub123"
+
+	store := storage.NewInMemoryStore()
+	_ = store.Save(ctx, storage.Entry{ShortCode: stubCode, OriginalURL: "existing"})
+
+	svc := NewShortener(stubGenerator{code: stubCode}, store) // ❌ Faulty generator
+	req := ShortenRequest{URL: "https://example.com"}
+	_, err := svc.Shorten(ctx, req)
+	if err != want {
+		t.Fatalf("expected %v, got %v", want, err)
+	}
+}
+```
+
+Here we deliberately reuse the same short code every time by seeding both the **store** and the **generator** with the identical value. Because the retry loop only allows three attempts, the service exhausts its retries and returns the sentinel `ErrTooManyCollisions`, which is exactly what the test verifies.
+
+## Other Errors Bubble Up
+
+Sometimes Save fails for reasons other than collisions (database timeout, disk issue, etc.). In that case the shortener shouldn’t retry—it should immediately surface the error so the caller can report a `500`.
+
+To simulate that, we pass a **stub store** whose `Save` always returns `errors.New("boom")` and since that error should bubble up, we have to assert that `Shorten` returns the same error (no retries).
+
+```go
+type otherErrorStore struct {
+	err error
+}
+
+func (s otherErrorStore) Save(context.Context, storage.Entry) error {
+	return s.err
+}
+func (otherErrorStore) Find(context.Context, string) (storage.Entry, error) {
+	return storage.Entry{}, storage.ErrNotFound
+}
+func (otherErrorStore) IncrementHits(context.Context, string) (storage.Entry, error) {
+	return storage.Entry{}, nil
+}
+```
+
+Then we use this stub in our test:
+
+```go
+func TestShortenSaveErrorBubblesUp(t *testing.T) {
+	ctx := context.Background()
+	stubStore := &otherErrorStore{
+		err: errors.New("boom"),
+	}
+	want := stubStore.err
+
+	svc := NewShortener(stubGenerator{code: "stub123"}, stubStore)
+	req := ShortenRequest{URL: "https://example.com"}
+	_, err := svc.Shorten(ctx, req)
+	if err != want {
+		t.Fatalf("expected %v, got %v", want, err)
+	}
+}
+```

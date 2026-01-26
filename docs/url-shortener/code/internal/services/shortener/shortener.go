@@ -11,10 +11,11 @@ import (
 )
 
 var (
-	ErrEmptyURL    = errors.New("url is required")
-	ErrInvalidURL  = errors.New("url is invalid")
-	ErrNoGenerator = errors.New("code generator unavailable")
-	ErrEmptyCode   = errors.New("short-code is empty")
+	ErrEmptyURL          = errors.New("url is required")
+	ErrInvalidURL        = errors.New("url is invalid")
+	ErrNoGenerator       = errors.New("code generator unavailable")
+	ErrEmptyCode         = errors.New("short-code is empty")
+	ErrTooManyCollisions = errors.New("too many collisions")
 )
 
 type ShortenRequest struct {
@@ -51,26 +52,37 @@ func (s *Shortener) Shorten(
 	if s.generator == nil {
 		return ShortenResponse{}, ErrNoGenerator
 	}
-	code, err := s.generator.Generate(ctx)
-	if err != nil {
-		return ShortenResponse{}, err
-	}
+
 	entry := storage.Entry{
-		ShortCode:   code,
+		ShortCode:   "",
 		OriginalURL: req.URL,
 		CreatedAt:   time.Now().UTC(),
 		CreatedBy:   "coming soon",
 		HitCount:    0,
 	}
-	err = s.store.Save(ctx, entry)
-	if err != nil {
-		if errors.Is(err, storage.ErrConflict) {
-			return ShortenResponse{}, storage.ErrConflict // or retry a new code
+
+	const maxAttempts = 3
+	for i := range maxAttempts {
+		code, err := s.generator.Generate(ctx)
+		if err != nil {
+			return ShortenResponse{}, err
 		}
-		return ShortenResponse{}, err
+		entry.ShortCode = code
+		err = s.store.Save(ctx, entry)
+		if err != nil {
+			if errors.Is(err, storage.ErrConflict) {
+				if i < maxAttempts-1 {
+					continue
+				}
+				return ShortenResponse{}, ErrTooManyCollisions
+			}
+			return ShortenResponse{}, err
+		} else {
+			break
+		}
 	}
 	return ShortenResponse{
-		ShortCode:   code,
+		ShortCode:   entry.ShortCode,
 		OriginalURL: req.URL,
 	}, nil
 }
