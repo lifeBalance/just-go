@@ -1,0 +1,55 @@
+import Admonition from '@components/Admonition.astro'
+
+# Shorten Handler Test
+
+`TestShortenHandlerSuccess` focuses on the JSON API that creates short links. The
+test lives in `/internal/api/router_test.go` and runs against the real router
+with a stubbed code generator so the response can be asserted deterministically.
+
+- Instantiates the router via `NewRouter`, injecting a stub generator that always
+  returns `stub123`.
+- Issues a `POST /api/shorten` request with payload `{ "url": "https://example.com" }`.
+- Expects an HTTP `200 OK` and a JSON body echoing both the generated short code
+  and the original URL supplied in the request.
+
+This confirms the handler decodes JSON, delegates to the shortener service, and
+encodes the response exactly the way clients expect.
+
+```go
+func TestShortenHandlerSuccess(t *testing.T) {
+    store := storage.NewInMemoryStore()
+    shortener := shortenerpkg.NewShortener(stubGenerator{code: "stub123"}, store)
+    router := NewRouter(shortener)
+
+    body := map[string]string{"url": "https://example.com"}
+    buf, err := json.Marshal(body)
+    if err != nil {
+        t.Fatalf("failed to marshal request body: %v", err)
+    }
+
+    req := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(buf))
+    rec := httptest.NewRecorder()
+
+    router.ServeHTTP(rec, req)
+
+    if rec.Code != http.StatusOK {
+        t.Fatalf("expected status 200, got %d", rec.Code)
+    }
+
+    var payload map[string]string
+    if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+        t.Fatalf("failed to decode response: %v", err)
+    }
+
+    if payload["short_code"] != "stub123" {
+        t.Fatalf("unexpected short code: %s", payload["short_code"])
+    }
+    if payload["original_url"] != "https://example.com" {
+        t.Fatalf("unexpected original url: %s", payload["original_url"])
+    }
+}
+```
+
+<Admonition type="Run Tests">
+  Run `go test ./internal/api` to execute the integration suite.
+</Admonition>

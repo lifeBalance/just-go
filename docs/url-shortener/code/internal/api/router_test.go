@@ -56,3 +56,40 @@ func TestShortenHandlerSuccess(t *testing.T) {
 		t.Fatalf("unexpected original url: %s", payload["original_url"])
 	}
 }
+
+func TestRedirectHandlerSuccess(t *testing.T) {
+	store := storage.NewInMemoryStore()
+	shortener := shortenerpkg.NewShortener(
+		stubGenerator{code: "stub123"},
+		store,
+	)
+	router := NewRouter(shortener)
+
+	_ = store.Save(context.Background(), storage.Entry{
+		ShortCode:   "stub123",
+		OriginalURL: "https://example.com",
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/stub123", nil)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusFound {
+		t.Fatalf("expected status 302, got %d", rec.Code)
+	}
+
+	loc := rec.Header().Get("Location")
+	if loc != "https://example.com" {
+		t.Fatalf("expected Location header to be https://example.com, got %s", loc)
+	}
+
+	// Ensure hit count increments.
+	entry, err := store.Find(context.Background(), "stub123")
+	if err != nil {
+		t.Fatalf("expected entry to exist, got error: %v", err)
+	}
+	if entry.HitCount != 1 {
+		t.Fatalf("expected HitCount 1, got %d", entry.HitCount)
+	}
+}

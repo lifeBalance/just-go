@@ -4,20 +4,15 @@ import Admonition from '@components/Admonition.astro'
 
 [Integration tests](https://en.wikipedia.org/wiki/Integration_testing) check how multiple components work together as a whole. Instead of focusing on testing individiual components like a **unit test**, they push realistic inputs through the system to confirm the resulting behavior matches what users expect.
 
+Our unit tests cover the individual pieces of the **shortener service**, but it's a good idea to ensure those components behave correctly once the server receives a real **HTTP request**, which is routed to the handler.
+
 To run the tests for this:
 
 ```sh
 go test ./internal/api
 ```
 
-## HTTP Integration Test
+## Covered Scenarios
 
-Our unit tests cover the individual pieces of the **shortener service**, but it's a good idea to ensure those components behave correctly once the server receives a real HTTP request, which is routed to the handler.
-
-The `TestShortenHandlerSuccess` lives in `/internal/api/router_test.go` does exactly that:
-
-- Create a router instance via `NewRouter` while injecting a stub **code generator** to keep the service deterministic.
-- Sends a `POST /api/shorten` request with JSON `{ "url": "https://example.com" }`
-- Expects an HTTP `200 OK` response and a JSON body containing both the **short code** produced by the stub and the **original URL**
-
-That single test proves the handler decodes HTTP requests, delegates to the service, and encodes responses the way clients expect — long before storage or other dependencies are wired in.
+- `TestShortenHandlerSuccess` — exercises the flow of a user creating a **short URL** based on a **long URL**.
+- `TestRedirectHandlerSuccess` — exercises the redirect flow for users clicking on the **short URL**.
