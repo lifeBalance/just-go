@@ -108,11 +108,6 @@ func loadEnvConfig() (config, error) {
 
 This is an augmented version of the previous `port()` function, only that this time, it takes care of more settings.
 
-<Admonition title="PSQL_*">
-  In the next section we'll reuse these `PSQL_*` variables while dockerizing the
-  database container and wiring up the store implementation.
-</Admonition>
-
 ## The Shortener Service
 
 In our service we could also have to make use of the `SHORTENER_MAX_RETRIES` variable, by using:

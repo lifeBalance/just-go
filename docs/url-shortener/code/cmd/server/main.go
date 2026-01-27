@@ -11,6 +11,7 @@ import (
 	"urlshortener/internal/services/shortener"
 	shortenerpkg "urlshortener/internal/services/shortener"
 	"urlshortener/internal/services/storage"
+	"urlshortener/internal/services/storage/postgres"
 
 	"github.com/joho/godotenv"
 )
@@ -20,6 +21,7 @@ type appConfig struct {
 		Address string
 	}
 	ShortenerSettings shortener.ShortenerSettings
+	PostgresConfig    postgres.PostgresConfig
 }
 
 func main() {
@@ -35,6 +37,13 @@ func main() {
 }
 
 func run(cfg appConfig) error {
+	// Connect to DB
+	conn, err := postgres.Open(cfg.PostgresConfig)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
 	store := storage.NewInMemoryStore()
 	codeGenerator := shortenerpkg.NewRandomCodeGenerator(
 		cfg.ShortenerSettings.CodeLength,
@@ -47,8 +56,8 @@ func run(cfg appConfig) error {
 	appRouter := api.NewRouter(shortenerSvc)
 
 	addr := fmt.Sprintf("%s", cfg.Server.Address)
-	log.Printf("🚀 listening on %s 🚀", addr)     // 🪵 log message
-	err := http.ListenAndServe(addr, appRouter) // 🚀 start HTTP server
+	log.Printf("🚀 listening on %s 🚀", addr)    // 🪵 log message
+	err = http.ListenAndServe(addr, appRouter) // 🚀 start HTTP server
 	if err != nil {
 		log.Fatalf("server stopped: %v", err)
 	}

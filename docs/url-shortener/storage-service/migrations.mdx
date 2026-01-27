@@ -1,0 +1,104 @@
+import Admonition from '@components/Admonition.astro'
+
+# Migrations
+
+Next we’ll wire migrations so our DB schema (tables for short codes, metadata,
+etc.) stays consistent across environments. We'll be using a CLI named [goose](https://pressly.github.io/goose/) to manage this stuff; you can install the `goose` binary to your `$GOPATH/bin` directorys with:
+
+```sh
+go install github.com/pressly/goose/v3/cmd/goose@latest
+```
+
+<Admonition title="Install Goose">
+  For macOS users, Goose is also available as a Homebrew formula: `brew install
+  goose`
+</Admonition>
+
+Let's run the following command to create our first migration file (gotta run it at the **root** of our project):
+
+```sh
+goose -dir migrations -s create create_urls_table sql
+```
+
+The `-s` flag will generate **serialized names** for our migration files, i.e. `00001_whatever.sql`, `00002_whatevs.sql`, and so on.
+
+<Admonition type="warning" title="Migrations Folder">
+  Make sure the `migrations` folder (or whatever argument you use with `--dir`)
+  exists!
+</Admonition>
+
+The generated file would look like this:
+
+```sql
+-- +goose Up
+-- +goose StatementBegin
+CREATE TABLE IF NOT EXISTS urls (
+    short_code VARCHAR(50) PRIMARY KEY,
+    original_url TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    hit_count INTEGER NOT NULL DEFAULT 0
+);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE urls;
+-- +goose StatementEnd
+```
+
+The **comments** in the file are **important**:
+
+- `-- +goose Up` marks the upgrade SQL.
+- `-- +goose Down` marks the rollback SQL.
+- Between `-- +goose StatementBegin` and `-- +goose StatementEnd` we write our SQL queries.
+
+We just have to add the schema for our table.
+
+## Useful Goose Commands
+
+Check migration **status**:
+
+```sh
+goose -dir migrations postgres "host=localhost port=5439 user=urlshortener password=supersecret dbname=urlshortener sslmode=disable" status
+```
+
+For the **connection string**, check the values in the `.env` file. I like to set an **"on the fly"** `PGCONN` on my terminal, to make it more readable:
+
+```sh
+PGCONN="host=localhost port=5439 user=urlshortener password=supersecret dbname=urlshortener sslmode=disable"
+```
+
+<Admonition type="warning" title="Be aware of old env. variables">
+If you use this method, be aware of possible variables you may have set in other projects 😬
+</Admonition>
+
+If the migrations are no applied, the output of the **status** command would be something like:
+
+```
+2026/01/27 17:12:07     Applied At                  Migration
+2026/01/27 17:12:07     =======================================
+2026/01/27 17:12:07     Pending                  -- 00001_create_urls_table.sql
+```
+
+Migrate up:
+
+```sh
+goose -dir migrations postgres $PGCON up
+```
+
+<Admonition title="psql">
+  Once we've migrated up, it's a good idea to connect to the database and verify
+  the schema changes are there.
+</Admonition>
+
+Rollback last migration
+
+```sh
+goose -dir migrations postgres $PGCON down
+```
+
+Reset database (down all migrations)
+
+```sh
+goose -dir migrations postgres $PGCON reset
+```

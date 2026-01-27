@@ -1,0 +1,182 @@
+import Admonition from '@components/Admonition.astro'
+
+# Postgres
+
+In the previous section we set up our **entry point** to make use of **env. variables**. Let's start this one by augmenting the `.env` file with some values:
+
+```sh
+PSQL_USER=urlshortener
+PSQL_PASSWORD=supersecret
+PSQL_DATABASE=urlshortener
+PSQL_HOST=localhost
+PSQL_PORT=5432
+PSQL_SSLMODE=disable
+```
+
+And loading them in our `loadEnvConfig` helper:
+
+```go
+unc loadEnvConfig() (config, error) {
+    var cfg config
+
+    // Load .env file
+    err := godotenv.Load()
+    if err != nil {
+        log.Fatal("Error loading .env file")
+        return cfg, err
+    }
+
+    // more code...
+
+    // PSQL configuration
+    cfg.PSQL = models.PostgresConfig{
+        Host:     os.Getenv("PSQL_HOST"),
+        Port:     os.Getenv("PSQL_PORT"),
+        User:     os.Getenv("PSQL_USER"),
+        Database: os.Getenv("PSQL_DATABASE"),
+        Password: os.Getenv("PSQL_PASSWORD"),
+        SSLMode:  os.Getenv("PSQL_SSLMODE"),
+    }
+
+    if cfg.PSQL.Host == "" || cfg.PSQL.Port == "" ||
+       cfg.PSQL.User == "" || cfg.PSQL.Database == "" ||
+       cfg.PSQL.Password == "" || cfg.PSQL.SSLMode == "" {
+        panic("Missing required PSQL configuration")
+    }
+
+    return cfg, nil
+}
+```
+
+In the next section we'll make use of the new `PSQL_*` settings when containerizing a Postgres database.
+
+## Docker Compose Service
+
+Add a Postgres service to `docker-compose.yml` so local development has an easy
+database to connect to:
+
+```yaml
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${PSQL_USER}
+      POSTGRES_PASSWORD: ${PSQL_PASSWORD}
+      POSTGRES_DB: ${PSQL_DATABASE}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
+```
+
+The container uses the **environment variables** (which we set in the `.env` file) so
+the application and database **share credentials**. The named volume keeps data even
+if the container restarts. After this, you can bring **up** the DB with:
+
+```sh
+docker-compose up -d db
+```
+
+To teardown the setup, clearing the volumes, use:
+
+```sh
+docker compose down -v
+```
+
+## Dependencies
+
+We'll need to install a Postgres driver named [pgx](github.com/jackc/pgx/v5):
+
+```go
+go get github.com/jackc/pgx/v5
+```
+
+<Admonition type="tip" title="Tidying Up">
+  You may have to run `go mod tidy` if you get some weird error when importing
+  this package.
+</Admonition>
+
+## Connection
+
+Then we'll add a new `postgres/postgres.go` file to our `storage` package:
+
+```go
+package storage
+
+import (
+	"database/sql"
+	"fmt"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
+)
+
+type PostgresConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Database string
+	SSLMode  string
+}
+
+func Open(cfg PostgresConfig) (*sql.DB, error) {
+	stringifiedConfig := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		cfg.Host,
+		cfg.Port,
+		cfg.User,
+		cfg.Password,
+		cfg.Database,
+		cfg.SSLMode)
+
+	conn, err := sql.Open("pgx", stringifiedConfig)
+	if err != nil {
+		return nil, fmt.Errorf("open: %w", err)
+	}
+
+	return conn, nil
+}
+```
+
+The `Open` function creates a connection to a Postgres database and return it. We'll make use of this function in the **entry point** of our app, by adding the following to the top of our `run` function:
+
+```go
+func run(cfg appConfig) error {
+  // Connect to DB
+	conn, err := models.Open(cfg.PostgresConfig)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+  // Run migrations
+	if err := postgres.Migrate(conn, "migrations"); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+  store := storage.NewInMemoryStore() // 👈 still using in-memory store ⚠️
+  // more code...
+}
+```
+
+Also, we need to import and add the postres config type to our main config type:
+
+```go
+type appConfig struct {
+	Server struct {
+		Address string
+	}
+	ShortenerSettings shortener.ShortenerSettings
+	PostgresConfig    postgres.PostgresConfig     // 👈 Add postgres config type ✅
+}
+```
+
+At this point our app is still using the **in-memory** store and not **postgres store**, we need to do two things before we can connect it:
+
+- Create **migrations** for our **short-code** tables.
+- Create the **postgres store** itself.
+
+We'll take care of that in the following sections.
+

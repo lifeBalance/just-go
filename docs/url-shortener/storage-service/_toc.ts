@@ -4,4 +4,6 @@ export default [
   { path: 'collision-handling', label: 'Collision Handling' },
   { path: 'lookup-redirect', label: 'Lookup and Redirect' },
   { path: 'env-vars', label: 'Environment Variables' },
+  { path: 'postgres', label: 'Database' },
+  { path: 'migrations', label: 'Migrations' },
 ]
