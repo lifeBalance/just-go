@@ -18,6 +18,15 @@ var (
 	ErrTooManyCollisions = errors.New("too many collisions")
 )
 
+type Shortener struct {
+	generator CodeGenerator
+	store     storage.Store
+}
+
+type CodeGenerator interface {
+	Generate(ctx context.Context) (string, error)
+}
+
 type ShortenRequest struct {
 	URL string
 }
@@ -25,14 +34,6 @@ type ShortenRequest struct {
 type ShortenResponse struct {
 	ShortCode   string
 	OriginalURL string
-}
-
-type CodeGenerator interface {
-	Generate(ctx context.Context) (string, error)
-}
-type Shortener struct {
-	generator CodeGenerator
-	store     storage.Store
 }
 
 func NewShortener(gen CodeGenerator, store storage.Store) *Shortener {

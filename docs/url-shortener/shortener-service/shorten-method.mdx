@@ -1,0 +1,46 @@
+import Admonition from '@components/Admonition.astro'
+
+# The Shorten Method
+
+The `Shorten` method starts with some **validation**, that checks for:
+
+- An **empty URL**.
+- A **valid URL**.
+- A `nil` generator.
+
+```go
+func (s *Shortener) Shorten(
+	ctx context.Context,
+	req ShortenRequest,
+) (ShortenResponse, error) {
+	if req.URL == "" {
+		return ShortenResponse{}, ErrEmptyURL
+	}
+	if _, err := url.ParseRequestURI(req.URL); err != nil {
+		return ShortenResponse{}, ErrInvalidURL
+	}
+	if s.generator == nil {
+		return ShortenResponse{}, ErrNoGenerator
+	}
+	code, err := s.generator.Generate(ctx)
+	if err != nil {
+		return ShortenResponse{}, err
+	}
+	return ShortenResponse{
+		ShortCode:   code,
+		OriginalURL: req.URL,
+	}, nil
+}
+```
+
+If **validation** succeeds, the `Generate` method is called. Note how this method needs two things:
+
+- A **context**, which is passed by the HTTP handler from the **incoming request** (`r.Context()`). 
+- A **request** structure (`ShortenRequest`) that carries the long `URL` payload.
+
+The **context** will be passed down to the `Generate` method. That will let us react if:
+
+- The **client** disconnects or times out.
+- If the generator (or anything it calls later—like a store or background validator) blocks on network/file operations.
+
+In any of these cases, we can call `ctx.Done()` and abort early instead of burning CPU on a request that’s already gone.

@@ -1,0 +1,42 @@
+import Admonition from '@components/Admonition.astro'
+
+# Service Setup: Injecting the Generator
+
+In `cmd/server/main.go` we now construct the service in two steps:
+
+```go
+generator := shortenerpkg.NewRandomCodeGenerator(6)
+shortenerSvc := shortenerpkg.NewShortener(generator)
+appRouter := api.NewRouter(shortenerSvc)
+```
+
+The `NewShortener` depends on something that satisfies the `CodeGenerator` interface, i.e. a type with a `Generate` function that we can call to produce the short code:
+
+```go
+type CodeGenerator interface {
+	Generate(ctx context.Context) (string, error)
+}
+```
+
+So we instantiate `NewRandomCodeGenerator(6)`, which produces six-character alphanumeric codes. 
+
+<Admonition type="DI">
+Injecting that generator into `NewShortener`, keeps the service independent of any specific generation strategy; later we can plug in a **deterministic generator** for tests or a **store-aware version** that handles collisions without touching the HTTP layer.
+</Admonition>
+
+## Building the Service
+
+We just saw, how we need to initialize the **shortener service** with an injected `CodeGenerator`. This is the **constructor function** that does that:
+
+```go
+func NewShortener(gen CodeGenerator) *Shortener {
+    return &Shortener{generator: gen}
+}
+```
+
+`NewShortener` takes any `CodeGenerator`, and it returns a `Shortener` that will use that generator when Shorten runs.
+
+
+<Admonition type="DI">
+ That’s the essence of **dependency injection**; `main` decides the concrete generator, while the service just depends on the interface. It’s useful for swapping in different strategies or test doubles without editing the service implementation.
+</Admonition>
