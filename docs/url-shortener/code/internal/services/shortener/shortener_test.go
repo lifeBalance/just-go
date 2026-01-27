@@ -19,10 +19,17 @@ func (s stubGenerator) Generate(context.Context) (string, error) {
 	return s.code, nil
 }
 
+func defaultTestSettings() ShortenerSettings {
+	return ShortenerSettings{
+		CodeLength: 6,
+		MaxRetries: 3,
+	}
+}
+
 func TestShortenSuccess(t *testing.T) {
 	gen := stubGenerator{code: "stub123"}
 	store := storage.NewInMemoryStore()
-	svc := NewShortener(gen, store)
+	svc := NewShortener(gen, store, defaultTestSettings())
 
 	resp, err := svc.Shorten(context.Background(), ShortenRequest{URL: "https://example.com"})
 	if err != nil {
@@ -51,7 +58,11 @@ func TestShortenSuccess(t *testing.T) {
 }
 
 func TestShortenValidation(t *testing.T) {
-	svc := NewShortener(stubGenerator{code: "unused"}, nil)
+	svc := NewShortener(
+		stubGenerator{code: "unused"},
+		nil,
+		defaultTestSettings(),
+	)
 
 	_, err := svc.Shorten(context.Background(), ShortenRequest{})
 	if err != ErrEmptyURL {
@@ -65,7 +76,7 @@ func TestShortenValidation(t *testing.T) {
 }
 
 func TestShortenNoGenerator(t *testing.T) {
-	svc := NewShortener(nil, nil)
+	svc := NewShortener(nil, nil, defaultTestSettings())
 
 	_, err := svc.Shorten(context.Background(), ShortenRequest{URL: "https://example.com"})
 	if err != ErrNoGenerator {
@@ -75,7 +86,7 @@ func TestShortenNoGenerator(t *testing.T) {
 
 func TestShortenGeneratorError(t *testing.T) {
 	want := errors.New("boom")
-	svc := NewShortener(stubGenerator{err: want}, nil)
+	svc := NewShortener(stubGenerator{err: want}, nil, defaultTestSettings())
 
 	_, err := svc.Shorten(context.Background(), ShortenRequest{URL: "https://example.com"})
 	if err != want {
@@ -113,7 +124,7 @@ func TestRandomCodeGeneratorGenerate(t *testing.T) {
 func TestLookupSuccess(t *testing.T) {
 	ctx := context.Background()
 	store := storage.NewInMemoryStore()
-	svc := NewShortener(stubGenerator{code: "stub123"}, store)
+	svc := NewShortener(stubGenerator{code: "stub123"}, store, defaultTestSettings())
 	_ = store.Save(ctx, storage.Entry{
 		ShortCode:   "stub123",
 		OriginalURL: "https://example.com",
@@ -134,7 +145,7 @@ func TestLookupSuccess(t *testing.T) {
 }
 func TestLookupEmptyCode(t *testing.T) {
 	want := ErrEmptyCode
-	svc := NewShortener(nil, nil)
+	svc := NewShortener(nil, nil, defaultTestSettings())
 	ctx := context.Background()
 
 	_, err := svc.Lookup(ctx, "")
@@ -149,7 +160,7 @@ func TestLookupNotFound(t *testing.T) {
 
 	store := storage.NewInMemoryStore()
 	gen := NewRandomCodeGenerator(8)
-	svc := NewShortener(gen, store)
+	svc := NewShortener(gen, store, defaultTestSettings())
 
 	// we need a valid code (alphabet-wise)
 	code, err := gen.Generate(ctx)
@@ -168,7 +179,7 @@ func TestLookupIncrementError(t *testing.T) {
 	// Create a stubbed store
 	stubbedStore := newFailingIncrementStore(expectedError)
 	// Create a Shortener service
-	svc := NewShortener(stubGenerator{code: "stub123"}, stubbedStore)
+	svc := NewShortener(stubGenerator{code: "stub123"}, stubbedStore, defaultTestSettings())
 	// Save an entry in the stubbed store (ignore the error)
 	_ = stubbedStore.Save(ctx, storage.Entry{
 		ShortCode:   "stub123",
@@ -245,7 +256,7 @@ func TestShortenRetriesOnCollision(t *testing.T) {
 		OriginalURL: "existing",
 	})
 
-	svc := NewShortener(seqGen, store)
+	svc := NewShortener(seqGen, store, defaultTestSettings())
 
 	req := ShortenRequest{URL: "https://example.com"}
 	_, err := svc.Shorten(ctx, req)
@@ -262,7 +273,7 @@ func TestShortenTooManyCollisions(t *testing.T) {
 	store := storage.NewInMemoryStore()
 	_ = store.Save(ctx, storage.Entry{ShortCode: stubCode, OriginalURL: "existing"})
 
-	svc := NewShortener(stubGenerator{code: stubCode}, store) // ❌ Faulty generator
+	svc := NewShortener(stubGenerator{code: stubCode}, store, defaultTestSettings()) // ❌ Faulty generator
 	req := ShortenRequest{URL: "https://example.com"}
 	_, err := svc.Shorten(ctx, req)
 	if err != want {
@@ -277,7 +288,7 @@ func TestShortenSaveErrorBubblesUp(t *testing.T) {
 	}
 	want := stubStore.err
 
-	svc := NewShortener(stubGenerator{code: "stub123"}, stubStore)
+	svc := NewShortener(stubGenerator{code: "stub123"}, stubStore, defaultTestSettings())
 	req := ShortenRequest{URL: "https://example.com"}
 	_, err := svc.Shorten(ctx, req)
 	if err != want {

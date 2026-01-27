@@ -24,9 +24,16 @@ func (s stubGenerator) Generate(context.Context) (string, error) {
 	return s.code, nil
 }
 
+func defaultTestSettings() shortenerpkg.ShortenerSettings {
+	return shortenerpkg.ShortenerSettings{
+		CodeLength: 6,
+		MaxRetries: 3,
+	}
+}
+
 func TestShortenHandlerSuccess(t *testing.T) {
 	store := storage.NewInMemoryStore()
-	shortener := shortenerpkg.NewShortener(stubGenerator{code: "stub123"}, store)
+	shortener := shortenerpkg.NewShortener(stubGenerator{code: "stub123"}, store, defaultTestSettings())
 	router := NewRouter(shortener)
 
 	body := map[string]string{"url": "https://example.com"}
@@ -62,6 +69,7 @@ func TestRedirectHandlerSuccess(t *testing.T) {
 	shortener := shortenerpkg.NewShortener(
 		stubGenerator{code: "stub123"},
 		store,
+		defaultTestSettings(),
 	)
 	router := NewRouter(shortener)
 

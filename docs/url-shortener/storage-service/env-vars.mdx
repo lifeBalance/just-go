@@ -1,0 +1,185 @@
+import Admonition from '@components/Admonition.astro'
+
+# Environment Variables
+
+So far we've been hardcoding **settings** in our source code, such as:
+
+- The **port** where our server runs
+- The **length** of the short-codes
+- The **maximum attempts** when retrying collisions
+
+We can control these and other settings more dynamically using [environment variables](https://en.wikipedia.org/wiki/Environment_variable).
+
+## Environment File
+
+Let's create an `.env` file containing the settings we mentioned:
+
+```sh
+PORT=8080                   # HTTP server port
+CODE_LENGTH=6               # Short-code length
+SHORTENER_MAX_RETRIES=3     # Max attempts when retrying collisions
+```
+
+<Admonition type="tip" title=".env.example">
+  Check a sample `.env.example` into version control, but keep the real `.env`
+  file ignored so credentials don't leak.
+</Admonition>
+
+Having settings in `.env` keeps behavior explicit and consistent across environments.
+
+## Installing
+
+We'll be using a package named [github.com/joho/godotenv](github.com/joho/godotenv) to easily load our `.env` files. Let's install it:
+
+```sh
+go get github.com/joho/godotenv
+```
+
+## Refactor Entry Point
+
+Then, in the **entry point** of our application, we'll add a type for our configuration:
+
+```go
+type config struct {
+    Server struct {
+        Address string
+    }
+    ShortenerSettings struct {
+        CodeLength int
+        MaxRetries int
+    }
+}
+```
+
+And refactor `main` into this:
+
+```go
+func main() {
+    cfg, err := loadEnvConfig()
+    if err != nil {
+        panic(err)
+    }
+
+    err = run(cfg)
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
+We'll also create a **helper function** that reads environment variables and falls back to sensible defaults when values are omitted:
+
+```go
+func loadEnvConfig() (config, error) {
+    var cfg config
+
+    // Load .env file
+    err := godotenv.Load()
+    if err != nil {
+        log.Fatal("Error loading .env file")
+        return cfg, err
+    }
+
+    // Server configuration
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+    cfg.Server.Address = ":" + port
+
+    // Shortener configuration
+    codeLength := os.Getenv("CODE_LENGTH")
+    if codeLength == "" {
+        cfg.ShortenerSettings.CodeLength = 6
+    } else {
+        cfg.ShortenerSettings.CodeLength, _ = strconv.Atoi(codeLength)
+    }
+
+    maxRetries := os.Getenv("SHORTENER_MAX_RETRIES")
+    if maxRetries == "" {
+        cfg.ShortenerSettings.MaxRetries = 3
+    } else {
+        cfg.ShortenerSettings.MaxRetries, _ = strconv.Atoi(maxRetries)
+    }
+
+    return cfg, nil
+}
+```
+
+This is an augmented version of the previous `port()` function, only that this time, it takes care of more settings.
+
+<Admonition title="PSQL_*">
+  In the next section we'll reuse these `PSQL_*` variables while dockerizing the
+  database container and wiring up the store implementation.
+</Admonition>
+
+## The Shortener Service
+
+In our service we could also have to make use of the `SHORTENER_MAX_RETRIES` variable, by using:
+
+```go
+const maxAttempts = os.Getenv("SHORTENER_MAX_RETRIES")
+if maxAttempts == "" {
+    maxAttempts = 3
+}
+```
+
+But it's generally not a good idea to access environment variables directly in other services:
+
+- We're **hiding dependencies**: Services that read `os.Getenv()` internally have hidden configuration dependencies that aren't visible in their function signatures.
+- **Hard to Test**: If we need to set/unset environment variables in your tests, it'd be harder to do it when we access the variables internally (it forces us to create test doubles)
+- **Tight Coupling**: Your services become tightly coupled to the environment, making them less reusable and portable.
+- **Unclear Configuration**: It's harder to see what configuration a service needs just by looking at its constructor.
+
+## Better Approach: Dependency Injection
+
+Refactor the service **constructor** to accept settings:
+
+```go
+
+func NewShortener(
+    codeGen CodeGenerator,
+    store Store,
+    settings int, // ✅ Good: Configuration passed explicitly
+) *Shortener {
+    return &Shortener{
+        codeGen:    codeGen,
+        store:      store,
+        maxRetries: maxRetries,
+    }
+}
+```
+
+Pass configuration through the **entry point**, in `main.go`:
+
+```go
+func run(cfg appConfig) {
+    store := storage.NewInMemoryStore()
+    codeGenerator := shortenerpkg.NewRandomCodeGenerator(cfg.Shortener.CodeLength)
+    shortenerSvc := shortenerpkg.NewShortener(
+        codeGenerator,
+        store,
+        cfg.Shortener.MaxRetries, // ✅ Passed from config
+    )
+    // ...
+}
+```
+
+<Admonition type="tip" title="Use the point Luke">
+The **entry point** is the composition root where you wire everything together with the appropriate configuration.
+</Admonition>
+
+## Fixing Tests
+
+To fix our tests, we'll start by adding a `defaultTestSettings()` **helper function** that returns sensible defaults for tests:
+
+```go
+func defaultTestSettings() ShortenerSettings {
+	return ShortenerSettings{
+		CodeLength: 6,
+		MaxRetries: 3,
+	}
+}
+```
+
+Then it's just a matter of calling it whenever we're building a service (with the constructor `NewShortener`)
