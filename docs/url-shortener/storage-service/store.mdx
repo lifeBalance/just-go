@@ -1,0 +1,161 @@
+import Admonition from '@components/Admonition.astro'
+
+# Posgres Store
+
+Time to define the **postgres store**, so let's start by refactor a bit our file structure:
+
+```sh
+internal/storage/
+├── storage.go           # ✅ Interface + types (shared)
+├── memory.go            # ✅ InMemoryStore implementation
+└── postgres/
+    ├── postgres.go      # DB connection & migrations
+    └── store.go         # PostgresStore implementation
+```
+
+We have left the **shared types** in the `storage.go` file, and extracted the **in-memory store** (useful for tests) to the `memory.go` file.
+
+The **postgres store** will make use of the shared types, and will satisfy the `Storage` interface:
+
+```go
+type Store struct {
+	db *sql.DB
+}
+
+func NewStore(db *sql.DB) *Store {
+	return &Store{db: db}
+}
+
+func (s *Store) Save(ctx context.Context, entry storage.Entry) error {
+	query := `
+		INSERT INTO urls (short_code, original_url, created_at, created_by, hit_count)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+
+	createdAt := entry.CreatedAt
+	if createdAt.IsZero() {
+		createdAt = time.Now().UTC()
+	}
+
+	_, err := s.db.ExecContext(ctx, query,
+		entry.ShortCode,
+		entry.OriginalURL,
+		createdAt,
+		entry.CreatedBy,
+		entry.HitCount,
+	)
+
+	if err != nil {
+		// Check for unique constraint violation (duplicate short_code)
+		// This is PostgreSQL-specific error handling
+		if isPgUniqueViolation(err) {
+			return storage.ErrConflict
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) Find(ctx context.Context, shortCode string) (storage.Entry, error) {
+	query := `
+		SELECT short_code, original_url, created_at, created_by, hit_count
+		FROM urls
+		WHERE short_code = $1
+	`
+
+	var entry storage.Entry
+	err := s.db.QueryRowContext(ctx, query, shortCode).Scan(
+		&entry.ShortCode,
+		&entry.OriginalURL,
+		&entry.CreatedAt,
+		&entry.CreatedBy,
+		&entry.HitCount,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return storage.Entry{}, storage.ErrNotFound
+		}
+		return storage.Entry{}, err
+	}
+
+	return entry, nil
+}
+
+func (s *Store) IncrementHits(ctx context.Context, shortCode string) (storage.Entry, error) {
+	query := `
+		UPDATE urls
+		SET hit_count = hit_count + 1
+		WHERE short_code = $1
+		RETURNING short_code, original_url, created_at, created_by, hit_count
+	`
+
+	var entry storage.Entry
+	err := s.db.QueryRowContext(ctx, query, shortCode).Scan(
+		&entry.ShortCode,
+		&entry.OriginalURL,
+		&entry.CreatedAt,
+		&entry.CreatedBy,
+		&entry.HitCount,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return storage.Entry{}, storage.ErrNotFound
+		}
+		return storage.Entry{}, err
+	}
+
+	return entry, nil
+}
+```
+
+## Wiring Up the Store
+
+Time to make use of our store, so in the **entry point** of our app:
+
+```diff
+- store := storage.NewInMemoryStore()
++ store := postgres.NewStore(conn)
+```
+
+If you launch the server, and create some url in the browser, we can connect to the database via docker (I used the `exec` tab in Docker Desktop):
+
+```sh
+root@7ca7f4e51e54:/# psql -U urlshortener
+psql (18.1 (Debian 18.1-1.pgdg13+2))
+Type "help" for help.
+
+urlshortener=#
+```
+
+We can run some commands to verify our `urlshortener` database contains a `urls` table:
+
+```sh
+urlshortener=# \dt
+                  List of tables
+ Schema |       Name       | Type  |    Owner
+--------+------------------+-------+--------------
+ public | goose_db_version | table | urlshortener
+ public | urls             | table | urlshortener
+(2 rows)
+```
+
+Then we can , and check if it's created in the database:
+
+```sh
+urlshortener=# TABLE urls;
+ short_code |  original_url     | created_by  |    created_at       | hit_count
+------------+--------------------------------+-------------+-------------------+
+ I2IgOz     | https://test.com/ | coming soon | 2026-01-27 16:55:23 |    0
+(1 row)
+```
+
+Some `psql` commands:
+
+| Command     | Functionality                           |
+| ----------- | --------------------------------------- |
+| `\c dbname` | Connect to the `dbname` database        |
+| `\d`        | Display the tables in current database  |
+| `\d users`  | Display **schema** of the `users` table |

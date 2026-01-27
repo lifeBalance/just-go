@@ -102,3 +102,43 @@ Reset database (down all migrations)
 ```sh
 goose -dir migrations postgres $PGCON reset
 ```
+
+## A Makefile
+
+Another option is to create a `Makefile` like this one:
+
+```makefile
+DB_CONNECTION = host=localhost port=5439 user=urlshortener password=supersecret dbname=urlshortener sslmode=disable
+
+.PHONY: migration-create
+migration-create:
+	@read -p "Enter migration name: " name; \
+	goose -dir migrations create $$name sql
+
+.PHONY: migrate-up
+migrate-up:
+	goose -dir migrations postgres "$(DB_CONNECTION)" up
+
+.PHONY: migrate-down
+migrate-down:
+	goose -dir migrations postgres "$(DB_CONNECTION)" down
+
+.PHONY: migrate-status
+migrate-status:
+	goose -dir migrations postgres "$(DB_CONNECTION)" status
+```
+
+Then we can do:
+
+```sh
+make migration-create
+# Enter migration name: create_urls_table
+
+make migrate-up
+make migrate-down
+make migrate-status
+```
+
+<Admonition type="tip" title="Blank Slate">
+If during **development** you find yourself in a weird state, just nuke the db volume: `docker-compose down -v`, and run migrations again.
+</Admonition>

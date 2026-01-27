@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	shortenerpkg "urlshortener/internal/services/shortener"
@@ -36,18 +37,22 @@ func shortCodeHandler(shortsvc *shortenerpkg.Shortener) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		shortCode := chi.URLParam(r, "shortCode")
 		if shortCode == "" {
+			log.Println("⚠️  Empty short code in request")
 			http.Error(w, "short-code is required", http.StatusBadRequest)
 			return
 		}
 		entry, err := shortsvc.Lookup(r.Context(), shortCode)
 		if err != nil {
 			if errors.Is(err, storage.ErrNotFound) {
+				log.Printf("⚠️  Short code not found: %s", shortCode)
 				http.NotFound(w, r)
 				return
 			}
+			log.Printf("❌ Failed to lookup short code %s: %v", shortCode, err)
 			http.Error(w, "failed to resolve short code", http.StatusInternalServerError)
 			return
 		}
+		log.Printf("✅ Redirecting %s -> %s", shortCode, entry.OriginalURL)
 		http.Redirect(w, r, entry.OriginalURL, http.StatusFound)
 	}
 }
@@ -66,16 +71,19 @@ func shortenHandler(shortsvc *shortenerpkg.Shortener) http.HandlerFunc {
 			URL string `json:"url"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Printf("❌ Failed to decode JSON: %v", err)
 			http.Error(w, "invalid json payload", http.StatusBadRequest)
 			return
 		}
 		if req.URL == "" {
+			log.Println("⚠️  Empty URL in request")
 			http.Error(w, "url is required", http.StatusBadRequest)
 			return
 		}
 
 		resp, err := shortsvc.Shorten(r.Context(), shortenerpkg.ShortenRequest{URL: req.URL})
 		if err != nil {
+			log.Printf("❌ Failed to shorten URL: %v", err)
 			http.Error(w, "failed to shorten url", http.StatusInternalServerError)
 			return
 		}
@@ -87,6 +95,7 @@ func shortenHandler(shortsvc *shortenerpkg.Shortener) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(payload); err != nil {
+			log.Printf("❌ Failed to encode response: %v", err)
 			http.Error(w, "failed to encode response", http.StatusInternalServerError)
 		}
 	}

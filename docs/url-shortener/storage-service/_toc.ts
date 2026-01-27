@@ -6,4 +6,5 @@ export default [
   { path: 'env-vars', label: 'Environment Variables' },
   { path: 'postgres', label: 'Database' },
   { path: 'migrations', label: 'Migrations' },
+  { path: 'store', label: 'Postgres Store' },
 ]
