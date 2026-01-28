@@ -1,0 +1,197 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import bankAccount from './code/bankaccount/main.go?raw'
+
+# Race Conditions
+
+A [race condition](https://en.wikipedia.org/wiki/Race_condition) is a software or hardware flaw occurring when **multiple threads or processes** access **shared data** concurrently, and the final outcome depends on the unpredictable timing or sequence of their execution. This often causes data corruption, system crashes, or security vulnerabilities.
+
+## Creating a Race Condition
+
+Consider the following code:
+
+<Code code={bankAccount} lang="go" title="bankaccount/main.go" />
+
+In this code, we do a few things:
+
+- The `deposit` function, makes 1 million deposits of `10` bucks (total `10,000,000`).
+- The `withdraw` function, makes 1 million withdraws of `10` bucks (total `10,000,000`).
+- In `main`, we launch these two functions as goroutines, passing a pointer to the money.
+- We use `sleep` for 2 seconds after creating the goroutines to wait for them to terminate. This is a temporary hack, until we introduce `WaitGroup`.
+
+If we `go run bankaccount/main.go` you may get the following **output**:
+
+```
+Balance: 8459490
+```
+
+And if we run it several times:
+
+```
+Balance: 5821070
+Balance: 9991960
+Balance: -9993470
+```
+
+The `deposit` function should deposit a total of `10,000,000` bucks, whereas `withdraw` drains another `10,000,000` bucks. That should leave the bank account with the starting saldo of `100`, but that's not the case! Instead, we get different amounts, some of them even **negative**.
+
+## What Happens During a Race
+
+Depending on the order the goroutines interleave during that particular program run, the results may vary:
+
+
+```
+Time │ Goroutine 1 (deposit)  │ Goroutine 2 (withdraw) │ money
+─────┼────────────────────────┼────────────────────────┼──────
+  1  │ READ (100)             │                        │ 100
+  2  │ ADD 10: 110            │                        │ 100
+  3  │                        │ READ (100)             │ 100
+  4  │                        │ SUBTRACT 10: 90        │ 100
+  5  │ WRITE 110.             │                        │ 110
+  6  │                        │ WRITE money: 90        │ 90  ← Lost deposit 10!
+```
+
+Both goroutines read `100`, but Goroutine 2's write **overwrites** Goroutine 1's deposit. The `+10` is lost! Imagine what can happen during the `1,000,000` iterations of the loop in each goroutine.
+
+## Multiple Scenarios
+
+When two goroutines access the same data simultaneously, their operations **interleave**, causing lost updates. Depending on timing, different interleavings produce different results:
+
+```
+Time │ Goroutine 1 (deposit)  │ Goroutine 2 (withdraw) │ money
+─────┼────────────────────────┼────────────────────────┼──────
+  1  │                        │ READ (100)             │ 100
+  2  │                        │ SUB 10 (90)            │ 100
+  3  │ READ (100)             │                        │ 100
+  4  │                        │ WRITE 90               │ 90
+  5  │ ADD 10                 │                        │ 90
+  6  │ WRITE money: 110       │                        │ 110 ← Lost withdrawal 10!
+```
+
+The net result is that our program behaves erratically, in a non-deterministic way.
+
+## Hardware
+
+As we mentioned in a previous section, the Go scheduler doesn't guarantee order when several goroutines run concurrently. From a hardware point of view, the mismatches between the reading values, are related to stale data in outdated caches:
+
+```
+    GOROUTINE 1           GOROUTINE 2
+┌─────────────────────────────────────┐
+│         Go Runtime Scheduler        │
+│  (Manages goroutines on OS threads) │
+└─────────────────────────────────────┘
+          │                  │
+    OS THREAD 1         OS THREAD 2
+┌───────────────┬───────────────────┐
+│  CPU Core 0   │    CPU Core 1     │
+│ ┌───────────┐ │   ┌───────────┐   │
+│ │   Cache   │ │   │   Cache   │   │
+│ └─────┬─────┘ │   └─────┬─────┘   │
+└───────┼───────┴─────────┼─────────┘
+        │                 │
+        └────────┬────────┘
+─────────────────┴─────────────────────
+            System Bus
+───────────────────────────────────────
+                 │
+          ┌──────┴──────┐
+          │ Main Memory │
+          │             │
+          │   money: ?  │ ← Shared variable
+          └─────────────┘
+```
+
+When goroutines run in different cores, we get **cache coherence delays**, where different cores may keep in their caches stale data. That being said, race conditions in Go happen because of interleaved operations on shared memory, not necessarily because goroutines run on different CPU cores. Even a **single CPU** core can cause race conditions if goroutines are **context-switched** in the middle of operations.
+
+## Non-Preemptive Scheduling
+
+In a [previous secction](/basic-concepts/scheduling#preemptive-scheduling) we saw how the **OS scheduler** uses [preemptive scheduling](https://en.wikipedia.org/wiki/Preemption_(computing)), meaning it would interrupt a running task and hand the CPU to another one, even if the running task hasn’t blocked or yielded.
+
+<Admonition title="User-level Threads">
+Remember, goroutines or any **user-level threads**, are not managed by the **OS scheduler**.
+</Admonition>
+
+
+On the other hand, the **Go scheduler** (user-level scheduling) works in a **cooperative** (non-preemptive) way: it will only do a context switch if the task is blocking (slow I/O) or when the application calls a thread yield (`Gosched()` in Go).
+
+<Admonition title="GOMAXPROCS">
+The [runtime](https://pkg.go.dev/runtime) package includes a function named `GOMAXPROCS` which allows us to set the homonym **environment variable**. [GOMAXPROCS](https://go.dev/blog/container-aware-gomaxprocs) which allows us to set the maximum number of threads to use for running goroutines at once. 
+</Admonition>
+
+Knowing all the above, a solution to our program's **race condition** could be to set `GOMAXPROCS=1`, due to the **cooperative** way the Go scheduler works, our program would probably run one goroutine after another, in a **sequential way**. So if you add the following line in `main`:
+
+```go
+func main() {
+	money := 100
+	runtime.GOMAXPROCS(1) // 👈
+
+	go deposit(&money)
+	go withdraw(&money)
+
+	time.Sleep(2 * time.Second) // ⚠️ temporary hack
+
+	fmt.Printf("Balance: %d\n", money)
+}
+```
+
+If you run the program, the **output** will be:
+
+```
+Balance: 100
+```
+
+When we are running goroutines on a **single processor**, it is unlikely that the runtime will interrupt the execution in the middle of these instructions. For this reason, it's unlikely that any goroutine will see an outdated version of a variable, since all the goroutines will be running on the same processor, using the same caches.
+
+```
+ GOROUTINE 1           GOROUTINE 2
+          │                     │
+          └──────────┬──────────┘
+                     ▼
+      ┌──────────────────────────┐
+      │   Go Runtime Scheduler   │
+      │ (Cooperative scheduling) │
+      └──────────────┬───────────┘
+                     │
+              OS THREAD 1
+         ┌───────────────────────┐
+         │      CPU Core 0       │
+         │   ┌───────────────┐   │
+         │   │     Cache     │   │
+         │   │               │   │
+         │   │  money: 100   │   │ ← Single cache view
+         │   └───────┬───────┘   │
+         └───────────┼───────────┘
+                     │
+─────────────────────┴─────────────
+           System Bus
+───────────────────────────────────
+                     │
+              ┌──────┴──────┐
+              │ Main Memory │
+              │             │
+              │  money: 100 │
+              └─────────────┘
+
+```
+
+Obviously, this is not a good solution to race conditions for several reasons:
+
+- It would be equivalent to not using **concurrency** at all, giving up the advantage of having multiple processors.
+- Also, because there is no guarantee that in a future version of Go, the scheduler chooses to work in a **preemptive** way, and then break our program.
+
+## Atomic operations
+
+The issue boils down to the way the statement `*money += 10` works. We're dealing with three separate operations:
+
+- Read the value of `money`
+- Update the value of `money`
+- Write the value of `money`
+
+At any point, any of these operations can interleave with the operations of the other goroutine (`*money -= 10`). Ideally we should turn these three steps into an [atomic operation](https://en.wikipedia.org/wiki/Linearizability).
+
+<Admonition title="Atomic Operations">
+An **atomic operation** is a sequence of instructions treated as a single, indivisible unit, ensuring it either completes entirely or fails entirely, with no intermediate state visible to other processes or threads.
+</Admonition>
+
+Turning a set of steps into an atomic operation means that the set of instructions must be executed without interference from other executions
