@@ -1,0 +1,12 @@
+import Admonition from '@components/Admonition.astro'
+
+# Context (`context.Context`)
+
+Not strictly a synchronization primitive, but used for cancellation signals and timeouts across goroutine boundaries.
+
+**Best for**: Request-scoped values, cancellation propagation, timeouts
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+```

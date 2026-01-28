@@ -1,0 +1,12 @@
+import Admonition from '@components/Admonition.astro'
+
+# Atomic Operations (`sync/atomic`)
+
+Hardware-level atomic operations for simple values (integers, pointers). Fastest synchronization primitive.
+
+**Best for**: Counters, flags, simple state that fits in a single word
+
+```go
+var counter int64
+atomic.AddInt64(&counter, 1)  // Thread-safe increment
+```

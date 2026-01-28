@@ -195,3 +195,31 @@ An **atomic operation** is a sequence of instructions treated as a single, indiv
 </Admonition>
 
 Turning a set of steps into an atomic operation means that the set of instructions must be executed without interference from other executions
+
+## Proper Synchronization
+
+Imagine two flatmates using an app to **add items** to a grocery list. At the moment the list contains the ingredients for a taco night:
+
+- Tortilla
+- Tomatoes
+- Avocado
+- Six-pack Coronas
+- Two sombreros
+- Piñata
+- Baseball bat
+
+They may end up buying the grocery list twice. But if we add **locking list** feature, so that when one of them enters the supermarket enables it, the other flatmate would know that someone is already doing the shopping, and wait for missing ingredients. To avoid **race conditions** in our programming, we need good **synchronization and communication** with the rest of the goroutines (flatmates) to make sure they don’t step over each other.
+
+## Detecting Race Conditions
+
+Go ships with a [race detector](https://go.dev/doc/articles/race_detector) that we can enable with the `-race` flag. When the compiler sees that, it adds special code to all memory accesses to track when different goroutines are reading from and writing to memory. For example:
+
+```go
+go run -race bankaccount/main.go
+==================
+WARNING: DATA RACE
+Read at 0x00c000010138 by goroutine 8:
+...
+```
+
+When some race condition is detected, we get useful output about the reads from and writes to memory. Since this flag adds some overhead to our resulting binary, it's not advisable to use in production. Also, the detector may overlook some races if during that run the race hasn't happened, it's not perfect.

@@ -1,0 +1,58 @@
+import Admonition from '@components/Admonition.astro'
+
+# Mutexes
+
+In Go, [mutual exclusion](https://en.wikipedia.org/wiki/Mutual_exclusion) is available using the [sync.Mutex](https://pkg.go.dev/sync#Mutex). For example, going back to our bank account example:
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+func main() {
+	money := 100
+	var mu sync.Mutex  // Create a mutex
+
+	go deposit(&money, &mu)
+	go withdraw(&money, &mu)
+
+	time.Sleep(2 * time.Second) // ⚠️ temporary hack
+
+	fmt.Printf("Balance: %d\n", money)
+}
+
+func deposit(money *int, mu *sync.Mutex) {
+	for range 1_000_000 {
+		mu.Lock()      // Acquire the lock
+		*money += 10   // Critical section
+		mu.Unlock()    // Release the lock
+	}
+}
+
+func withdraw(money *int, mu *sync.Mutex) {
+	for range 1_000_000 {
+		mu.Lock()      // Acquire the lock
+		*money -= 10   // Critical section
+		mu.Unlock()    // Release the lock
+	}
+}
+```
+In the code above:
+
+1. We create a mutex in `main`.
+2. Each goroutine receives a pointer to the mutex, and acquire a lock before running the code that accesses **shared data**. We have to remember to **release the lock** after modification!
+
+Now when you run this, you'll always get:
+```
+Balance: 100
+```
+
+[Mutexes](https://go.dev/tour/concurrency/9) are used when want to make sure only one goroutine at a time can access shared data. We can protect critical sections of code by wrapping them in locks, to ensure that several steps run as an **atomic operation**. This way we can 
+
+<Admonition title='One at a time'>
+Only **one goroutine** can hold the lock at a time.
+</Admonition>

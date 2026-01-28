@@ -1,0 +1,81 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import sleep from './code/sleep/main.go?raw'
+import chan1 from './code/chan1/main.go?raw'
+import chan2 from './code/chan2/main.go?raw'
+import chan3 from './code/chan3/main.go?raw'
+
+# Channels
+
+Go In Go, the most favored and idiomatic way to synchronize goroutines is [channels](https://go.dev/ref/spec#Channel_types), a mechanism for communication between goroutines. 
+
+<Admonition title="Channels">
+There's a mantra in Go about concurrency:
+
+**“Do not communicate by sharing memory; share memory by communicating.”**
+
+Which means that goroutines should not share variables directly. Instead, they should send and receive values over channels.
+</Admonition>
+
+Channels are useful especially when you need to coordinate work, pass data, signal completion, or implement producer-consumer patterns.
+
+## The Sleep Hack
+
+Check the following code:
+
+<Code code={sleep} lang='go' title='sleep/main.go'/>
+
+If you run the code above, you'll see **no output**:
+
+- The `main` goroutine starts.
+- The `greet` goroutine starts.
+- Then `main` finishes, and `greet` doesn't have time to print anything.
+
+So far, we've been fixing this issue, by adding a `time.Sleep` call:
+
+```go
+time.Sleep(2 * time.Second) // ⚠️ temporary hack
+```
+
+But there is **no synchronization** at all here.
+
+## Sending Signals
+
+We've mentioned that channels are a mechanism for passing information between goroutines. But sometimes, we have no information to send, just a signal to let the caller know, "hey, I'm done". Let's fix the **sleep hack** with a channel:
+
+<Code code={chan1} lang='go' title='chan1/main.go'/>
+
+In the code above, a few things are happening in `main`:
+
+- We create a channel, with the type `chan struct{}`.
+- Launch `greet` in a goroutine.
+- Tell `main` to wait for a completion signal before finishing.
+
+In the `greet` function:
+
+- We receive the channel as an argument.
+- The function does its thing.
+- Finally, it sends a **completion signal** with the [close](https://go.dev/ref/spec#Close) built-in function.
+
+In this case, we're not passing any data between goroutines, just signaling. When doing that, it’s good practice to use an **empty struct** (`struct {}`) as the type of the channel, since they have a really small size (1 byte); it also expresses intent in our code.
+
+## Single-Owner
+
+Going back to our bank account example, let's implement it with channels:
+
+<Code code={chan2} lang='go' title='chan2/main.go'/>
+
+In the code above we have goroutine that owns the `balance` state. The other goroutines don't even have access to this state, they can only send messages to the `ops` channel:
+
+```
+[deposit]───┐
+            ├──> [ balance goroutine ]
+[withdraw]──┘
+```
+
+## Multiple-owner
+
+A less common approach, but still valid, is having multiple goroutines modify shared state, but channels are used only for coordination, not ownership. For example:
+
+<Code code={chan3} lang='go' title='chan3/main.go'/>

@@ -1,0 +1,15 @@
+import Admonition from '@components/Admonition.astro'
+
+# Once (`sync.Once`)
+
+Ensures a function is executed exactly once, even when called from multiple goroutines.
+
+**Best for**: Lazy initialization, singleton patterns
+
+```go
+var once sync.Once
+once.Do(func() {
+    // This code runs exactly once
+    initializeResources()
+})
+```

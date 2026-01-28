@@ -3,4 +3,5 @@ export default [
   { path: 'basic-concepts/', label: 'Basic Concepts' },
   { path: 'scheduling/', label: 'Scheduling' },
   { path: 'goroutines/', label: 'Goroutines' },
+  { path: 'synchronization/', label: 'Synchronization' },
 ]

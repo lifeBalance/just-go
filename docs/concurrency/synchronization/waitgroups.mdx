@@ -1,0 +1,49 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import wg1 from './code/wg1/main.go?raw'
+import wgMutex from './code/wgMutex/main.go?raw'
+import wgChan from './code/wgChan/main.go?raw'
+
+
+# Wait Groups
+
+If channels are the preferred way of synchronizing goroutines, the second most common tool is [sync.WaitGroup](https://pkg.go.dev/sync#WaitGroup), very popular when you simply need to wait for a known number of goroutines to finish. A `Waitgroup` doesn't protect data, just coordinate execution.
+
+## Bank Account Example
+
+Let's take a a look at our bank account example using exclusively a `WaitGroup`:
+
+<Code code={wg1} lang='go' title='wg1/main.go'/>
+
+In the code above, in `main`:
+
+1. We create the `var wg sync.WaitGroup`.
+2. We tell the `WaitGroup` to wait for 2 goroutines (`wg.Add(2)`).
+3. We launch the two goroutines.
+4. We wait for the group to finish. `wg.Wait()` - blocks until counter reaches zero (all goroutines done)
+
+If we run this code, we'll still get inconsistent results:
+```
+Balance: 8459490
+Balance: 5821070
+Balance: -9993470
+```
+
+We just got rid of the `time.Sleep` call.
+
+<Admonition type="warning" title="⚠️ A WaitGroup just waits">
+`WaitGroup` only ensures we wait for goroutines to finish—it does NOT protect **shared data**.
+</Admonition>
+
+## Combining WaitGroup with Mutex
+
+A way of solving the previous example is to use both `WaitGroup` (for coordination) and `Mutex` (for safety):
+
+<Code code={wgMutex} lang='go' title='wgMutex/main.go'/>
+
+
+
+## Combining WaitGroup with Channel
+
+<Code code={wgChan} lang='go' title='wgChan/main.go'/>

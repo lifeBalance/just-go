@@ -1,0 +1,14 @@
+import Admonition from '@components/Admonition.astro'
+
+# Read-Write Mutexes (`sync.RWMutex`)
+
+Optimized locks that allow multiple readers OR one writer. Better performance when reads are more frequent than writes.
+
+**Best for**: Read-heavy data structures like caches, configuration data
+
+```go
+var mu sync.RWMutex
+mu.RLock()      // Multiple readers can hold this
+data := cache[key]
+mu.RUnlock()
+```

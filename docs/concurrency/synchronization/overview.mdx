@@ -1,0 +1,80 @@
+import Admonition from '@components/Admonition.astro'
+
+# Synchronization
+
+When multiple threads access shared data concurrently, we need [synchronization](https://en.wikipedia.org/wiki/Synchronization_(computer_science)) to prevent race conditions and other issues (deadlocks, starvation, etc). Synchronization ensures that operations on **shared resources** happen in a controlled, predictable manner—preventing data corruption and maintaining program correctness.
+
+## Universal Synchronization Primitives
+
+Across most programming languages and systems, you'll find these fundamental synchronization mechanisms:
+
+1. **Locks**, aka mutexes, are the most basic primitive—ensures only one thread can access a critical section at a time.
+2. Semaphores are generalized locks that allow **N threads** to access a resource simultaneously. A **lock** is essentially a semaphore with `N=1`. They're usually used for rate limiting, connection pools, resource allocation, etc.
+3. **Condition Variables** allow threads to wait for certain conditions to become true before proceeding. Used with locks for complex coordination.
+4. **Read/Write Locks** are optimized locks allowing multiple readers OR one exclusive writer. Better performance for read-heavy workloads.
+5. **Atomic Operations** are hardware-level operations that execute without interruption. Used for lock-free programming.
+6. **Barriers** are synchronization points where threads wait until all have reached it before proceeding.
+7. **Monitors** are high-level abstraction combining locks and condition variables. Built into some languages.
+8. **Message Passing** is for sharing data by sending messages between threads rather than sharing memory.
+
+The following table summarizes some of the synchronization mechanisms available in different languages:
+
+| Primitive               | C (POSIX)           | Java                | Python                | Rust        | Go                  |
+| ----------------------- | ------------------- | ------------------- | --------------------- | ----------- | ------------------- |
+| **Locks/Mutexes**       | `pthread_mutex_t`   | `synchronized`      | `threading.Lock`      | `Mutex`     | `sync.Mutex`        |
+| **Semaphores**          | `sem_t`             | `Semaphore`         | `threading.Semaphore` | Manual      | Buffered channels   |
+| **Condition Variables** | `pthread_cond_t`    | `wait()`/`notify()` | `threading.Condition` | `Condvar`   | `sync.Cond`         |
+| **Read/Write Locks**    | `pthread_rwlock_t`  | `ReadWriteLock`     | `threading.RLock`     | `RwLock`    | `sync.RWMutex`      |
+| **Atomic Operations**   | `stdatomic.h`       | `AtomicInteger`     | Limited               | `AtomicU64` | `sync/atomic`       |
+| **Barriers**            | `pthread_barrier_t` | `CyclicBarrier`     | `threading.Barrier`   | Manual      | Manual              |
+| **Message Passing**     | Manual              | `BlockingQueue`     | `queue.Queue`         | Channels    | Channels (built-in) |
+
+## Synchronization in Go
+
+When multiple goroutines access **shared data** concurrently, we need **synchronization** to prevent race conditions. Synchronization ensures that operations on **shared resources** happen in a controlled, predictable manner—preventing data corruption and maintaining program correctness.
+
+Synchronization is the coordination of concurrent operations to ensure:
+
+1. **Mutual Exclusion**: Only one goroutine accesses shared data at a time
+2. **Visibility**: Changes made by one goroutine are visible to others
+3. **Ordering**: Operations happen in a predictable sequence
+
+Without synchronization, concurrent access to shared memory leads to **undefined behavior**, i.e. the program may work sometimes, fail other times, or produce incorrect results that are hard to debug.
+
+<Admonition title="The Cost of Synchronization">
+Synchronization isn't free. It introduces overhead:
+
+- **Performance**: Synchronized operations are slower than unsynchronized ones.
+- **Contention**: Goroutines may wait for locks, reducing parallelism.
+- **Complexity**: Code becomes harder to reason about and maintain.
+
+The goal is to use **just enough** synchronization—protecting shared data without sacrificing too much performance.
+
+</Admonition>
+
+Go offers several synchronization primitives, each suited for different scenarios:
+
+1. **Mutexes** (`sync.Mutex`) for protecting critical sections of code with mutual exclusion (Only one goroutine can hold the lock at a time).
+2. **Channels** mechanism for communication between goroutines by passing messages.
+3. **WaitGroups** (`sync.WaitGroup`) waiting for a set of goroutines to finish before proceeding.
+3. **Read/Write Mutexes** (`sync.RWMutex`) are optimized locks that allow multiple readers OR one writer.
+4. **Atomic Operations** (`sync/atomic`) are hardware-level atomic operations for simple values (integers, pointers).
+6. **Once** (`sync.Once`) ensures a function is executed exactly once, even when called from multiple goroutines.
+7. **Condition Variables** (`sync.Cond`) is an advanced primitive for waiting for or announcing state changes.
+8. **Context** (`context.Context`) is not strictly a synchronization primitive, but used for cancellation signals and timeouts across goroutine boundaries.
+
+Go encourages the use of **channels** (message passing) over traditional locks when possible. However, both approaches are available because different problems call for different tools.
+
+## Choosing the Right Tool
+
+Here's a quick decision guide:
+
+| Scenario                            | Tool                  |
+| ----------------------------------- | --------------------- |
+| Passing data between goroutines     | **Channels**          |
+| Simple counter or flag              | **Atomic operations** |
+| Protecting a struct or complex data | **Mutex**             |
+| Read-heavy cache or config          | **RWMutex**           |
+| Waiting for goroutines to finish    | **WaitGroup**         |
+| One-time initialization             | **Once**              |
+| Cancellation or timeouts            | **Context**           |
