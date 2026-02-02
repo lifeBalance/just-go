@@ -1,58 +1,162 @@
 import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import bankAccount from './code/bankaccount/main.go?raw'
+import mutex from './code/mutex/main.go?raw'
+import mutex2 from './code/mutex2/main.go?raw'
+import mutex3 from './code/mutex3/main.go?raw'
 
 # Mutexes
 
-In Go, [mutual exclusion](https://en.wikipedia.org/wiki/Mutual_exclusion) is available using the [sync.Mutex](https://pkg.go.dev/sync#Mutex). For example, going back to our bank account example:
+In the [data races section](goroutines/races) we saw an example about the issues caused by a couple goroutines accessing **shared data** without any synchronization. Let's take a look at the code again:
+
+<Code code={bankAccount} lang="go" title="bankaccount/main.go" />
+
+If we run the program above several times, we'll get different outputs:
+
+```
+Balance: 8459490
+Balance: 5821070
+Balance: 9991960
+Balance: -9993470
+```
+
+One of the ways to solve that issue is by allowing access to the **shared data** to one goroutine at a time. When one goroutine is accessing the data, the other one is excluded, and viceversa. This is known as [mutual exclusion](https://en.wikipedia.org/wiki/Mutual_exclusion), or **mutex** for short.
+
+<Admonition title="Mutexes">
+  A **mutex** (mutual exclusion) is a **concurrency primitive** used to prevent
+  race conditions by guarding critical sections. It ensures that only one
+  execution context—such as a goroutine or OS thread—can access the protected
+  code at a time. When multiple executions contend for the mutex, only one is
+  granted ownership while the others block until it is released.
+</Admonition>
+
+In short, [mutexes](https://go.dev/tour/concurrency/9) are used when want to make sure only one goroutine at a time can access shared data. The first step when using a **mutex** is to identify the section of the code where the problem happens.
+
+## Critical sections
+
+In our previous example, the problematic part were the statements where the shared data was being accessed:
+
+<Code
+  code={bankAccount}
+  lang="go"
+  title="mutex/main.go"
+  mark={[21, 27]}
+  collapse={'1-18'}
+/>
+
+It's a bit easier to see the issue if we rewrite the statement in a more explicit way:
 
 ```go
-package main
+// READ operation: Load current value from memory
+currentValue := *money
 
-import (
-	"fmt"
-	"sync"
-	"time"
-)
+// COMPUTE: Perform the addition
+newValue := currentValue + 10
 
-func main() {
-	money := 100
-	var mu sync.Mutex  // Create a mutex
-
-	go deposit(&money, &mu)
-	go withdraw(&money, &mu)
-
-	time.Sleep(2 * time.Second) // ⚠️ temporary hack
-
-	fmt.Printf("Balance: %d\n", money)
-}
-
-func deposit(money *int, mu *sync.Mutex) {
-	for range 1_000_000 {
-		mu.Lock()      // Acquire the lock
-		*money += 10   // Critical section
-		mu.Unlock()    // Release the lock
-	}
-}
-
-func withdraw(money *int, mu *sync.Mutex) {
-	for range 1_000_000 {
-		mu.Lock()      // Acquire the lock
-		*money -= 10   // Critical section
-		mu.Unlock()    // Release the lock
-	}
-}
+// WRITE operation: Store the new value back to memory
+*money = newValue
 ```
+
+The problem arises when goroutines interleave in the middle of these three operations. That is the **critical section** that we need to protect.
+
+## Adding a Mutex
+
+In Go, [mutual exclusion](https://en.wikipedia.org/wiki/Mutual_exclusion) is available using the [sync.Mutex](https://pkg.go.dev/sync#Mutex). Let's use one to fix our bank account example:
+
+<Code
+  code={mutex}
+  lang="go"
+  title="mutex/main.go"
+  mark={[11, 23, 25, 31, 33]}
+/>
+
 In the code above:
 
 1. We create a mutex in `main`.
 2. Each goroutine receives a pointer to the mutex, and acquire a lock before running the code that accesses **shared data**. We have to remember to **release the lock** after modification!
 
 Now when you run this, you'll always get:
+
 ```
 Balance: 100
 ```
 
-[Mutexes](https://go.dev/tour/concurrency/9) are used when want to make sure only one goroutine at a time can access shared data. We can protect critical sections of code by wrapping them in locks, to ensure that several steps run as an **atomic operation**. This way we can 
+<Admonition type='tip' title="Wrap All Critical Sections">
+  It's good practice to **protect shared resources** even if you’re sure that there will be no conflict. For example, in our `main` function we read the **shared data** at the end, to print the **balance**. In this particular case, a race condition is unlikely to happen, since both goroutines finish fast, and we have a `time.Sleep` of **2 seconds**. But in other scenarios, the compiler’s optimizations might re-order instructions, causing them to execute in a different manner.
 
-<Admonition title='One at a time'>
-Only **one goroutine** can hold the lock at a time.
+```go
+mutex.Lock()
+fmt.Println("Money in bank account: ", money)
+mutex.Unlock()
+```
+
+In the code above, we added another lock, to ensure that the `main` goroutine reads an updated copy of the variable.
+
 </Admonition>
+
+[Mutexes](https://go.dev/tour/concurrency/9) are used by marking the **beginning** and the **end** of a **critical section** of our code. When a goroutine finds such a marked section, it will lock the mutex, and unlock it when it's done.
+
+<Admonition title="One at a time">
+  Only **one goroutine** can hold the lock at a time.
+</Admonition>
+
+Using mutexes we can protect critical sections of code by wrapping them in locks, to ensure that until the lock is released, no other goroutine will access the shared data.
+
+## The Art of Mutexing
+
+Using a mutex reduces concurrency by serializing access to the protected section. Only one goroutine can execute the code between a lock and unlock at a time, effectively making that portion of the program run sequentially. Check the following code:
+
+<Code code={mutex2} lang="go" title="mutex2/main.go" />
+
+It's like our previous example, only that this time there's some **slow I/O operation** going on in the `deposit` and `withdraw` functions (think HTTP requests). If we time this run:
+
+```sh
+time go run mutex2/main.go
+Balance: 4310
+go run mutex2/main.go  3.55s user 7.54s system 73% cpu 15.152 total
+```
+
+Wow, over `15s`, why so long? Well, we're acquiring the locks before we start the **slow operations**, even though that operation is not affecting the shared data. Our goroutines spend the vast majority of their time waiting for **slow I/O**,  and a tiny fraction of a second processing it:
+
+```
+                       acquire         release.      acquire       release
+                            ↓             ↓             ↓             ↓
+                            ┌─────────────┐             ┌─────────────┐
+withdraw:                   |io + critical|             |io + critical|
+deposit:    |io + critical|               |io + critical|
+            └─────────────┘               └─────────────┘
+            ↑             ↑               ↑             ↑
+         acquire       release         acquire       release
+```
+
+Let's refactor the code above, so that we only lock when we reach the **critical section**:
+
+<Code code={mutex3} lang="go" title="mutex3/main.go" />
+
+If we run this version:
+
+```sh
+time go run mutex3/main.go 
+Balance: 100
+go run mutex3/main.go  2.52s user 5.28s system 116% cpu 6.695 total
+```
+
+Around `7s`, twice faster that our version above, why? In this **optimized version**, we lock only during **critical section**, and the result shows:
+
+```
+                     lock+rel.   lock+rel.   lock+rel.
+                     ↓ ↓         ↓ ↓         ↓ ↓ 
+                     ┌─┐         ┌─┐         ┌─┐
+withdraw:   io io io │C│ io io io│C│ io io io│C│ io io
+deposit:       io io io│C│ io io io│C│ io io io│C│ io io
+                       └─┘         └─┘         └─┘
+                       ↑ ↑         ↑ ↑         ↑ ↑
+                       lock+rel.   lock+rel.   lock+rel.
+
+Legend:
+  io = slow I/O operation (runs in parallel)
+  C  = critical section (locked, tiny duration)
+```
+
+So the idea here is that when deciding where to lock/unlock, we should focus on the **shared data** we're trying to protect. The **slow operations** will perform **concurrently**, and we'll only lock the critical sections. The net gain will be even more noticeable if we had more that two goroutines.

@@ -97,6 +97,35 @@ body {
   font-size: 0.85em;
 }
 
+/* Scrollable table */
+.prose table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Scrollbar styling */
+.prose > :where(table)::-webkit-scrollbar {
+  height: 5px;
+}
+
+.prose > :where(table)::-webkit-scrollbar-track {
+  background: var(--color-sd-bg);
+}
+
+.prose > :where(table)::-webkit-scrollbar-thumb {
+  background: var(--sd-muted);
+  border-radius: 5px;
+}
+
+.prose > :where(table)::-webkit-scrollbar-thumb:hover {
+  background: var(--color-sd-accent);
+}
+
+.prose table:has(:hover)::-webkit-scrollbar-thumb {
+  background: var(--color-sd-accent);
+}
+
 .pagefind-ui__drawer .svelte-e9gkc3 {
   background: #a6a09b;
   border-radius: 1rem;

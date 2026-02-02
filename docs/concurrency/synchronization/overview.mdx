@@ -31,50 +31,10 @@ The following table summarizes some of the synchronization mechanisms available 
 
 ## Synchronization in Go
 
-When multiple goroutines access **shared data** concurrently, we need **synchronization** to prevent race conditions. Synchronization ensures that operations on **shared resources** happen in a controlled, predictable manner—preventing data corruption and maintaining program correctness.
+When multiple goroutines access **shared data** concurrently, we need **synchronization** to prevent race conditions.
 
 Synchronization is the coordination of concurrent operations to ensure:
 
 1. **Mutual Exclusion**: Only one goroutine accesses shared data at a time
 2. **Visibility**: Changes made by one goroutine are visible to others
 3. **Ordering**: Operations happen in a predictable sequence
-
-Without synchronization, concurrent access to shared memory leads to **undefined behavior**, i.e. the program may work sometimes, fail other times, or produce incorrect results that are hard to debug.
-
-<Admonition title="The Cost of Synchronization">
-Synchronization isn't free. It introduces overhead:
-
-- **Performance**: Synchronized operations are slower than unsynchronized ones.
-- **Contention**: Goroutines may wait for locks, reducing parallelism.
-- **Complexity**: Code becomes harder to reason about and maintain.
-
-The goal is to use **just enough** synchronization—protecting shared data without sacrificing too much performance.
-
-</Admonition>
-
-Go offers several synchronization primitives, each suited for different scenarios:
-
-1. **Mutexes** (`sync.Mutex`) for protecting critical sections of code with mutual exclusion (Only one goroutine can hold the lock at a time).
-2. **Channels** mechanism for communication between goroutines by passing messages.
-3. **WaitGroups** (`sync.WaitGroup`) waiting for a set of goroutines to finish before proceeding.
-3. **Read/Write Mutexes** (`sync.RWMutex`) are optimized locks that allow multiple readers OR one writer.
-4. **Atomic Operations** (`sync/atomic`) are hardware-level atomic operations for simple values (integers, pointers).
-6. **Once** (`sync.Once`) ensures a function is executed exactly once, even when called from multiple goroutines.
-7. **Condition Variables** (`sync.Cond`) is an advanced primitive for waiting for or announcing state changes.
-8. **Context** (`context.Context`) is not strictly a synchronization primitive, but used for cancellation signals and timeouts across goroutine boundaries.
-
-Go encourages the use of **channels** (message passing) over traditional locks when possible. However, both approaches are available because different problems call for different tools.
-
-## Choosing the Right Tool
-
-Here's a quick decision guide:
-
-| Scenario                            | Tool                  |
-| ----------------------------------- | --------------------- |
-| Passing data between goroutines     | **Channels**          |
-| Simple counter or flag              | **Atomic operations** |
-| Protecting a struct or complex data | **Mutex**             |
-| Read-heavy cache or config          | **RWMutex**           |
-| Waiting for goroutines to finish    | **WaitGroup**         |
-| One-time initialization             | **Once**              |
-| Cancellation or timeouts            | **Context**           |
