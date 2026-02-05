@@ -1,0 +1,127 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import stdmutex from './code/stdmutex/main.go?raw'
+import rwmutex from './code/rwmutex/main.go?raw'
+
+# Readers-Writer Mutexes
+
+In the previous section we saw how **mutexes** avoid **race conditions**, by limiting access to **shared data** to a single goroutine at a time. While this approach works, it can needlessly restrict performance for some applications.
+
+## The Readers-Writers Problem
+
+The [Readers-Writers Problem](https://en.wikipedia.org/wiki/Readers%E2%80%93writers_problem) is a classic synchronization challenge: how do we manage access to a **shared resource** when multiple threads want to **read** from it and others want to **write** to it?
+
+The challenge:
+
+- **Reads are safe to share**: Multiple threads can read simultaneously since reading doesn't modify data.
+- **Writes must be exclusive**: Only one thread can write at a time, with no concurrent readers or writers.
+
+Without proper synchronization, you get **race conditions**: readers may see incomplete data mid-write, or concurrent writers may corrupt data.
+
+Solutions can be classified in three groups:
+
+- **Readers Priority**: Maximizes read throughput—useful for read-heavy workloads like caches or config data that rarely changes. Risk: writers may starve.
+- **Writers Priority**: Ensures data freshness—useful when readers must see the latest state (inventory, transactions). Risk: readers may starve.
+- **Balanced**: Neither group starves, but may sacrifice throughput or freshness.
+
+Balanced solutions aren't always the goal. The right choice depends on your access patterns and requirements.
+
+## Readers Priority
+
+Readers priority makes sense when:
+
+- Read-heavy workloads: Reads vastly outnumber writes (config caches, DNS tables, feature flags). Maximizing read throughput matters more than occasional write delays.
+- Read latency is critical: Real-time dashboards, serving cached content - reads must be fast, writes can wait.
+- Infrequently changing data: Reference tables, exchange rates updated once daily - why block frequent reads for rare writes?
+
+## Writers Priority
+
+Writers priority makes sense when:
+
+- Data freshness is critical: Financial transactions, inventory systems - readers must see latest data ASAP.
+- High-read environments: Without writer priority, constant reads could starve writers indefinitely.
+
+## Example 1: Locking on Read And Write
+
+Imagine we have the following `main` function:
+
+<Code
+  code={stdmutex}
+  lang="go"
+  title="stdmutex/main.go"
+  collapse={'1-8, 51-92'}
+/>
+
+Then we have a `reader` and a `writer` that use a `mutex.Lock`:
+
+<Code
+  code={stdmutex}
+  lang="go"
+  title="stdmutex/main.go"
+  collapse={'1-51, 66-92'}
+/>
+
+If we run this code:
+
+```sh
+go run stdmutex/main.go 
+Standard Mutex:
+  Total writes: 100 (expected: 100) ✅
+  Expected reads: 100000 ✅
+  Time: 6.467624959s
+```
+
+## Example 2: RLocking on Read And Locking on Write
+
+Let's modify the `main` function to make use of an [sync.RWMutex]():
+
+<Code
+  code={rwmutex}
+  lang="go"
+  title="stdmutex/main.go"
+  collapse={'1-23, 52-93'}
+/>
+
+Our `reader` and `writer` function will also receive this new mutex as argument:
+
+<Code
+  code={rwmutex}
+  lang="go"
+  title="rwmutex/main.go"
+  collapse={'1-50, 67-93'}
+  mark={[62, 65]}
+/>
+
+Nothing changes in the `writer`, here we have to `Lock` and `Unlock`, but in the `reader` we use `RLock` and `RUnlock` this time. Let's check the difference:
+
+```sh
+go run rwmutex/main.go 
+RW Mutex:
+  Total writes: 100 (expected: 100) ✅
+  Expected reads: 100000 ✅
+  Time: 186.979792ms
+```
+
+Wow, not `186 milliseconds`, compare to more than `6 seconds` in the standard `Mutex`!
+
+## Go's Readers-Writer Mutex
+
+Go's [sync.RWMutex](https://pkg.go.dev/sync#RWMutex) provides an efficient solution that allows **concurrent read access** while ensuring **exclusive write access**:
+
+- **Read operations**: Multiple goroutines can hold read locks concurrently using `RLock()` and `RUnlock()`.
+- **Write operations**: Only one goroutine can hold a write lock using `Lock()` and `Unlock()`, blocking all readers and writers
+
+This significantly improves performance for workloads with **frequent reads** and **infrequent writes**, balancing safety (no race conditions) with concurrency (parallel reads).
+
+<Admonition title="Multiple Readers - Single Writer">
+ Using `sync.RWMutex` allows for **multiple readers** accessing shared data at the same time. But a **single writer** when it's writing time.
+</Admonition>
+
+Go's `sync.RWMutex` favors a **writers priority** strategy:
+
+1. Some **readers** hold some locks (only they can read).
+2. **Writer** arrives, **waits** for all the readers to finish.
+3. When it's the **writer** time, if new readers arrive they must wait behind the writer (everybody waits until the writer is done).
+
+The writer still respects existing readers, but new readers can't cut in line. That's what "favors writers" means.
