@@ -120,7 +120,7 @@ This significantly improves performance for workloads with **frequent reads** an
 
 Go's `sync.RWMutex` favors a **writers priority** strategy:
 
-1. Some **readers** hold some locks (only they can read).
+1. Some **readers** hold some locks (only they can access the data).
 2. **Writer** arrives, **waits** for all the readers to finish.
 3. When it's the **writer** time, if new readers arrive they must wait behind the writer (everybody waits until the writer is done).
 

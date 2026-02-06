@@ -1,0 +1,184 @@
+import Admonition from '@components/Admonition.astro'
+import { Code } from 'astro-expressive-code/components'
+
+import customrwmutex from './code/customrwmutex/main.go?raw'
+
+# Building a Reader-Priority RW Mutex
+
+In the previous section we learned how to _use_ a readers–writer mutex (`sync.RWMutex`). In this section, and for learning purposes, we’ll implement a **minimal** read-preferred RW mutex. The implementation will be intentionally simple, with only four methods:
+
+- `ReadLock`
+- `ReadUnlock`
+- `WriteLock`
+- `WriteUnlock`
+
+They mirror the behavior of Go’s `sync.RWMutex`, but we give them our own names so it’s obvious this is **our implementation**, not the standard library’s.
+
+## High-level idea
+
+We want the following behavior:
+
+- Multiple readers may hold the lock **at the same time**.
+- While at least one reader is active, writers are locked out.
+- Writers must have **exclusive access**, i.e. while a writer is active, both **readers** and **writers** are locked out.
+
+This implementation is **read-preferred** because as long as there's an **active reader** and readers keep arriving, writers may starve.
+
+## Mental model: the “room with two entrances”
+
+Imagine a room that represents access to a shared resource:
+
+- The room has two doors, one for **readers** and one for **writers**.
+
+```
+┌────────────────────────┐
+│                        │
+│          ROOM          │
+│    (shared resource)   │
+│                        │
+└───┤   ├────────┤   ├───┘
+      ▲           ▲
+      │           │
+    READERS     WRITERS
+```
+
+- **Multiple readers** may be inside simultaneously.
+
+```
+┌────────────────────────┐
+│                        │
+│    Readers: 👤 👤 👤    │
+│         (many)         │
+│                        │
+└───┤   ├────────┤───├───┘
+      ▲           ▲
+      │           │
+    READERS     WRITERS
+```
+
+- Only **one writer** may ever be inside, alone.
+
+```
+┌────────────────────────┐
+│                        │
+│        Writer: ✍️      │
+│      (one, alone)      │
+│                        │
+└───┤───├────────┤───├───┘
+      ▲           ▲
+      │           │
+    READERS     WRITERS
+```
+
+To manage this:
+
+- We keep a **counter** of readers inside the room.
+- The **first reader** locks the writers’ door, and the **last reader** unlocks it.
+- A writer simply tries the door — if it's locked (readers inside), they wait.
+- Once a writer enters the room, it locks all doors.
+
+<Admonition title="The Readers Counter">
+  The **counter** is internal bookkeeping for readers to coordinate who
+  locks/unlocks the writers' door.
+</Admonition>
+
+## Data Structures
+
+Here’s the full structure backing our mutex:
+
+```go
+type ReadWriteMutex struct {
+	readersCounter int        // number of active readers
+	readersLock    sync.Mutex // protects readersCounter
+	globalLock     sync.Mutex // blocks writers (and first reader)
+}
+```
+
+- `readersCounter` tracks how many readers are currently in the room (a critical section of our code).
+- `readersLock` ensures only one reader updates `readersCounter` at a time. Without it, two readers could both read the counter as `0`, both increment to `1`, and both try to lock `globalLock` (race condition).
+- `globalLock` blocks access to all goroutines:
+  - Readers use it to block writers: the first reader locks it, the last reader unlocks it.
+  - Writers use it to block everybody else; when they're finished writing they unlock it.
+
+## Locking logic: Readers
+
+The `ReadLock` method controls how **readers** acquire locks:
+
+```go
+func (rw *ReadWriteMutex) ReadLock() {
+	rw.readersLock.Lock()
+	rw.readersCounter++
+	if rw.readersCounter == 1 {
+		rw.globalLock.Lock()
+	}
+	rw.readersLock.Unlock()
+}
+```
+
+1. A reader acquires `readersLock` to safely update the counter.
+2. It increments `readersCounter`, and if this reader is the number `1`, it locks `globalLock`, blocking writers (other readers can enter the room).
+3. It releases `readersLock` (counter update is done) and proceeds to read.
+
+Other readers can now enter concurrently without blocking each other.
+
+## Locking logic: Writers
+
+When a **writer** wants to write, the first thing it does is call the `WriteLock` method:
+
+```go
+func (rw *ReadWriteMutex) WriteLock() {
+	rw.globalLock.Lock()
+}
+```
+
+- If the `globalLock` is **unlocked**, the writer acquires it.
+- If it's **locked** (by another writer or the first reader), the writer is blocked until lock is released.
+
+<Admonition title="Acquiring Global Lock">
+ The `globalLock` can be acquired:
+
+- By a **writer** to exclude everybody else.
+- By a **first reader** to exclude writers.
+
+</Admonition>
+
+## Unlocking logic: Readers
+
+When a reader is done reading, it calls `ReadUnlock`:
+
+```go
+func (rw *ReadWriteMutex) ReadUnlock() {
+	rw.readersLock.Lock()
+	rw.readersCounter--
+	if rw.readersCounter == 0 {
+		rw.globalLock.Unlock()
+	}
+	rw.readersLock.Unlock()
+}
+```
+
+1. Reader acquires `readersLock` to safely update the counter.
+2. Decrements `readersCounter`.
+3. If this reader is the **last one out** (`readersCounter == 0`), it unlocks `globalLock`, allowing a writer to proceed.
+4. Releases `readersLock` (so other readers can update the counter)
+
+## Unlocking logic: Writers
+
+When a writer is done writing, it calls `WriteUnlock`:
+
+```go
+func (rw *ReadWriteMutex) WriteUnlock() {
+	rw.globalLock.Unlock()
+}
+```
+
+This releases `globalLock`, allowing the next waiting goroutine to proceed — whether it's another **writer** or the **first reader** in a group.
+
+## Reader preference (writer starvation)
+
+Our implementation is **read-preferring**, which means that if readers continuously arrive, **writers** may never acquire the lock. A writer can be starved indefinitely by a steady stream of readers. This happens because:
+
+- New readers can enter as long as there is at least one active reader (they don't need `globalLock` to be **unlocked**, only the first reader does).
+- The **writer** must wait for the `readersCounter` to drop to `0`, which never happens if readers keep coming.
+
+This is **not a bug** — it’s a design choice. More sophisticated implementations (including Go’s `sync.RWMutex`) use additional coordination to avoid starvation. We’ll fix this later using **condition variables**.
