@@ -23,6 +23,7 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
+.vscode
 opencode*.jsonc
 pagefind
 pagefind-*

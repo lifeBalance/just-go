@@ -15,3 +15,10 @@ This repository is intended for keeping my notes about the [Go programming langu
 [home]: #
 [back]: #
 [next]: installing.md
+
+.
+├── code
+├── pancakes/
+├── docs/
+├── .starfu
+└── README.md
