@@ -21,7 +21,7 @@ go version go1.25.4 darwin/arm64
 Instead of downloading and installing manually the official binary, you could use the package manager of your choice.
 
 <Admonition>
-Some examples of package managers are [Chocolatey](https://chocolatey.org/) for **Windows**, or if you're on **Linux**, you probably know how to use a package manager.
+Some examples of package managers are [Chocolatey](https://chocolatey.org/) for **Windows** 🤢, or if you're on **Linux** 👍, you probably know how to use a package manager.
 </Admonition>
 
 In **macOS**, we can install the Go compiler using [homebrew](https://brew.sh/) (a popular package manager for macOS):
