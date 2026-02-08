@@ -4,7 +4,7 @@ This repository serves as a comprehensive collection of my notes, explorations, 
 
 ## 🚀 See it live!
 
-You can find the live version hosted on GitHub Pages [here](https://lifebalance.io/just-go/).
+You can find the live version hosted on GitHub Pages [here](https://lifebalance.github.io/just-go/).
 
 > [!NOTE]
 > This documentation project was proudly built with [Starfu](https://www.npmjs.com/package/starfu).
