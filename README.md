@@ -2,6 +2,15 @@
 
 This repository serves as a comprehensive collection of my notes, explorations, and learning resources related to the [Go programming language](https://golang.org/). It covers various aspects of Go, from fundamental concepts to advanced topics, best practices, and code examples.
 
+## Developing
+
+To work on the docs, you may want to start the **development web server**:
+
+```sh
+cd .starfu
+pnpm dev
+```
+
 ## 🚀 See it live!
 
 You can find the live version hosted on GitHub Pages [here](https://lifebalance.github.io/just-go/).

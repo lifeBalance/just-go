@@ -6,6 +6,7 @@ import Footer from '@components/Footer.astro'
 import TocSidebar from '@components/sidebar/TocSidebar.astro'
 import Breadcrumb from '@components/Breadcrumb.astro'
 import DocsToc from '@components/DocsToc.astro'
+import DocsTocBar from '@components/DocsTocBar.astro'
 
 // Docs engine API: section factory, static paths, prev/next, and resolver/redirect logic
 import {
@@ -59,16 +60,17 @@ const currentPath = `${basePrefix}/${section}` + (currentSegment ? `/${currentSe
 const resolve = sectionApi.resolver()
 const mod = resolve(currentSegment) as any
 const Page = mod?.default
+const headings = Page ? await mod.getHeadings?.() : []
 
 // Compute prev/next links based on the flattened, ordered nav structure
 const { prev, next } = getPrevNext(nav, currentPath)
 ---
 
 <MainLayout activeBranch={section}>
-  <div class="flex gap-6 items-start">
+  <div class="flex items-start">
     <!-- Left Sidebar - Table of Contents -->
     <aside
-      class="sticky self-start overflow-y-auto w-64 shrink-0 border-r border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      class="hidden min-[1000px]:block sticky self-start overflow-y-auto w-64 shrink-0 border-r border-sd-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       style="top: 4rem; height: calc(100vh - 4rem);"
     >
       <div class="p-4">
@@ -77,11 +79,13 @@ const { prev, next } = getPrevNext(nav, currentPath)
     </aside>
 
     <!-- Central section - Main Content -->
-    <article class="flex-1 min-w-0 pb-12">
-      <div class="py-4">
+    <article class="flex-1 min-w-0 px-6 pb-12">
+      <DocsTocBar {headings} {nav} {currentPath} />
+
+      <div class="py-4 max-[999px]:mx-auto max-[999px]:max-w-prose">
         <Breadcrumb path={currentPath} {nav} />
       </div>
-      <div id="content" class="prose">
+      <div id="content" class="prose pb-20 max-[999px]:mx-auto" data-pagefind-body>
         {
           Page ? (
             <Page />
@@ -90,7 +94,7 @@ const { prev, next } = getPrevNext(nav, currentPath)
           )
         }
       </div>
-      <div class="mt-8 flex items-center justify-between">
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {
           prev ? (
             <PageBtn href={prev.url} label={prev.title} direction="prev" />
@@ -107,7 +111,7 @@ const { prev, next } = getPrevNext(nav, currentPath)
         }
       </div>
 
-      <Footer left={docsConfig.title} right="Happy Coding" />
+      <Footer left={docsConfig.title} />
     </article>
 
     <!-- Right Sidebar - On This Page -->
@@ -116,7 +120,7 @@ const { prev, next } = getPrevNext(nav, currentPath)
       style="top: 4rem; height: calc(100vh - 4rem);"
     >
       <div class="p-4">
-        <DocsToc />
+        <DocsToc {headings} />
       </div>
     </aside>
   </div>
