@@ -2,43 +2,59 @@ import Admonition from '@components/Admonition.astro'
 
 # Concurrency vs Parallelism
 
-Concurrency and parallelism both exist to tackle the same fundamental set of problems, even though they approach them differently.
+Many developers use the terms **concurrency** and **parallelism** interchangeably, however they're not the same thing! In previous jobs, I've had a hard time explaining the difference to **non-technical** people, who are used to the term **in parallel** from their daily lives.
 
-## The Problems 
+## Making Pizza: A Concurrency Example
 
-At a high level, they aim to solve:
+Let's use an example: Imagine you're making pizza at home, alone. You don't do one thing at a time and wait for it to finish before starting the next. Instead, you juggle tasks:
 
-1. Efficient Use of Resources. Modern systems have **multiple CPU cores** able of performing several operations simultaneously.
+1. Mix the dough and let it rest.
+2. While it rests, chop tomatoes and start the sauce on the stove.
+3. While the sauce simmers, cut your toppings.
+4. Take the sauce off the heat so it cools, turn on the oven so it gets hot.
+5. Shape the dough, add sauce and toppings, put it in the oven.
 
-2. Responsiveness. Programs often need to:
+You're **one person**, but you're making progress on multiple things by switching between tasks and using waiting time wisely. This is **concurrency** — one worker, many overlapping tasks.
 
-- Handle multiple users
-- React to events
-- Continue doing useful work while waiting (e.g., network or disk I/O)
+> [!NOTE]
+> This is exactly how **JavaScript** works. It's **single-threaded** (one cook), but its event loop lets it juggle many tasks by switching between them whenever one is waiting — a network request, a timer, user input. Only one thing actually executes at any given nanosecond, but the overlap makes it feel simultaneous. This is **not parallelism**!
+> 
+> JavaScript handles **concurrency** via the event loop and opts into **parallelism** with Worker Threads (not super common).
 
-Concurrency allows a program to stay responsive by structuring work so that long or blocking operations don’t freeze the entire system.
+## Parallelism: Invite your Friends involves Multiple Cores
 
-3. Throughput. Both aim to increase how much work gets done over time:
+Now imagine you invite three friends to help.
 
-- Concurrency improves throughput by **overlapping tasks**.
-- Parallelism improves throughput by **executing tasks simultaneously**.
-- The goal in both cases is to process more work in less time.
+- You make the dough.
+- Frankie chops tomatoes and handles the sauce.
+- Bobby cuts the toppings.
+- Tommy preheats the oven and preps the pan.
 
-5. Decomposing Complex Problems
+Everyone is working at the same time **in parallel**, each on their own task. This is **parallelism**, multiple workers executing simultaneously.
 
-Large problems are often easier to reason about when split into smaller, independent pieces. Both models encourage breaking work into units that can be:
+> [!NOTE]
+> This is how **Go** (and other languages which support for parallelism) approaches it. You can spawn goroutines that run truly **in parallel** across multiple CPU cores, like separate cooks working independently in the same kitchen.
 
-- Executed independently
-- Coordinated safely
-- Combined into a final result
+**Parallelism** solves it by having **multiple workers** doing different tasks at the exact same time. In programming, you can think of each friend as a separate thread of execution. 
 
-This improves both performance and maintainability.
+![multicore](../img/single-vs-multiple.png)
 
-6. Latency Hiding. Many operations, especially I/O are slow. Concurrency and parallelism help hide that latency by ensuring other useful work can proceed while something is waiting.
+Modern hardware architectures are built with [multiple cores](https://en.wikipedia.org/wiki/Multi-core_processor), so it make sense that programming languages offer a way to fully utilize the capabilities of a machine.
+
+In **Go**, you can spawn multiple goroutines that run truly in parallel on different CPU cores. Here, **Task A** and **Task B** can both be actively progressing at the same time, each on its own thread of execution.
+
+## Concurrent Programming
+
+Concurrency is a programming paradigm that allows us to structure our programs as a collection of tasks that can be executed independently. It doesn't necessarily mean that these tasks will run at the same time (in parallel), but they can be interleaved in a way that gives the illusion of simultaneous execution (like JavaScript's event loop).
+
+![concurrency vs parallelism](../img/concurrency-parallelism.png)
+
+Parallelism is a subset of concurrency:
+
+- Concurrency is about structure — designing tasks so they can overlap, whether or not they run at the same time. Even on a single CPU, a concurrent program interleaves tasks, switching between them during waits (I/O, timers, network) to keep the processor busy.
+- Parallelism is about execution — tasks literally running simultaneously on multiple cores. But only concurrent programs can run in parallel. You can't have multiple cooks working at the same time unless the work is broken into separate tasks first. 
 
 ## The Difference
-
-Many developers use the terms **concurrency** and **parallelism** interchangeably, however they're not the same thing!
 
 1. **Concurrency** is when we write our programs by grouping instructions into separate tasks. Some task examples could be:
 
@@ -52,44 +68,12 @@ Depending on the available hardware, these tasks may or may not execute **in par
 
 **Concurrency** is about planning how to do many tasks at the same time (interleaving or in parallel). **Parallelism** is about performing many tasks at the same time.
 
-## Concurrency
+## The Cost of Concurrency
 
-**Concurrency** solves this issue having **one worker** switching between tasks so fast it looks like they are happening simultaneously.
+Even with a **single CPU core**, concurrency models like the **event loop** used by JavaScript offers real benefits. Most programs spend only a small proportion of their time executing computations — the majority of the time the CPU is waiting on **slow I/O** (disk, network, user input). Instead of sitting idle, a concurrent program switches to other tasks that are ready to run, making better use of that time.
 
-For example, the **JavaScript runtime** is single-threaded but highly concurrent via its event loop; it interleaves tasks without parallel execution. The system starts **Task A** (e.g. sending an HTTP request), pauses it to work on **Task B** (e.g. handling a button click), then goes back to Task A. They "overlap" in timeframe, but only one is actually moving forward at any specific nanosecond.
+This is part of why **JavaScript** became so popular. By being **single-threaded** with an **event loop**, it gives you the I/O concurrency benefits without exposing the hard parts — no shared memory, no data races, no locks. You get most of the throughput gains with a much simpler mental model.
 
-## Parallelism
+Go takes the opposite bet: give developers powerful concurrency primitives (goroutines, channels) and trust them to use them correctly.
 
-**Parallelism** solves it by having **multiple workers** doing different tasks at the exact same time.
-
-For example, in languages like **Go**, you can spawn multiple goroutines that run truly in parallel on different CPU cores. Here, **Task A** and **Task B** can both be actively progressing at the same time, each on its own thread of execution.
-
-<Admonition title="Both Concurrency and Parallelism">
-  Many languages utilize both concepts. For example, JavaScript achieves
-  **concurrency** via the *Event Loop* (handling multiple tasks on a single
-  thread) but opts into **parallelism** using *Worker Threads* (executing code
-  simultaneously on separate CPU cores).
-</Admonition>
-
-Go simplifies this by blending both behaviors into a single primitive: the [Goroutine](https://go.dev/tour/concurrency/1).
-
-## Utilizing Multiple CPU Cores
-
-Modern hardware architectures are built with [multiple cores](https://en.wikipedia.org/wiki/Multi-core_processor), so it make sense that programming languages offer a way to fully utilize the capabilities of a machine.
-
-![multicore](../img/single-vs-multiple.webp)
-
-Using **concurrent programming** we can split our program's workload into tasks, that can run simultaneously in multiple CPU cores. This increases the throughput of our programs, and speeds up their execution.
-
-## Single Core Benefits
-
-Even with a **single CPU core**, concurrency offers benefits. Most programs spend only a small proportion of their time executing computations on the processor. The majority of the time, the CPU is waiting on **slow I/O** (disk, network, user input). Instead of letting the core sit idle during those waits, concurrent programs can switch to other tasks that are ready to run, making better use of the CPU time.
-
-<Admonition type="info" title="Real-life analogy">
-  Imagine you're baking some muffins. While they are in the oven, you can be
-  doing the dishes, or start another batch. Instead of sitting iddle, just
-  waiting for the muffins to bake, you're using that time to get other things
-  done.
-</Admonition>
-
-JavaScript is a well-known example: the language doesn’t expose primitives for splitting work across multiple CPU cores, yet its event loop and callback mechanism let it juggle many asynchronous tasks without blocking the page.
+The tradeoff is **complexity**. Concurrent programs are significantly harder to reason about — you have to think about tasks interleaving in ways you don't fully control, shared state being accessed simultaneously, and bugs that only appear under specific timing conditions.

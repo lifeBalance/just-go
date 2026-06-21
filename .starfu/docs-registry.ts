@@ -8,6 +8,10 @@ export const generatedRegistry = {
     content: import.meta.glob('../docs/concurrency/**/*.{md,mdx}', { eager: true }),
     toc: import.meta.glob('../docs/concurrency/**/_toc.ts', { eager: true }),
   },
+  'generics': {
+    content: import.meta.glob('../docs/generics/**/*.{md,mdx}', { eager: true }),
+    toc: import.meta.glob('../docs/generics/**/_toc.ts', { eager: true }),
+  },
   'url-shortener': {
     content: import.meta.glob('../docs/url-shortener/**/*.{md,mdx}', { eager: true }),
     toc: import.meta.glob('../docs/url-shortener/**/_toc.ts', { eager: true }),

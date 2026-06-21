@@ -1,16 +1,46 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 
+import wgNeeded from './code/wg-needed/main.go?raw'
+import wg from './code/wg/main.go?raw'
 import wg1 from './code/wg1/main.go?raw'
-import wgMutex from './code/wgMutex/main.go?raw'
-import wgChan from './code/wgChan/main.go?raw'
 
 
 # Wait Groups
 
-If channels are the preferred way of synchronizing goroutines, the second most common tool is [sync.WaitGroup](https://pkg.go.dev/sync#WaitGroup), very popular when you simply need to wait for a known number of goroutines to finish. A `Waitgroup` doesn't protect data, just coordinate execution.
+A [sync.WaitGroup](https://pkg.go.dev/sync#WaitGroup) allows us to wait for a known number of goroutines to finish. A `Waitgroup` doesn't synchronize or protect data, just coordinate execution.
 
-## Bank Account Example
+## Waiting For Goroutines
+
+When you launch a goroutine, the main function doesn't wait for it to finish. If the main function exits before the goroutine completes, the program will terminate and the goroutine will be abruptly stopped. Check this out:
+
+<Code code={wgNeeded} lang='go' title='wg-needed/main.go'/>
+
+If we run the code above, we'll get an output like this:
+
+```
+All workers done
+```
+
+The main function exits before any of the worker goroutines have a chance to print their messages. To prevent this, we can use a `WaitGroup` to ensure that the main function waits for all goroutines to finish before exiting:
+
+<Code code={wg} lang='go' title='wg/main.go'/>
+
+If we run the code above, we'll get the expected output:
+
+```
+Worker 2 starting
+Worker 1 starting
+Worker 3 starting
+Worker 3 done
+Worker 1 done
+Worker 2 done
+All workers done
+```
+
+As you can see, the main function waits for all worker goroutines to complete before printing "All workers done" and exiting. But the order of the worker messages may vary each time you run the program, since goroutines are scheduled independently by the **Go runtime**.
+
+## What WaitGroups Do Not Do
 
 Let's take a a look at our bank account example using exclusively a `WaitGroup`:
 
@@ -33,17 +63,14 @@ Balance: -9993470
 We just got rid of the `time.Sleep` call.
 
 <Admonition type="warning" title="⚠️ A WaitGroup just waits">
-`WaitGroup` only ensures we wait for goroutines to finish—it does NOT protect **shared data**.
+`WaitGroup` only ensures we **wait** for goroutines to finish—it does NOT protect **shared data**.
 </Admonition>
 
-## Combining WaitGroup with Mutex
+## Combining With Other Synchronization Tools
 
-A way of solving the previous example is to use both `WaitGroup` (for coordination) and `Mutex` (for safety):
+WaitGroups are often used in combination with other synchronization tools, like mutexes or channels, to coordinate the execution of goroutines while also ensuring safe access to shared resources.
 
-<Code code={wgMutex} lang='go' title='wgMutex/main.go'/>
+Some examples:
 
-
-
-## Combining WaitGroup with Channel
-
-<Code code={wgChan} lang='go' title='wgChan/main.go'/>
+- [WaitGroup + Mutex](/concurrency/synchronization/mutexes#the-art-of-mutexing): Use a `WaitGroup` to wait for goroutines to finish and a `Mutex` to protect shared data.
+- [WaitGroup + Channel](/concurrency/synchronization/channels#multiple-owner): Use a `WaitGroup` to wait for goroutines to finish and a `Channel` to communicate results or signals between goroutines.
