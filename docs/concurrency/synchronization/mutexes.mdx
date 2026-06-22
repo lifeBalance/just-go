@@ -1,7 +1,7 @@
 import Admonition from '@components/Admonition.astro'
 import { Code } from 'astro-expressive-code/components'
 
-import bankAccount from './code/bankaccount/main.go?raw'
+import bankAccountWg from './code/bankaccount-wg/main.go?raw'
 import mutex from './code/mutex/main.go?raw'
 import mutex2 from './code/mutex2/main.go?raw'
 import mutex3 from './code/mutex3/main.go?raw'
@@ -10,7 +10,7 @@ import mutex3 from './code/mutex3/main.go?raw'
 
 In the [data races section](goroutines/races) we saw an example about the issues caused by a couple goroutines accessing **shared data** without any synchronization. Let's take a look at the code again:
 
-<Code code={bankAccount} lang="go" title="bankaccount/main.go" />
+<Code code={bankAccountWg} lang="go" title="bankaccount/main.go" />
 
 If we run the program above several times, we'll get different outputs:
 
@@ -38,10 +38,10 @@ In short, [mutexes](https://go.dev/tour/concurrency/9) are used when want to mak
 In our previous example, the problematic part were the statements where the shared data was being accessed:
 
 <Code
-  code={bankAccount}
+  code={bankAccountWg}
   lang="go"
   title="mutex/main.go"
-  mark={[21, 27]}
+  mark={[23, 30]}
   collapse={'1-18'}
 />
 
@@ -68,7 +68,7 @@ In Go, [mutual exclusion](https://en.wikipedia.org/wiki/Mutual_exclusion) is ava
   code={mutex}
   lang="go"
   title="mutex/main.go"
-  mark={[11, 23, 25, 31, 33]}
+  mark={[11, 23, 27, 33, 37]}
 />
 
 In the code above:

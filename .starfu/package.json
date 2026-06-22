@@ -4,10 +4,10 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "dev:template": "STARFU_TITLE=Starfu STARFU_PLATFORM=github STARFU_USERNAME=lifeBalance STARFU_REPO=starfu STARFU_DOCS_ROOT=./docs astro dev",
+    "dev:template": "STARFU_TITLE='Just Go!' STARFU_PLATFORM=github STARFU_USERNAME=lifeBalance STARFU_REPO=starfu STARFU_DOCS_ROOT=./docs astro dev",
     "dev:template:pagefind": "pnpm build:template && pnpm dev:template",
     "build": "astro build && npm run pagefind",
-    "build:template": "STARFU_TITLE=Starfu STARFU_PLATFORM=github STARFU_USERNAME=lifeBalance STARFU_REPO=starfu STARFU_DOCS_ROOT=./docs astro build && npm run pagefind",
+    "build:template": "STARFU_TITLE='Just Go!' STARFU_PLATFORM=github STARFU_USERNAME=lifeBalance STARFU_REPO=starfu STARFU_DOCS_ROOT=./docs astro build && npm run pagefind",
     "pagefind": "tsx src/lib/docs/build-pagefind.ts",
     "preview": "astro preview",
     "astro": "astro"

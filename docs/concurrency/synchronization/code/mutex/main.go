@@ -3,22 +3,26 @@ package main
 import (
 	"fmt"
 	"sync"
-	"time"
 )
 
 func main() {
 	money := 100
+	var wg sync.WaitGroup
 	var mu sync.Mutex // Create a mutex
 
-	go deposit(&money, &mu)
-	go withdraw(&money, &mu)
+	wg.Add(2)
 
-	time.Sleep(2 * time.Second) // ⚠️ temporary hack
+	go deposit(&money, &mu, &wg)
+	go withdraw(&money, &mu, &wg)
+
+	wg.Wait()
 
 	fmt.Printf("Balance: %d\n", money)
 }
 
-func deposit(money *int, mu *sync.Mutex) {
+func deposit(money *int, mu *sync.Mutex, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	for range 1_000_000 {
 		mu.Lock()    // Acquire the lock
 		*money += 10 // Critical section
@@ -26,7 +30,9 @@ func deposit(money *int, mu *sync.Mutex) {
 	}
 }
 
-func withdraw(money *int, mu *sync.Mutex) {
+func withdraw(money *int, mu *sync.Mutex, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	for range 1_000_000 {
 		mu.Lock()    // Acquire the lock
 		*money -= 10 // Critical section

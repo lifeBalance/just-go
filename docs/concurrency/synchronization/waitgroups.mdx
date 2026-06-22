@@ -3,7 +3,7 @@ import { Code } from 'astro-expressive-code/components'
 
 import wgNeeded from './code/wg-needed/main.go?raw'
 import wg from './code/wg/main.go?raw'
-import wg1 from './code/wg1/main.go?raw'
+import bankAccountWg from './code/bankaccount-wg/main.go?raw'
 
 
 # Wait Groups
@@ -40,11 +40,20 @@ All workers done
 
 As you can see, the main function waits for all worker goroutines to complete before printing "All workers done" and exiting. But the order of the worker messages may vary each time you run the program, since goroutines are scheduled independently by the **Go runtime**.
 
+> [!WARNING]
+> As you can see in the code and output above, `wg.Wait()` blocks the current goroutine (in this case `main`) until every tracked goroutine has called `wg.Done()`.
+>
+> To clarify: `wg.Wait()` does not block every goroutine in the program. It only pauses the goroutine where `wg.Wait()` is called (in this case `main`).
+
 ## What WaitGroups Do Not Do
 
-Let's take a a look at our bank account example using exclusively a `WaitGroup`:
+Let's take a a look at our bank account example using a `WaitGroup`:
 
-<Code code={wg1} lang='go' title='wg1/main.go'/>
+<Code
+  code={bankAccountWg}
+  lang="go"
+  title="mutex/main.go"
+/>
 
 In the code above, in `main`:
 
@@ -60,7 +69,7 @@ Balance: 5821070
 Balance: -9993470
 ```
 
-We just got rid of the `time.Sleep` call.
+We just got rid of the `time.Sleep` call, so that `main` goroutine will wait for the group to finish. But we're not controlling the way the goroutines in the group access the `money`.
 
 <Admonition type="warning" title="⚠️ A WaitGroup just waits">
 `WaitGroup` only ensures we **wait** for goroutines to finish—it does NOT protect **shared data**.
@@ -74,3 +83,5 @@ Some examples:
 
 - [WaitGroup + Mutex](/concurrency/synchronization/mutexes#the-art-of-mutexing): Use a `WaitGroup` to wait for goroutines to finish and a `Mutex` to protect shared data.
 - [WaitGroup + Channel](/concurrency/synchronization/channels#multiple-owner): Use a `WaitGroup` to wait for goroutines to finish and a `Channel` to communicate results or signals between goroutines.
+
+If your goroutines can fail and you want to stop the whole group when one returns an error, use `errgroup`, which builds on the same idea but adds error handling and cancellation.

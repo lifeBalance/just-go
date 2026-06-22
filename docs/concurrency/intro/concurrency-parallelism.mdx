@@ -2,7 +2,7 @@ import Admonition from '@components/Admonition.astro'
 
 # Concurrency vs Parallelism
 
-Many developers use the terms **concurrency** and **parallelism** interchangeably, however they're not the same thing! In previous jobs, I've had a hard time explaining the difference to **non-technical** people, who are used to the term **in parallel** from their daily lives.
+Many developers use the terms **concurrency** and **parallelism** interchangeably, however they're not the same thing! In previous jobs, I've had a hard time explaining the difference to **non-technical people**, who are used to the term **in-parallel** from their daily lives.
 
 ## Making Pizza: A Concurrency Example
 
@@ -14,7 +14,7 @@ Let's use an example: Imagine you're making pizza at home, alone. You don't do o
 4. Take the sauce off the heat so it cools, turn on the oven so it gets hot.
 5. Shape the dough, add sauce and toppings, put it in the oven.
 
-You're **one person**, but you're making progress on multiple things by switching between tasks and using waiting time wisely. This is **concurrency** — one worker, many overlapping tasks.
+You're using common sense to split and organize your work — tackling the next task while something else is waiting, instead of standing still. If you were a program, this is exactly what **concurrent programming** is about: structuring tasks to overlap and make progress without blocking.
 
 > [!NOTE]
 > This is exactly how **JavaScript** works. It's **single-threaded** (one cook), but its event loop lets it juggle many tasks by switching between them whenever one is waiting — a network request, a timer, user input. Only one thing actually executes at any given nanosecond, but the overlap makes it feel simultaneous. This is **not parallelism**!
@@ -53,20 +53,6 @@ Parallelism is a subset of concurrency:
 
 - Concurrency is about structure — designing tasks so they can overlap, whether or not they run at the same time. Even on a single CPU, a concurrent program interleaves tasks, switching between them during waits (I/O, timers, network) to keep the processor busy.
 - Parallelism is about execution — tasks literally running simultaneously on multiple cores. But only concurrent programs can run in parallel. You can't have multiple cooks working at the same time unless the work is broken into separate tasks first. 
-
-## The Difference
-
-1. **Concurrency** is when we write our programs by grouping instructions into separate tasks. Some task examples could be:
-
-- Handle HTTP requests.
-- Searching for files.
-- Render a frame in a videogame.
-
-Depending on the available hardware, these tasks may or may not execute **in parallel** (for parallel execution we need multiple CPU cores). Even on a single CPU, if our code is written in a concurrent way, the system will interleave the tasks, giving the impression that is performing more that one task at a time. 
-
-2. Parallelism requires multiple CPU cores in order to perform each task simultaneously on each core. But only **concurrent** programs can execute code in parallel. In that sense, we can say that **parallelism** is a subset of concurrency.
-
-**Concurrency** is about planning how to do many tasks at the same time (interleaving or in parallel). **Parallelism** is about performing many tasks at the same time.
 
 ## The Cost of Concurrency
 
