@@ -1,21 +1,32 @@
-import Admonition from '@components/Admonition.astro'
+import Admonition from "@components/Admonition.astro";
 
 # Threads
 
-Many high-performance applications rely on threads to keep the UI responsive, overlap I/O with computation, and utilize all available CPU cores. When a **process** needs to perform **multiple tasks** at once, a common approach is to split those tasks across **threads**.  
+A [thread](<https://en.wikipedia.org/wiki/Thread_(computing)>) is an independent path of execution (a sequence of instructions) running inside a process. Every process has at least one thread (the **main thread**), but it can create more. At any given time, a thread can be in one of three states:
+
+- **Running**: currently executing on a CPU core.
+- **Ready**: able to run, but waiting for the scheduler to give it CPU time.
+- **Blocked**: waiting for something else, such as disk I/O, network data, or a lock.
+
+When a **process** needs to perform **multiple tasks** at once, a common approach is to split those tasks across **threads** (that way we keep the UI responsive, overlap I/O with computation, and utilize all available CPU cores).
+
+> [!NOTE]
+> This process is known as [Multithreading](<https://en.wikipedia.org/wiki/Multithreading_(computer_architecture)>), and allows a **single process** to run multiple threads concurrently. On **multicore hardware**, those threads may run **in parallel**.
+>
+> Each thread represents a separate line of execution inside the same process. Each thread has its own stack, registers, and program counter, which means each one can be at a different point in the code.
 
 ```
 ┌──────────────────────────────┐
 │        Process A             │
-│ PID: 5102                    │  
-│   ┌──── Memory Space ───┐    │       
-│   │  Stack  │ Heap      │    │       
-│   │  Data   │ Text      │    │       
-│   └─────────────────────┘    │       
-│   ┌── File Descriptors ─┐    │       
-│   │ 0 stdin  1 stdout   │    │       
-│   │ 2 stderr 3 socket#17│    │       
-│   └─────────────────────┘    │  
+│ PID: 5102                    │
+│   ┌──── Memory Space ───┐    │
+│   │  Stack  │ Heap      │    │
+│   │  Data   │ Text      │    │
+│   └─────────────────────┘    │
+│   ┌── File Descriptors ─┐    │
+│   │ 0 stdin  1 stdout   │    │
+│   │ 2 stderr 3 socket#17│    │
+│   └─────────────────────┘    │
 │ ┌────────── Threads ───────┐ │
 │ │ Main Thread (T0)         │ │
 │ │ Worker Thread (T1)       │ │
@@ -24,11 +35,20 @@ Many high-performance applications rely on threads to keep the UI responsive, ov
 └──────────────────────────────┘
 ```
 
-A [thread](<https://en.wikipedia.org/wiki/Thread_(computing)>) is the actual unit of execution inside a process. Every process has at least one thread (the **main thread**), but it can create more.
-
 <Admonition title="Threads are lighter than Processes">
-Threads are lighter than processes, but they are still **not free**. An OS thread typically consumes about `1MB` of RAM just to exist.
+  Threads are lighter than processes, but they are still **not free**. An OS
+  thread typically consumes about `1MB` of RAM just to exist.
 </Admonition>
+
+## Types of Threads
+
+Threads can be implemented at different levels. The two important categories are **kernel-level threads** and **user-level threads**.
+
+- **Kernel-level threads** (aka **OS threads**) are managed directly by the operating system. The OS scheduler can see each thread, pause it, resume it, and assign it to a CPU core. Since the OS knows about each thread, multiple threads from the same process can run in parallel on different cores.
+
+- **User-level threads** are managed by code inside the process, usually a language runtime or threading library. The operating system does not see each user-level thread individually; it only sees the process and the kernel threads that process is using.
+
+User-level threads are usually cheaper to create and switch between, but the runtime has to schedule them itself. This is the idea behind lightweight concurrency models like Go's goroutines.
 
 ## Sharing is Caring
 
@@ -55,41 +75,33 @@ Unlike processes, threads inside the same process **share the same memory space*
 
 Threads share the process’s memory space, file descriptors, etc, so they can collaborate more easily than separate processes. For this reason, **thread-based concurrency** tends to be more lightweight than **inter-process communication**, but it also introduces the classic synchronization problems: race conditions, deadlocks, and so on.
 
-## Multithreading
+> [!WARNING]
+> Shared memory makes communication fast and simple because threads can read and write the same data directly. It is dangerous because two threads can access or modify the same data at the same time, causing data races and inconsistent state.
 
-[Multithreading](https://en.wikipedia.org/wiki/Multithreading_(computer_architecture)) allows a **single process** run multiple strands of execution **concurrently**. On multicore hardware those threads may run **in parallel**. Multithreading can be implemented at two different levels:
+Each thread has its own:
 
-1. **Kernel-level threads**, where the operating system schedules and manages each thread directly.
-2. **User-level threads**, where a runtime or library multiplexes **lightweight threads** inside the process on top of one or more **kernel threads**.
-
-Each thread represents a **separate path of execution** inside the same process. Each thread has its own own stack, registers, and program counter. That means each can be at a different point in the code.
+- **Stack**, which is a region of memory used for function calls, local variables, and control flow. The stack is separate from the shared memory space, so each thread can have its own local variables without interfering with other threads.
+- **Registers**, which are small, fast storage locations inside the CPU that hold temporary data and the current instruction pointer. Each thread has its own set of registers, so it can execute independently of other threads.
+- **Program Counter**, which is a special register that holds the address of the next instruction to execute. Each thread has its own program counter, so it can be at a different point in the code than other threads.
 
 ## User Level Threads
 
-When a user launches an application, i.e. a process, this one receives its own **memory space**, which is different from the one used by the OS.
+When a user launches an application, the operating system creates a **process** for it. That process gets its own **memory space**, separate from the memory used by the operating system kernel.
 
-<Admonition title="A Context Switch">
-  The term [user
-  space](https://en.wikipedia.org/wiki/User_space_and_kernel_space) (or
-  userland) refers to all code that runs outside the operating system's kernel.
-</Admonition>
+User-level threads run inside this process memory, in what is known as [user space](https://en.wikipedia.org/wiki/User_space_and_kernel_space), or **userland**. They are managed by application code, a runtime, or a library instead of being scheduled directly by the operating system.
 
-Application code can also make use threads. These threads are not managed by the OS; the OS only sees a **process** running, but doesn't have access to the threads running within that process. The process itself is responsible for managing them, and to this effect, must include a **scheduler**, which works pretty much the same as the OS scheduler, but at a smaller scale:
+Because the OS does not see each user-level thread individually, the process needs its own scheduler to manage them. That scheduler is responsible for:
 
-- Decide which thread should run.
-- Maintain a table of the threads contexts.
-- Perform **context switching**.
+- Deciding which user-level thread should run next.
+- Keeping track of each thread's execution state.
+- Switching between user-level threads.
 
-User-level threads are more performant, because context-switching at this level is faster. They introduce some **challenges** as well:
+User-level threads are usually cheaper to create and switch between than kernel-level threads, because switching between them does not require a full OS context switch.
 
-1. If a user-level thread performs some **blocking IO operation** (e.g. reading from a file), the OS scheduler may decide to deschedule the whole process (the OS only sees the **outer process**). As a result, the other threads running within, won't have a chance to run.
+They also introduce some challenges:
 
-<Admonition title="Slow IO">
-  One of the advantages of threads is to perform computations, when other
-  threads are waiting for I/O.
-</Admonition>
+1. In simple user-level threading models, if one user-level thread performs a blocking I/O operation, the kernel thread underneath it may block too. Since the OS cannot see the individual user-level threads, other user-level threads on that same kernel thread may not get a chance to run.
 
-A way to avoid this issue is to use **non-blocking** IO operations, but not all devices support them.
+2. In a simple `N:1` model, many user-level threads run on top of a single kernel thread. That means they cannot run in parallel on multiple CPU cores.
 
-2. Since the OS only sees the external process, the internal threads only have access to a processor's **single core** at a time. In other words, the **user-level threads** contained in that **kernel-level thread** will not be able to run in parallel.
-
+More advanced runtimes avoid these limitations with an `M:N` model, where many user-level threads are multiplexed over multiple kernel-level threads. Go uses this kind of model for goroutines, which we'll cover in the next section.

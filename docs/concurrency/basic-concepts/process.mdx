@@ -2,7 +2,12 @@ import Admonition from '@components/Admonition.astro'
 
 # Processes
 
-A [process](<https://en.wikipedia.org/wiki/Process_(computing)>) is the instance of a computer program that is being executed. For example, [sleep](<https://en.wikipedia.org/wiki/Sleep_(command)>) is a command that as soon as it starts, suspends execution for the amount of time we pass as argument. So when we run:
+A [process](<https://en.wikipedia.org/wiki/Process_(computing)>) is the instance of a computer program that is being executed. 
+
+> [!NOTE]
+> A **program** is is a set of instructions intended to be executed. These instructions are executable files on disk. A **process** is a running instance of a program created by the operating system.
+
+For example, [sleep](<https://en.wikipedia.org/wiki/Sleep_(command)>) is a command that as soon as it starts, suspends execution for the amount of time we pass as argument. So when we run:
 
 ```bash
 sleep 30&
@@ -52,6 +57,13 @@ A process it's sort of an isolated container created by the OS, which all the re
 - [Process ID](https://en.wikipedia.org/wiki/Process_identifier): Each process is assigned a unique identifier, aka `PID`, which the operating system uses to manage and track it.
 - [Memory Space](https://en.wikipedia.org/wiki/Virtual_address_space) is an area of contiguous [virtual memory](https://en.wikipedia.org/wiki/Virtual_memory) locations, which an operating system makes available to a process for executing instructions and storing data.
 - [File Descriptors](https://en.wikipedia.org/wiki/File_descriptor): Each process has its own set of file descriptors, which are just integers that point to an open resource your process can use for reading, writing.
+
+In the **memory space**, we can find several segments:
+
+- [Text Segment](https://en.wikipedia.org/wiki/Text_segment): Contains the executable code of the program.
+- [Data Segment](https://en.wikipedia.org/wiki/Data_segment): Contains global and static variables
+- [Heap Segment](https://en.wikipedia.org/wiki/Heap_(data_structure)): Used for dynamic memory allocation, where variables are allocated and freed at runtime.
+- [Stack Segment](https://en.wikipedia.org/wiki/Call_stack): Used for function call management, local variables, and control flow.
 
 ## Inter-Process Communication (IPC)
 
