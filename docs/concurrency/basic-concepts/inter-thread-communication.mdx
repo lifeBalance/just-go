@@ -2,7 +2,9 @@ import Admonition from '@components/Admonition.astro'
 
 # Inter-Thread Communication
 
-In the section about [processes](/concurrency/basic-concepts/process) can communicate with each other using [inter-process communication (IPC)](https://en.wikipedia.org/wiki/Inter-process_communication). Sometimes, **threads** working together to solve a problem need to interchange information. There are two ways of doing this:
+In the section about [processes](/concurrency/basic-concepts/process) we mention that they can communicate with each other using [inter-process communication (IPC)](https://en.wikipedia.org/wiki/Inter-process_communication).
+
+Sometimes, **threads** working together to solve a problem, also need to interchange information. There are two ways of doing this:
 
 - Memory sharing.
 - Message passing.
@@ -32,7 +34,7 @@ As we mentioned before, threads share the **memory space** of the process where 
 └───────────────────────────────────────────────────────┘
 ```
 
-That means one thread can update data structures that another thread reads a moment later—but that convenience comes with hazards. Without coordination, two threads writing the same variable can trample each other’s updates, leading to several issues such as:
+That means one thread can update data structures that another thread reads a moment later, but that convenience comes with some hazards. Without coordination, two threads writing the same variable can trample each other’s updates, leading to several issues such as:
 
 - [Race conditions](https://en.wikipedia.org/wiki/Race_condition).
 - [Deadlocks](<https://en.wikipedia.org/wiki/Deadlock_(computer_science)>).
@@ -41,7 +43,6 @@ That means one thread can update data structures that another thread reads a mom
 Operating systems and runtimes provide synchronization solutions to protect critical sections and ensure memory visibility across cores.Some examples:
 
 — [Mutexes](<https://en.wikipedia.org/wiki/Lock_(computer_science)>) (aka locks).
-
 - [Semaphores](<https://en.wikipedia.org/wiki/Semaphore_(programming)>).
 - [Atomic operations](https://en.wikipedia.org/wiki/Linearizability).
 
@@ -84,13 +85,13 @@ Whenever we have a system with **multiple processors** (or a multicore system), 
 └───────────────┴───────────────┘
           │             │
 ─────────────────────────────────
-             System Bus
+            System Bus
 ─────────────────────────────────
-                  │
-           ┌──────────────┐
-           │  Main Memory │
-           │ (Process A)  │
-           └──────────────┘
+                 │
+          ┌──────────────┐
+          │  Main Memory │
+          │ (Process A)  │
+          └──────────────┘
 ```
 
 In the diagram above, we have two threads running in parallel that want to communicate via **memory sharing**. Let's imagine the following scenarios:

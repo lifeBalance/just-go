@@ -1,0 +1,37 @@
+# Preemption
+
+Yielding works well when goroutines naturally hit channel operations or syscalls. But what about a goroutine doing pure CPU-bound work?
+
+```go
+func burn() {
+    for {
+        // tight loop, no yield points
+        // never hits a channel, syscall, or function call
+    }
+}
+```
+
+If a goroutine is doing pure CPU-bound work — a tight loop, heavy computation, number crunching — it never hits a yield point. It just keeps running and never gives the scheduler a chance to swap in another goroutine.
+
+In early versions of Go, this goroutine would run forever on its `M`, starving every other goroutine on that `P`. The scheduler had no way to interrupt it. Since **Go 1.14**, the runtime can **preempt** goroutines that haven't yielded on their own, preventing any single goroutine from monopolizing a thread.
+
+## Cooperative vs Asynchronous Preemption
+
+Go's scheduler has gone through two phases:
+
+1. **Before Go 1.14 — Cooperative only**
+
+Goroutines could only be preempted at yield points. A CPU-bound goroutine with no yield points would monopolize its thread until it voluntarily gave it up. The workaround was to insert `runtime.Gosched()` calls manually in tight loops.
+
+2. **Go 1.14+ — Asynchronous preemption**
+
+The runtime can now preempt any goroutine at (almost) any point using signals. The OS sends a signal to the thread, the runtime catches it, inspects the goroutine, and forces a yield if it has been running too long.
+
+This means CPU-bound goroutines no longer need manual `Gosched()` calls to cooperate with the scheduler.
+
+## SIGURG
+
+Go uses `SIGURG` (an otherwise rarely used signal) to trigger async preemption. When the runtime decides a goroutine has run long enough, it sends `SIGURG` to the M running it. The signal handler saves the goroutine's state and returns control to the scheduler.
+
+> [!NOTE]
+> Async preemption is not guaranteed at every instruction. Some regions of code are intentionally non-preemptible — for example, during certain runtime operations. These are marked with `//go:nopreempt` or managed via `acquirem()`/`releasem()` in the runtime internals.

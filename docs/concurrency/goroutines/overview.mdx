@@ -7,14 +7,17 @@ import sequential from './code/sequential/main.go?raw'
 
 A [goroutine](https://go.dev/tour/concurrency/1) is the main primitive in Go for concurrent programming. Compared to a thread, a goroutine is cheaper to create and maintain (`~2KB` vs `1MB`), allowing you to spawn thousands or even millions of them in a single program.
 
-<Admonition title="Go Runtime">
-  Go is a compiled language, so when we run `go build`, this command compiles
-  source code into a native machine-code executable. This executable includes a
-  [runtime](https://go.dev/doc/faq#runtime) system that’s embedded directly into
-  the final binary during linking. This runtime is not a separate process or
-  library you install—it’s compiled in, adding **~2-5 MB** to the binary size
-  depending on features.
-</Admonition>
+## Goroutine Stacks
+
+OS threads reserve a fixed stack of around **1MB** upfront, regardless of how much they actually need. Multiply that by thousands of threads and memory runs out fast.
+
+Goroutines start with just **~2KB** of stack space. The Go runtime grows and shrinks the stack dynamically as needed — if a stack overflow is about to happen, the runtime allocates a larger stack, copies the goroutine's data over, and resumes execution transparently. The goroutine doesn't know it happened.
+
+This is why you can spawn thousands or even millions of goroutines in a single Go program without exhausting system resources.
+
+## One to Rule Them All
+
+Go is a compiled language, so when we run `go build`, this command compiles source code into a native machine-code executable. This executable includes a [runtime](https://go.dev/doc/faq#runtime) system that’s embedded directly into the final binary during linking. This runtime is not a separate process or library you install—it’s compiled in, adding **~2-5 MB** to the binary size depending on features.
 
 **Threads** are managed by the **OS**, while goroutines are managed by the [Go scheduler](https://go.dev/src/runtime/HACKING), which is included in the **Go runtime**. The scheduler handles the multiplexing of goroutines onto OS threads, allowing for efficient execution and context switching.
 

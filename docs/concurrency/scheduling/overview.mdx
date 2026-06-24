@@ -1,2 +1,7 @@
 # Overview
 
+In a [previous section]() we saw how the **OS scheduler** manages processes and kernel threads. Go adds another scheduler inside the runtime that sits on top of the OS scheduler: instead of letting the OS manage goroutines directly, Go's runtime schedules them onto OS threads itself.
+
+This extra layer exists for one reason: OS threads are expensive. Creating one costs around **1MB of stack** and context switching between them requires a round trip into the kernel. Go's scheduler avoids that cost by multiplexing thousands of lightweight goroutines onto a small number of OS threads, switching between them in user space without kernel involvement.
+
+The result is that you can spawn hundreds of thousands of goroutines in a single program without exhausting system resources — something that would be impossible if each goroutine mapped directly to an OS thread.

@@ -1,0 +1,57 @@
+# The GMP Model
+
+Languages like C, C++, Java, and Rust expose OS threads directly — you create a thread, the OS manages it, and you pay the full OS cost per thread (~1MB of stack, slow context switches).
+
+Go takes a different approach. Rather than mapping goroutines 1:1 to OS threads, Go's runtime implements its own scheduler on top of the OS, using a model called **GMP**:
+
+- **G** — Goroutine. The unit of concurrent work. Starts at ~2KB of stack and grows dynamically.
+- **M** — Machine. An OS thread, managed by the kernel.
+- **P** — Processor. A logical CPU slot that holds a local run queue of goroutines and schedules them onto an M.
+
+```
+┌────── P0 ──────┐    ┌────── P1 ──────┐
+│ LRQ: [G2][G3]  │    │ LRQ: [G5][G6]  │
+│   running: G1  │    │   running: G4  │
+└───────┬────────┘    └───────┬────────┘
+        │                     │
+       M0                    M1
+  (OS Thread)           (OS Thread)
+```
+
+A goroutine can only run when it has both an **M** to execute on and a **P** to schedule it. The number of Ps is set by `GOMAXPROCS` and defaults to the number of available CPU cores — this is what controls how many goroutines can run truly in parallel at any given moment.
+
+## Why P Exists
+
+Before **Go 1.1**, the scheduler had only `G` and `M`. Every scheduling decision required a global lock, which became a bottleneck as programs spawned more goroutines.
+
+`P` was introduced to fix this. Each `P` has its own **local run queue** (LRQ), so most scheduling decisions happen without any locking. The **global run queue** (GRQ) still exists as a fallback for overflow and newly created goroutines, but it's consulted far less often.
+
+## Work Stealing
+
+When a P's local run queue runs dry, it doesn't sit idle — it steals goroutines from other Ps to keep its M busy.
+
+The stealing order is:
+
+1. Try to steal from another P's **local run queue** (takes half their goroutines).
+2. Fall back to the **global run queue**.
+3. Check the **network poller** for goroutines that have finished waiting on I/O.
+
+```
+┌────── P0 ──────┐         ┌────── P1 ──────┐
+│ LRQ: []        │ ──────> │ LRQ: [G2][G3]  │
+│  (empty, idle) │  steal  │   running: G1  │
+└────────────────┘         └────────────────┘
+```
+
+Work stealing keeps all Ps busy without routing every goroutine through a single shared queue, which would reintroduce the global lock problem that P was designed to solve.
+
+## Lifecycle Of A Goroutine
+
+```
+created -> placed in P's LRQ -> scheduled onto M -> running -> yields/blocks -> back to LRQ
+```
+
+- When a new goroutine is created, it's placed in the current P's local run queue.
+- The scheduler assigns it to an `M` when the `P` is free.
+- When it yields or blocks, it's removed from the `M` and another goroutine takes its place.
+- When it unblocks (e.g. I/O completes), it's placed back into a **run queue**.

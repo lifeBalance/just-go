@@ -1,0 +1,42 @@
+# Syscalls
+
+A syscall is a request from a program to the OS kernel — reading a file, opening a network connection, allocating memory. They're unavoidable, but they're also slow: the CPU has to switch from user space to kernel space and back.
+
+The problem for a scheduler is that syscalls can **block**. If a goroutine makes a blocking syscall, the OS thread running it stalls until the kernel responds. In languages like C or Java, this wastes the entire thread while it waits.
+
+Go handles this differently depending on the type of syscall.
+
+## Non-Blocking Syscalls
+
+For network I/O, Go uses the **network poller** — a layer built on top of the OS's async I/O primitives (`epoll` on Linux, `kqueue` on macOS). When a goroutine makes a network call:
+
+1. Go registers the file descriptor with the network poller.
+2. The goroutine is parked and detached from its `M`.
+3. The `M` picks up the next goroutine from the P's run queue.
+4. When the network poller detects the I/O is ready, the goroutine is placed back into a run queue.
+
+The `M` never blocks. The thread keeps running other goroutines the entire time.
+
+## Blocking Syscalls
+
+For truly blocking syscalls (file I/O, certain OS calls that can't be made async), Go takes a different approach:
+
+1. Before entering the syscall, the goroutine calls `entersyscall`, which **detaches the P** from the M.
+2. The M blocks in the kernel with the goroutine.
+3. The detached P is picked up by another M (or a new M is created) to keep running other goroutines.
+4. When the syscall returns, `exitsyscall` runs — the goroutine tries to reacquire a P. If one is available, it continues. If not, the goroutine is placed in the global run queue and the M may go idle.
+
+```
+before syscall:          during syscall:          after syscall:
+┌─── P ───┐              ┌─── P ───┐              ┌─── P ───┐
+│ G (run) │              │ G2(run) │              │ G (run) │
+└────┬────┘              └────┬────┘              └────┬────┘
+     M                        M2 (new/idle)             M
+     │                        
+     G ──> kernel (blocked)   
+```
+
+This keeps the rest of the program running even when one goroutine is stuck waiting on the kernel.
+
+> [!NOTE]
+> `entersyscall` and `exitsyscall` are internal runtime functions. You won't call them directly, but understanding them explains why Go programs stay responsive under heavy I/O load.

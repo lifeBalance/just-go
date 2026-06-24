@@ -1,0 +1,48 @@
+# Yielding
+
+**Yielding** is when a goroutine voluntarily pauses and hands control back to the **scheduler**.
+
+There are several reasons why a goroutine yields:
+
+- Channel operations
+- syscalls (unlike OS threads, where a blocking syscall stalls the entire thread)
+- Function calls
+
+All of the above are considered natural **yield points**. A goroutine also yields when it blocks on I/O. 
+
+> [!NOTE]
+> Yielding is as if the goroutine is saying "I'm waiting on something, use this thread for something else in the meantime."
+
+In all these cases, the **scheduler** detaches the goroutine from its `M` and assigns the next one from the P's local run queue, keeping the thread busy instead of stalling it.
+
+## Blocking on I/O
+
+When a goroutine blocks on I/O, the scheduler **detaches it from its M** so the thread can keep running other goroutines. Once the I/O completes, the goroutine is placed back into a run queue and eventually scheduled again.
+
+This is fundamentally different from how OS threads handle blocking I/O in languages like C or Java — there, a blocking syscall stalls the entire thread, wasting it while it waits.
+
+## runtime.Gosched()
+
+You can yield manually using `runtime.Gosched()`:
+
+```go
+import "runtime"
+
+func main() {
+    go func() {
+        for i := 0; i < 5; i++ {
+            fmt.Println("goroutine", i)
+            runtime.Gosched() // yield to scheduler
+        }
+    }()
+
+    for i := 0; i < 5; i++ {
+        fmt.Println("main", i)
+    }
+}
+```
+
+`Gosched` yields the processor, allowing other goroutines to run. The current goroutine is not suspended — it's placed back into the run queue and will resume when the scheduler picks it again.
+
+> [!NOTE]
+> `runtime.Gosched()` is rarely needed in practice. Most yield points happen naturally through channel operations and syscalls. It's mainly useful in tight CPU-bound loops where you want to cooperate with the scheduler explicitly.

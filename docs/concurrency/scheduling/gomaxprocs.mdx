@@ -1,0 +1,44 @@
+# GOMAXPROCS
+
+`GOMAXPROCS` controls how many **Ps** (logical processors) the Go runtime creates. Since a goroutine needs a P to run, this directly controls how many goroutines can execute in parallel at any given moment.
+
+By default, Go sets `GOMAXPROCS` to the number of logical CPU cores available on the machine:
+
+```go
+fmt.Println(runtime.GOMAXPROCS(0)) // 0 = query without changing
+// e.g. 8 on an 8-core machine
+```
+
+## Changing GOMAXPROCS
+
+You can change it at runtime:
+
+```go
+runtime.GOMAXPROCS(4) // use 4 Ps
+```
+
+Or via environment variable before the program starts:
+
+```sh
+GOMAXPROCS=4 go run main.go
+```
+
+## Effect On Parallelism
+
+- `GOMAXPROCS=1` — only one goroutine runs at a time. Concurrency still works (goroutines interleave), but there is no parallelism.
+- `GOMAXPROCS=N` — up to N goroutines run in parallel, one per P.
+
+Increasing `GOMAXPROCS` beyond the number of physical cores rarely helps and can hurt performance due to increased context switching and cache contention.
+
+## When To Change It
+
+Most of the time you shouldn't. The default (number of cores) is the right value for CPU-bound work.
+
+Reasons you might lower it:
+
+- Running in a container with limited CPU quota.
+- Benchmarking to isolate concurrency bugs.
+- Reducing CPU usage for a background service.
+
+> [!NOTE]
+> In containerized environments, Go may not correctly detect the available CPU count and default to the host machine's core count instead. Libraries like [automaxprocs](https://github.com/uber-go/automaxprocs) from Uber fix this by reading the container's CPU quota and setting `GOMAXPROCS` accordingly.
