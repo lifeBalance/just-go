@@ -1,7 +1,108 @@
 # Overview
 
-In a [previous section]() we saw how the **OS scheduler** manages processes and kernel threads. Go adds another scheduler inside the runtime that sits on top of the OS scheduler: instead of letting the OS manage goroutines directly, Go's runtime schedules them onto OS threads itself.
+In a [previous section](/concurrency/basic-concepts/scheduling/) we talked about:
 
-This extra layer exists for one reason: OS threads are expensive. Creating one costs around **1MB of stack** and context switching between them requires a round trip into the kernel. Go's scheduler avoids that cost by multiplexing thousands of lightweight goroutines onto a small number of OS threads, switching between them in user space without kernel involvement.
+- **OS threads** which run within processes, both managed by the **OS scheduler**.
+- **User-level threads** which run within OS threads, and are managed by a language runtime or a library.
 
-The result is that you can spawn hundreds of thousands of goroutines in a single program without exhausting system resources — something that would be impossible if each goroutine mapped directly to an OS thread.
+User level threads are **lightweight threads** that are scheduled by the language runtime or some library.
+
+> [!NOTE]
+> Depending on the language they have different names:
+>
+> - **Green threads** — the original thread library for Java.
+> - **Greenlets** — lightweight coroutines for in-process concurrent programming (Python).
+> - **Goroutines** — Go’s lightweight user threads multiplexed onto kernel threads by the runtime.
+
+All these have in common several things:
+
+- They’re scheduled in **user space** by a **runtime** (or library) rather than the **OS scheduler**.
+- They start with a **small context** (a few kilobytes) that can grow on demand, so you can spawn thousands of them cheaply.
+- **Context switches** between them are far faster than switching OS threads.
+
+## Threading Models
+
+There are different models to map lightweight threads to OS threads:
+
+| Model                  | Mapping                                          |
+| :--------------------- | :----------------------------------------------- |
+| **Many-to-One (N:1)**  | Multiple user threads → 1 kernel thread          |
+| **One-to-One (1:1)**   | 1 user thread → 1 kernel thread                  |
+| **Many-to-Many (N:M)** | Multiple user threads → M kernel threads (M < N) |
+| **One-to-Many (1:N)**  | 1 user thread → Multiple kernel threads          |
+
+### Many-To-One (N:1)
+
+Multiple user threads are mapped to a single kernel thread. The runtime manages all scheduling in user space, and the kernel is completely unaware of the multiple threads. Because only one kernel thread exists, the process can only run on a single CPU core at a time. If any user thread makes a blocking system call, the entire process blocks.
+
+```
+User-Thread 1 ─────┐
+                   │
+User-Thread 2 ─────┼──► Scheduler ──► Kernel-Thread 1 ──► CPU0
+                   │
+User-Thread 3 ─────┘
+```
+
+Used by: Old Java Green Threads (pre-1.2), GNU Portable Threads, early Ruby/Python (due to GIL limitations, sort of)
+
+Pros: Extremely fast context switches, very low memory overhead per thread.
+
+Cons: Cannot utilize multiple CPU cores; blocking I/O stalls all threads.
+
+### One-to-One (1:1)
+
+Each user thread is mapped to a single dedicated kernel thread. The OS scheduler handles all scheduling decisions. The language or runtime simply wraps the OS's native threading API.
+
+```
+User-Thread 1 ────────► Kernel-Thread 1 ────► CPU0
+User-Thread 2 ────────► Kernel-Thread 2 ────► CPU1
+User-Thread 3 ────────► Kernel-Thread 3 ────► CPU2
+
+```
+
+Used by: C++ (std::thread), Java (java.lang.Thread), Rust (std::thread) — built on top of Linux, Windows, macOS OS threads.
+
+Languages like C, C++, Java, and Rust expose OS threads directly — you create a thread, the OS manages it, and you pay the full OS cost per thread (~1MB of stack, slow context switches).
+
+Pros: True parallelism across multiple CPU cores; blocking I/O only affects the blocking thread.
+
+Cons: Expensive context switches (kernel involvement), large memory footprint per thread (~1MB stack).
+
+### Many-to-Many (N:M)
+
+Multiple user threads are mapped to a smaller pool of kernel threads (M kernel threads, where M < N). The runtime multiplexes user threads across the available kernel threads, allowing the kernel to manage CPU core usage while the runtime handles lightweight scheduling. This model tries to combine the efficiency of user-level threading with the parallelism of kernel-level threading.
+
+```
+User-Thread 1 ─────┐                    ┌──► Kernel-Thread 1 ──► CPU0
+                   │                    │
+User-Thread 2 ─────┤                    ├──► Kernel-Thread 2 ──► CPU1
+                   ├──► Scheduler ──────┤
+User-Thread 3 ─────┤                    ├──► Kernel-Thread 3 ──► CPU2
+                   │                    │
+User-Thread 4 ─────┤                    └──► Kernel-Thread 4 ──► CPU3
+                   │
+User-Thread 5 ─────┘
+```
+
+This is the model used by Go, where **goroutines** (user threads) are multiplexed onto a smaller **pool of kernel-level threads**, where each thread manages a queue of goroutines. The Go runtime manages scheduling, migration, and load balancing of goroutines across kernel threads.
+
+Used by: Go (goroutines), Rust (Tokio with async), Erlang, old Solaris 8/9 thread library.
+
+Pros: Many lightweight threads with true parallelism across cores; blocking I/O only blocks the specific kernel thread, not the entire pool.
+
+Cons: Complex to implement well; scheduler must handle dynamic load balancing and kernel thread management.
+
+### One-to-Many (1:N)
+
+This would mean one user-level thread gets split across multiple kernel threads to run on multiple CPU cores simultaneously, which is a nightmare for synchronization, cache coherency, and would break basically every program. Some highly experimental research OSes might have played with it, but you will never encounter this in production.
+
+
+```
+                                    ┌──► Kernel-Thread 1 ──► CPU0
+                                    │
+                                    ├──► Kernel-Thread 2 ──► CPU1
+User-Thread 1 ─────► Scheduler ────►┤
+                                    ├──► Kernel-Thread 3 ──► CPU2
+                                    │
+                                    └──► Kernel-Thread 4 ──► CPU3
+```

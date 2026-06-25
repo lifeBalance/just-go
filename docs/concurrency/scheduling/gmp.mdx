@@ -1,5 +1,18 @@
 # The GMP Model
 
+In the previous section, we mentioned that Go uses an **M:N threading model** (aka hybrid threading), where multiple user-level threads (goroutines) are multiplexed over a smaller or equal set of kernel-level threads.
+
+> [!NOTE]
+> This approach differs from the traditional **N:1 model** used in other languages, which typically maps **multiple user-level threads** onto a **single kernel thread**.
+
+Supporting an **M:N model** requires a significantly more sophisticated runtime, as it must efficiently schedule, migrate, and balance user-level threads across multiple kernel-level threads.
+
+To achieve this, Go adds another scheduler inside the runtime that sits on top of the OS scheduler: instead of letting the OS manage goroutines directly, Go's runtime schedules them onto OS threads itself.
+
+This extra layer exists for one reason: OS threads are expensive. Creating one costs around **1MB of stack** and context switching between them requires a round trip into the kernel. Go's scheduler avoids that cost by multiplexing thousands of lightweight goroutines onto a small number of OS threads, switching between them in user space without kernel involvement.
+
+The result is that you can spawn hundreds of thousands of goroutines in a single program without exhausting system resources — something that would be impossible if each goroutine mapped directly to an OS thread.
+
 Languages like C, C++, Java, and Rust expose OS threads directly — you create a thread, the OS manages it, and you pay the full OS cost per thread (~1MB of stack, slow context switches).
 
 Go takes a different approach. Rather than mapping goroutines 1:1 to OS threads, Go's runtime implements its own scheduler on top of the OS, using a model called **GMP**:
@@ -26,9 +39,21 @@ Before **Go 1.1**, the scheduler had only `G` and `M`. Every scheduling decision
 
 `P` was introduced to fix this. Each `P` has its own **local run queue** (LRQ), so most scheduling decisions happen without any locking. The **global run queue** (GRQ) still exists as a fallback for overflow and newly created goroutines, but it's consulted far less often.
 
+## Run Queues
+
+The Go's runtime maintains two queues:
+
+- A **local run queue** is assigned to each of the available **kernel-level threads**.
+- A **global run queue** to store goroutines that Go hasn’t yet assigned to a kernel-level thread.
+
+We mentioned before that the **OS scheduler** may decide to deschedule the whole process if one of its threads is running a **blocking IO** operation. The Go runtime can detect when a kernel-level thread is about to be paused by the operating system. When this occurs, the runtime either spawns a new kernel-level thread or reuses one from an idle pool, transfers the affected goroutine queue to it, and continues execution. The original thread, now waiting on I/O, is then suspended by the OS.
+
 ## Work Stealing
 
-When a P's local run queue runs dry, it doesn't sit idle — it steals goroutines from other Ps to keep its M busy.
+When a P's local run queue runs dry, it doesn't sit idle — it steals goroutines from other Ps to keep its M busy. The process of of moving goroutines from one queue to another is known in Go as **work stealing**. This happens in two situations:
+
+- When a goroutine makes a **blocking** call. This mechanism ensures that a goroutine performing a blocking operation does not halt the progress of other goroutines in the same **local run queue**, allowing the system to maintain concurrency and throughput.
+- To keep the run queues balanced. When a **local run queue** (LRQ) becomes empty and its associated **kernel-level thread** has no goroutines left to run, it can steal goroutines from the run queue of another thread. This prevents cores from sitting idle while there is still work available.
 
 The stealing order is:
 

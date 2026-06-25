@@ -1,5 +1,7 @@
 # GOMAXPROCS
 
+Go’s runtime decides how many kernel-level threads can run simultaneously based on the number of logical processors available. This behavior is controlled by the [GOMAXPROCS](https://pkg.go.dev/runtime#GOMAXPROCS) environment variable.
+
 `GOMAXPROCS` controls how many **Ps** (logical processors) the Go runtime creates. Since a goroutine needs a P to run, this directly controls how many goroutines can execute in parallel at any given moment.
 
 By default, Go sets `GOMAXPROCS` to the number of logical CPU cores available on the machine:
@@ -22,6 +24,20 @@ Or via environment variable before the program starts:
 ```sh
 GOMAXPROCS=4 go run main.go
 ```
+
+If `GOMAXPROCS` is not explicitly set, Go automatically determines its value by querying the operating system for the number of available CPU cores. Let's see this in action:
+
+<Code code={gomaxprocs} lang="go" title="gomaxprocs/main.go" />
+
+If you run the code above, the output would be along these lines:
+
+```sh
+$ go run gomaxprocs/main.go
+Number of CPUs: 14
+GOMAXPROCS: 14
+```
+
+The number of processors will depend on your machine.
 
 ## Effect On Parallelism
 
