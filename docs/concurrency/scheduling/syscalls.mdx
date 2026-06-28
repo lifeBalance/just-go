@@ -15,7 +15,28 @@ For network I/O, Go uses the **network poller** — a layer built on top of the 
 3. The `M` picks up the next goroutine from the P's run queue.
 4. When the network poller detects the I/O is ready, the goroutine is placed back into a run queue.
 
+```
+before network I/O:          while fd is not ready:       after fd is ready:
+┌──── P0 ────┐               ┌──── P0 ────┐              ┌──── P0 ────┐
+│ running G1 │               │ running G2 │              │ running G2 │
+└─────┬──────┘               └─────┬──────┘              └─────┬──────┘
+      │                            │                           │
+     M1                           M1                          M1
+      │                            │
+      │ register fd                │ keeps running 
+      ▼                            │ other Goroutines
+┌──────────────┐                   │                     ┌──────────────┐
+│ netpoller    │                   │                     │ netpoller    │
+│ watches fd   │                   │                     │ fd ready     │
+└──────┬───────┘                   │                     └──────┬───────┘
+       │                           │                            │
+       ▼                           ▼                            ▼
+G1 parked, not runnable       G2 runs on same M          G1 back to run queue
+```
+
 The `M` never blocks. The thread keeps running other goroutines the entire time.
+
+The **network poller** watches **file descriptors** for network I/O readiness. When a goroutine starts a network operation that would block, the goroutine is parked with the network poller. When the **fd** becomes ready, the poller makes the goroutine **runnable** again.
 
 ## Blocking Syscalls
 
@@ -27,16 +48,22 @@ For truly blocking syscalls (file I/O, certain OS calls that can't be made async
 4. When the syscall returns, `exitsyscall` runs — the goroutine tries to reacquire a P. If one is available, it continues. If not, the goroutine is placed in the global run queue and the M may go idle.
 
 ```
-before syscall:          during syscall:          after syscall:
-┌─── P ───┐              ┌─── P ───┐              ┌─── P ───┐
-│ G (run) │              │ G2(run) │              │ G (run) │
-└────┬────┘              └────┬────┘              └────┬────┘
-     M                        M2 (new/idle)             M
-     │                        
-     G ──> kernel (blocked)   
+before syscall:            during syscall:           after syscall returns:
+┌──── P0 ────┐             ┌──── P0 ────┐            ┌──── P0 ────┐
+│ running G1 │             │ running G2 │            │ running G1 │
+└─────┬──────┘             └─────┬──────┘            └─────┬──────┘
+      │                          │                         │
+     M1                         M2                        M1
+      │   
+      │ entersyscall   
+      ▼                      
+M1 + G1 blocked            P0 detached from M1
+in kernel.                 and reused by M2
 ```
 
 This keeps the rest of the program running even when one goroutine is stuck waiting on the kernel.
 
 > [!NOTE]
 > `entersyscall` and `exitsyscall` are internal runtime functions. You won't call them directly, but understanding them explains why Go programs stay responsive under heavy I/O load.
+>
+> They mark when an `M` is entering and leaving a **syscall**, so the scheduler can detach or reacquire a `P`.

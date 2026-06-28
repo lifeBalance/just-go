@@ -18,8 +18,11 @@ Languages like C, C++, Java, and Rust expose OS threads directly — you create 
 Go takes a different approach. Rather than mapping goroutines 1:1 to OS threads, Go's runtime implements its own scheduler on top of the OS, using a model called **GMP**:
 
 - **G** — Goroutine. The unit of concurrent work. Starts at ~2KB of stack and grows dynamically.
-- **M** — Machine. An OS thread, managed by the kernel.
-- **P** — Processor. A logical CPU slot that holds a local run queue of goroutines and schedules them onto an M.
+- **M** is short for **Machine**, and represents An **OS thread**, managed by the kernel.
+- **P** is short for **Processor**. A logical CPU slot that holds a **local run queue** of goroutines and schedules them onto an `M`.
+
+> [!WARNING]
+> The `P` in Go's runtime is **not a physical CPU core**. It is a logical processor that represents the ability to execute goroutines. The number of `P`s is set by the `GOMAXPROCS` environment variable, which defaults to the number of available CPU cores.
 
 ```
 ┌────── P0 ──────┐    ┌────── P1 ──────┐
@@ -35,9 +38,16 @@ A goroutine can only run when it has both an **M** to execute on and a **P** to 
 
 ## Why P Exists
 
-Before **Go 1.1**, the scheduler had only `G` and `M`. Every scheduling decision required a global lock, which became a bottleneck as programs spawned more goroutines.
+Before **Go 1.1**, the scheduler had only `G` and `M`. Every scheduling decision required a **global lock**, which became a bottleneck as programs spawned more goroutines.
 
 `P` was introduced to fix this. Each `P` has its own **local run queue** (LRQ), so most scheduling decisions happen without any locking. The **global run queue** (GRQ) still exists as a fallback for overflow and newly created goroutines, but it's consulted far less often.
+
+If every goroutine had to go through one global run queue, every P/thread would need to lock the same shared queue to get work. That shared lock would become a bottleneck. So Go uses:
+
+- **Local run queues**: each `P` mostly schedules from its own queue, avoiding global lock contention.
+- **Global run queue**: still exists for overflow, fairness, and some newly awakened goroutines, but it is not the hot path.
+
+Conceptually, the **global run queue** is shared runtime state, so accessing it requires synchronization inside the runtime. You don’t manage that lock yourself; the Go runtime does. The point is: **local queues** reduce how often the runtime needs to touch the shared **global queue**.
 
 ## Run Queues
 
@@ -48,9 +58,11 @@ The Go's runtime maintains two queues:
 
 We mentioned before that the **OS scheduler** may decide to deschedule the whole process if one of its threads is running a **blocking IO** operation. The Go runtime can detect when a kernel-level thread is about to be paused by the operating system. When this occurs, the runtime either spawns a new kernel-level thread or reuses one from an idle pool, transfers the affected goroutine queue to it, and continues execution. The original thread, now waiting on I/O, is then suspended by the OS.
 
+A runnable goroutine sitting in a queue is just waiting. It runs when a `P` schedules it onto an `M`.
+
 ## Work Stealing
 
-When a P's local run queue runs dry, it doesn't sit idle — it steals goroutines from other Ps to keep its M busy. The process of of moving goroutines from one queue to another is known in Go as **work stealing**. This happens in two situations:
+When a `P`'s **local run queue** runs dry, it doesn't sit idle — it steals goroutines from other `P`s to keep its `M` (OS thread) busy. The process of of moving goroutines from one queue to another is known in Go as **work stealing**. This happens in two situations:
 
 - When a goroutine makes a **blocking** call. This mechanism ensures that a goroutine performing a blocking operation does not halt the progress of other goroutines in the same **local run queue**, allowing the system to maintain concurrency and throughput.
 - To keep the run queues balanced. When a **local run queue** (LRQ) becomes empty and its associated **kernel-level thread** has no goroutines left to run, it can steal goroutines from the run queue of another thread. This prevents cores from sitting idle while there is still work available.
@@ -76,7 +88,7 @@ Work stealing keeps all Ps busy without routing every goroutine through a single
 created -> placed in P's LRQ -> scheduled onto M -> running -> yields/blocks -> back to LRQ
 ```
 
-- When a new goroutine is created, it's placed in the current P's local run queue.
+- When a new goroutine is created, it's placed in the current `P`'s local run queue.
 - The scheduler assigns it to an `M` when the `P` is free.
 - When it yields or blocks, it's removed from the `M` and another goroutine takes its place.
 - When it unblocks (e.g. I/O completes), it's placed back into a **run queue**.
